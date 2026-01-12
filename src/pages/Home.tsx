@@ -2,6 +2,7 @@ import { Trophy, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FeedCard } from "@/components/cards/FeedCard";
 import { ObligationCard } from "@/components/cards/ObligationCard";
+import { MatchScheduleCard } from "@/components/match/MatchScheduleCard";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -51,6 +52,36 @@ const obligationsData = [
   },
 ];
 
+// Matches that need scheduling
+const schedulingMatchesData = [
+  {
+    id: "match-1",
+    tournamentName: "Spring Showdown",
+    roundName: "Round of 16",
+    opponentName: "NightOwl",
+    status: "pending_availability" as const,
+    deadline: "Jan 25, 2024",
+    opponentAvailability: ["Jan 23-14:00", "Jan 23-16:00", "Jan 24-18:00"],
+  },
+  {
+    id: "match-2",
+    tournamentName: "Pro League Season 3",
+    roundName: "Quarterfinal",
+    opponentName: "ShadowBlade",
+    status: "scheduled" as const,
+    scheduledTime: "Jan 24 at 20:00",
+  },
+  {
+    id: "match-3",
+    tournamentName: "Community Cup",
+    roundName: "Semi-final",
+    opponentName: "ThunderStrike",
+    status: "ready_phase" as const,
+    scheduledTime: "Now",
+    opponentReady: true,
+  },
+];
+
 export default function Home() {
   const navigate = useNavigate();
 
@@ -77,6 +108,30 @@ export default function Home() {
                 tournamentName={item.tournamentName}
                 timestamp={item.timestamp}
                 onClick={() => navigate("/tournaments/1")}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Schedule Your Matches */}
+        <section>
+          <h2 className="text-lg font-semibold mb-4">Schedule Matches</h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            Tap a match to set your availability or confirm ready status
+          </p>
+          <div className="space-y-3">
+            {schedulingMatchesData.map((match) => (
+              <MatchScheduleCard
+                key={match.id}
+                matchId={match.id}
+                tournamentName={match.tournamentName}
+                roundName={match.roundName}
+                opponentName={match.opponentName}
+                status={match.status}
+                deadline={match.deadline}
+                scheduledTime={match.scheduledTime}
+                opponentAvailability={match.opponentAvailability}
+                opponentReady={match.opponentReady}
               />
             ))}
           </div>
