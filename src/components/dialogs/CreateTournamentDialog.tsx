@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Trophy, Globe, Coins } from "lucide-react";
+import { Users, Trophy, Globe, Coins, FileText, UserPlus } from "lucide-react";
 
 interface CreateTournamentDialogProps {
   open: boolean;
@@ -24,13 +24,13 @@ interface CreateTournamentDialogProps {
 }
 
 const regions = [
+  { value: "global", label: "Global (No Restrictions)" },
   { value: "europe", label: "Europe" },
   { value: "north-america", label: "North America" },
   { value: "south-america", label: "South America" },
   { value: "asia", label: "Asia" },
   { value: "africa", label: "Africa" },
   { value: "oceania", label: "Oceania" },
-  { value: "global", label: "Global" },
 ];
 
 const playerLevels = [
@@ -41,11 +41,21 @@ const playerLevels = [
   { value: "5", label: "Level 5 - Professional" },
 ];
 
+const maxPlayerOptions = [
+  { value: "8", label: "8 Players" },
+  { value: "16", label: "16 Players" },
+  { value: "32", label: "32 Players" },
+  { value: "64", label: "64 Players" },
+  { value: "128", label: "128 Players" },
+];
+
 export function CreateTournamentDialog({ open, onOpenChange }: CreateTournamentDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [rules, setRules] = useState("");
   const [minLevel, setMinLevel] = useState("");
-  const [region, setRegion] = useState("");
+  const [maxPlayers, setMaxPlayers] = useState("");
+  const [region, setRegion] = useState("global");
   const [prizePool, setPrizePool] = useState("");
   const [inviteFollowers, setInviteFollowers] = useState(false);
 
@@ -55,7 +65,9 @@ export function CreateTournamentDialog({ open, onOpenChange }: CreateTournamentD
     console.log("Create tournament:", {
       name,
       description,
+      rules,
       minLevel,
+      maxPlayers,
       region,
       prizePool,
       inviteFollowers,
@@ -67,8 +79,10 @@ export function CreateTournamentDialog({ open, onOpenChange }: CreateTournamentD
   const resetForm = () => {
     setName("");
     setDescription("");
+    setRules("");
     setMinLevel("");
-    setRegion("");
+    setMaxPlayers("");
+    setRegion("global");
     setPrizePool("");
     setInviteFollowers(false);
   };
@@ -103,22 +117,57 @@ export function CreateTournamentDialog({ open, onOpenChange }: CreateTournamentD
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-accent" />
-              Minimum Player Level
+            <Label htmlFor="tournamentRules" className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              Rules
             </Label>
-            <Select value={minLevel} onValueChange={setMinLevel}>
-              <SelectTrigger className="bg-secondary border-border/50">
-                <SelectValue placeholder="Select minimum level" />
-              </SelectTrigger>
-              <SelectContent>
-                {playerLevels.map((level) => (
-                  <SelectItem key={level.value} value={level.value}>
-                    {level.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Textarea
+              id="tournamentRules"
+              value={rules}
+              onChange={(e) => setRules(e.target.value)}
+              placeholder="Enter tournament rules (e.g., Best of 3, no exploits allowed...)"
+              className="bg-secondary border-border/50 min-h-[100px]"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-accent" />
+                Min Level
+              </Label>
+              <Select value={minLevel} onValueChange={setMinLevel}>
+                <SelectTrigger className="bg-secondary border-border/50">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {playerLevels.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-primary" />
+                Max Players
+              </Label>
+              <Select value={maxPlayers} onValueChange={setMaxPlayers}>
+                <SelectTrigger className="bg-secondary border-border/50">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {maxPlayerOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">

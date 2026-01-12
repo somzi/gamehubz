@@ -1,11 +1,13 @@
-import { useParams } from "react-router-dom";
-import { Calendar, Users } from "lucide-react";
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Calendar, Users, FileText, Trophy, Coins, Globe, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { TournamentBracket } from "@/components/bracket/TournamentBracket";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { AdminPlayerList } from "@/components/admin/AdminPlayerList";
 
 // Placeholder data
 const tournamentData = {
@@ -15,16 +17,28 @@ const tournamentData = {
   status: "live" as const,
   date: "Jan 15, 2024",
   format: "Single Elimination",
+  rules: `1. Best of 3 matches for all rounds except Finals (Best of 5)
+2. No use of exploits or glitches
+3. Players must be ready 5 minutes before scheduled time
+4. No-shows will result in automatic disqualification
+5. All disputes must be reported to admins within 15 minutes
+6. Unsportsmanlike behavior will not be tolerated`,
+  maxPlayers: 16,
   playerCount: 8,
+  region: "Global",
+  prizePool: "$1,000",
+  minLevel: 3,
+  isOpen: false,
+  isAdmin: true, // Placeholder: check if current user is admin
   players: [
-    { id: "1", name: "ProPlayer99" },
-    { id: "2", name: "GamerX" },
-    { id: "3", name: "ChampionKing" },
-    { id: "4", name: "NightHawk" },
-    { id: "5", name: "ShadowStrike" },
-    { id: "6", name: "BlazeMaster" },
-    { id: "7", name: "IcePhoenix" },
-    { id: "8", name: "ThunderBolt" },
+    { id: "1", name: "ProPlayer99", level: 4, fairPlayScore: 95, noShowCount: 0, registeredAt: "Jan 10" },
+    { id: "2", name: "GamerX", level: 3, fairPlayScore: 88, noShowCount: 1, registeredAt: "Jan 11" },
+    { id: "3", name: "ChampionKing", level: 5, fairPlayScore: 92, noShowCount: 0, registeredAt: "Jan 11" },
+    { id: "4", name: "NightHawk", level: 3, fairPlayScore: 78, noShowCount: 2, registeredAt: "Jan 12" },
+    { id: "5", name: "ShadowStrike", level: 4, fairPlayScore: 85, noShowCount: 0, registeredAt: "Jan 12" },
+    { id: "6", name: "BlazeMaster", level: 3, fairPlayScore: 90, noShowCount: 0, registeredAt: "Jan 13" },
+    { id: "7", name: "IcePhoenix", level: 4, fairPlayScore: 97, noShowCount: 0, registeredAt: "Jan 13" },
+    { id: "8", name: "ThunderBolt", level: 3, fairPlayScore: 82, noShowCount: 1, registeredAt: "Jan 14" },
   ],
 };
 
@@ -83,8 +97,21 @@ const bracketData = [
   },
 ];
 
+// Placeholder: current user level
+const currentUserLevel = 3;
+
 export default function TournamentDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [players, setPlayers] = useState(tournamentData.players);
+  
+  const isEligible = currentUserLevel >= tournamentData.minLevel;
+  const canApply = tournamentData.isOpen && isEligible && players.length < tournamentData.maxPlayers;
+  
+  const handleRemovePlayer = (playerId: string) => {
+    setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+    console.log("Removed player:", playerId);
+  };
 
   return (
     <div className="min-h-screen pb-24">
@@ -103,43 +130,74 @@ export default function TournamentDetails() {
             <StatusBadge status={tournamentData.status} />
           </div>
 
-          <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
+          <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              <span>{tournamentData.playerCount} players</span>
+              <span>{players.length}/{tournamentData.maxPlayers} players</span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span>{tournamentData.date}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              <span>{tournamentData.region}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-accent" />
+              <span>Min Level {tournamentData.minLevel}</span>
+            </div>
+            {tournamentData.prizePool && (
+              <div className="flex items-center gap-2 col-span-2">
+                <Coins className="w-4 h-4 text-accent" />
+                <span className="text-accent font-semibold">{tournamentData.prizePool}</span>
+              </div>
+            )}
           </div>
 
-          <Button className="w-full gradient-accent text-primary-foreground font-semibold">
-            Join Tournament
-          </Button>
+          {canApply ? (
+            <Button className="w-full gradient-accent text-primary-foreground font-semibold">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Apply to Join
+            </Button>
+          ) : tournamentData.isOpen && !isEligible ? (
+            <div className="text-center py-3 rounded-xl bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive">
+                Level {tournamentData.minLevel} required to join
+              </p>
+            </div>
+          ) : null}
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="bracket" className="w-full">
-          <TabsList className="w-full bg-transparent border-b border-border rounded-none h-12">
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="w-full bg-transparent border-b border-border rounded-none h-12 grid grid-cols-4">
             <TabsTrigger 
               value="overview" 
-              className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger 
               value="bracket"
-              className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
             >
               Bracket
             </TabsTrigger>
             <TabsTrigger 
               value="players"
-              className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
             >
               Players
             </TabsTrigger>
+            {tournamentData.isAdmin && (
+              <TabsTrigger 
+                value="admin"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
+              >
+                Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="overview" className="px-4 py-6 space-y-4">
@@ -148,10 +206,13 @@ export default function TournamentDetails() {
               <p className="text-muted-foreground">{tournamentData.format}</p>
             </div>
             <div className="stat-card">
-              <h3 className="font-semibold mb-2">Rules</h3>
-              <p className="text-muted-foreground">
-                Standard competitive rules apply. Best of 3 matches for all rounds.
-              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="w-4 h-4 text-primary" />
+                <h3 className="font-semibold">Rules</h3>
+              </div>
+              <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans">
+                {tournamentData.rules}
+              </pre>
             </div>
           </TabsContent>
 
@@ -161,20 +222,40 @@ export default function TournamentDetails() {
 
           <TabsContent value="players" className="px-4 py-6">
             <div className="space-y-3">
-              {tournamentData.players.map((player, index) => (
+              {players.map((player, index) => (
                 <div
                   key={player.id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/30"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/30 cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => navigate(`/players/${player.id}`)}
                 >
                   <span className="w-6 text-center text-sm text-muted-foreground">
                     {index + 1}
                   </span>
                   <PlayerAvatar name={player.name} size="sm" />
-                  <span className="font-medium">{player.name}</span>
+                  <div className="flex-1">
+                    <span className="font-medium">{player.name}</span>
+                    <p className="text-xs text-muted-foreground">Level {player.level}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </TabsContent>
+
+          {tournamentData.isAdmin && (
+            <TabsContent value="admin" className="px-4 py-6">
+              <div className="mb-4">
+                <h3 className="font-semibold text-lg">Registered Players</h3>
+                <p className="text-sm text-muted-foreground">
+                  {players.length} of {tournamentData.maxPlayers} slots filled
+                </p>
+              </div>
+              <AdminPlayerList
+                tournamentId={tournamentData.id}
+                players={players}
+                onRemovePlayer={handleRemovePlayer}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

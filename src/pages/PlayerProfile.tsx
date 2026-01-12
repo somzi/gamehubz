@@ -5,6 +5,8 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { StatCard } from "@/components/ui/StatCard";
 import { MatchHistoryCard } from "@/components/cards/MatchHistoryCard";
 import { SocialLinks } from "@/components/profile/SocialLinks";
+import { FairPlayStats } from "@/components/profile/FairPlayStats";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Placeholder data - would come from API based on playerId
 const getPlayerData = (id: string) => ({
@@ -17,6 +19,10 @@ const getPlayerData = (id: string) => ({
   wins: Math.floor(10 + Math.random() * 40),
   losses: Math.floor(5 + Math.random() * 20),
   level: Math.floor(1 + Math.random() * 5),
+  // Fair play stats
+  fairPlayScore: Math.floor(70 + Math.random() * 30),
+  noShowCount: Math.floor(Math.random() * 3),
+  reportsCount: Math.floor(Math.random() * 2),
   socials: [
     { platform: "discord" as const, username: `Player${id}#1234`, url: "#" },
     { platform: "tiktok" as const, username: `@player${id}`, url: `https://tiktok.com/@player${id}` },
@@ -77,44 +83,75 @@ export default function PlayerProfile() {
           </div>
         </div>
 
-        {/* Social Links */}
-        <div className="px-4 py-4">
-          <h2 className="text-lg font-semibold mb-3">Connected Accounts</h2>
-          <SocialLinks links={playerData.socials} />
-        </div>
+        {/* Tabs */}
+        <Tabs defaultValue="stats" className="w-full">
+          <TabsList className="w-full bg-transparent border-b border-border rounded-none h-12 grid grid-cols-3">
+            <TabsTrigger 
+              value="stats" 
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
+            >
+              Stats
+            </TabsTrigger>
+            <TabsTrigger 
+              value="fairplay"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
+            >
+              Fair Play
+            </TabsTrigger>
+            <TabsTrigger 
+              value="social"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
+            >
+              Social
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Stats */}
-        <div className="px-4 py-4">
-          <h2 className="text-lg font-semibold mb-4">Statistics</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard icon={Target} value={playerData.totalMatches} label="Total Matches" />
-            <StatCard icon={TrendingUp} value={`${playerData.winPercentage}%`} label="Win Rate" variant="accent" />
-            <StatCard icon={Trophy} value={playerData.wins} label="Wins" variant="gold" />
-            <div className="stat-card flex-1">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 bg-destructive/20">
-                <Trophy className="w-4 h-4 text-destructive" />
+          <TabsContent value="stats" className="px-4 py-6 space-y-6">
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard icon={Target} value={playerData.totalMatches} label="Total Matches" />
+              <StatCard icon={TrendingUp} value={`${playerData.winPercentage}%`} label="Win Rate" variant="accent" />
+              <StatCard icon={Trophy} value={playerData.wins} label="Wins" variant="gold" />
+              <div className="stat-card flex-1">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 bg-destructive/20">
+                  <Trophy className="w-4 h-4 text-destructive" />
+                </div>
+                <p className="text-2xl font-bold text-destructive">{playerData.losses}</p>
+                <p className="text-xs text-muted-foreground">Losses</p>
               </div>
-              <p className="text-2xl font-bold text-destructive">{playerData.losses}</p>
-              <p className="text-xs text-muted-foreground">Losses</p>
             </div>
-          </div>
-        </div>
 
-        {/* Match History */}
-        <section className="px-4 py-4">
-          <h2 className="text-lg font-semibold mb-4">Match History</h2>
-          <div className="space-y-2">
-            {matchHistory.map((match) => (
-              <MatchHistoryCard
-                key={match.id}
-                tournamentName={match.tournamentName}
-                opponentName={match.opponentName}
-                result={match.result}
-                date={match.date}
-              />
-            ))}
-          </div>
-        </section>
+            {/* Match History */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Match History</h2>
+              <div className="space-y-2">
+                {matchHistory.map((match) => (
+                  <MatchHistoryCard
+                    key={match.id}
+                    tournamentName={match.tournamentName}
+                    opponentName={match.opponentName}
+                    result={match.result}
+                    date={match.date}
+                  />
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="fairplay" className="px-4 py-6">
+            <FairPlayStats
+              fairPlayScore={playerData.fairPlayScore}
+              noShowCount={playerData.noShowCount}
+              reportsCount={playerData.reportsCount}
+              matchesPlayed={playerData.totalMatches}
+            />
+          </TabsContent>
+
+          <TabsContent value="social" className="px-4 py-6">
+            <h2 className="text-lg font-semibold mb-3">Connected Accounts</h2>
+            <SocialLinks links={playerData.socials} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
