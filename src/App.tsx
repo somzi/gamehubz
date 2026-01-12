@@ -10,6 +10,7 @@ import TournamentDetails from "./pages/TournamentDetails";
 import Hubs from "./pages/Hubs";
 import HubProfile from "./pages/HubProfile";
 import Profile from "./pages/Profile";
+import PlayerProfile from "./pages/PlayerProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/hubs" element={<Hubs />} />
             <Route path="/hubs/:id" element={<HubProfile />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/players/:id" element={<PlayerProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNav />
