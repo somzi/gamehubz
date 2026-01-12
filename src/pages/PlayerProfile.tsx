@@ -1,29 +1,30 @@
+import { useParams } from "react-router-dom";
 import { Trophy, Target, TrendingUp, Gamepad2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { StatCard } from "@/components/ui/StatCard";
 import { MatchHistoryCard } from "@/components/cards/MatchHistoryCard";
 import { SocialLinks } from "@/components/profile/SocialLinks";
-import { Button } from "@/components/ui/button";
 
-// Placeholder data
-const playerData = {
-  username: "ProPlayer99",
-  discordNickname: "ProPlayer99#1234",
-  inGameNickname: "xProPlayer",
-  totalMatches: 48,
-  winPercentage: 67,
-  wins: 32,
-  losses: 16,
-  level: 3,
+// Placeholder data - would come from API based on playerId
+const getPlayerData = (id: string) => ({
+  id,
+  username: id === "1" ? "ProPlayer99" : `Player${id}`,
+  discordNickname: `Player${id}#${Math.floor(1000 + Math.random() * 9000)}`,
+  inGameNickname: `xPlayer${id}`,
+  totalMatches: Math.floor(20 + Math.random() * 80),
+  winPercentage: Math.floor(40 + Math.random() * 40),
+  wins: Math.floor(10 + Math.random() * 40),
+  losses: Math.floor(5 + Math.random() * 20),
+  level: Math.floor(1 + Math.random() * 5),
   socials: [
-    { platform: "discord" as const, username: "ProPlayer99#1234", url: "#" },
-    { platform: "tiktok" as const, username: "@proplayer99", url: "https://tiktok.com/@proplayer99" },
-    { platform: "instagram" as const, username: "@proplayer99", url: "https://instagram.com/proplayer99" },
+    { platform: "discord" as const, username: `Player${id}#1234`, url: "#" },
+    { platform: "tiktok" as const, username: `@player${id}`, url: `https://tiktok.com/@player${id}` },
+    { platform: "instagram" as const, username: `@player${id}`, url: `https://instagram.com/player${id}` },
   ],
-};
+});
 
-const matchHistory = [
+const getMatchHistory = (playerId: string) => [
   {
     id: "1",
     tournamentName: "Winter Championship",
@@ -35,36 +36,26 @@ const matchHistory = [
     id: "2",
     tournamentName: "Weekly Cup #42",
     opponentName: "ChampionKing",
-    result: "win" as const,
+    result: "loss" as const,
     date: "Jan 12, 2024",
   },
   {
     id: "3",
     tournamentName: "Pro Series",
     opponentName: "NightHawk",
-    result: "loss" as const,
-    date: "Jan 10, 2024",
-  },
-  {
-    id: "4",
-    tournamentName: "Community Battle",
-    opponentName: "ShadowStrike",
     result: "win" as const,
-    date: "Jan 8, 2024",
+    date: "Jan 10, 2024",
   },
 ];
 
-export default function Profile() {
+export default function PlayerProfile() {
+  const { id } = useParams();
+  const playerData = getPlayerData(id || "1");
+  const matchHistory = getMatchHistory(id || "1");
+
   return (
     <div className="min-h-screen pb-24">
-      <PageHeader 
-        title="Profile" 
-        rightElement={
-          <Button variant="ghost" size="sm" className="text-primary">
-            Edit
-          </Button>
-        }
-      />
+      <PageHeader title="Player Profile" showBack />
 
       <div className="animate-slide-up">
         {/* Profile Header */}

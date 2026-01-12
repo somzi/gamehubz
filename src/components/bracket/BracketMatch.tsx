@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,13 @@ interface BracketMatchProps {
 }
 
 export function BracketMatch({ player1, player2, winnerId, className }: BracketMatchProps) {
+  const navigate = useNavigate();
+
+  const handlePlayerClick = (playerId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/players/${playerId}`);
+  };
+
   const renderPlayer = (player?: Player) => {
     if (!player) {
       return (
@@ -30,9 +38,10 @@ export function BracketMatch({ player1, player2, winnerId, className }: BracketM
 
     return (
       <div
+        onClick={(e) => handlePlayerClick(player.id, e)}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-          isWinner ? "bg-success/20 border border-success/30" : "bg-muted/30"
+          "flex items-center gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer hover:scale-[1.02]",
+          isWinner ? "bg-success/20 border border-success/30" : "bg-muted/30 hover:bg-muted/50"
         )}
       >
         <PlayerAvatar src={player.avatar} name={player.name} size="sm" className="w-6 h-6" />
