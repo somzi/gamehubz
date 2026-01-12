@@ -1,15 +1,17 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface PageHeaderProps {
   title: string;
   showBack?: boolean;
   rightElement?: React.ReactNode;
+  showNotifications?: boolean;
   className?: string;
 }
 
-export function PageHeader({ title, showBack, rightElement, className }: PageHeaderProps) {
+export function PageHeader({ title, showBack, rightElement, showNotifications = true, className }: PageHeaderProps) {
   const navigate = useNavigate();
 
   return (
@@ -26,7 +28,10 @@ export function PageHeader({ title, showBack, rightElement, className }: PageHea
           )}
           <h1 className="text-lg font-semibold">{title}</h1>
         </div>
-        {rightElement}
+        <div className="flex items-center gap-2">
+          {showNotifications && <NotificationBell />}
+          {rightElement}
+        </div>
       </div>
     </header>
   );
