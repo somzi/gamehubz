@@ -3,6 +3,7 @@ export type RootStackParamList = {
     TournamentDetails: { id: string };
     HubProfile: { id: string };
     PlayerProfile: { id: string };
+    Notifications: undefined;
     NotFound: undefined;
 };
 

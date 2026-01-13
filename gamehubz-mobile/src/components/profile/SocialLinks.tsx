@@ -16,27 +16,27 @@ interface SocialLinksProps {
 
 const platformConfig: any = {
     discord: {
-        icon: <Ionicons name="logo-discord" size={18} />,
+        icon: <Ionicons name="logo-discord" size={20} />,
         color: "text-[#5865F2]",
         bgColor: "bg-[#5865F2]/20",
     },
     tiktok: {
-        icon: <Ionicons name="logo-tiktok" size={18} />,
+        icon: <Ionicons name="logo-tiktok" size={20} />,
         color: "text-foreground",
         bgColor: "bg-foreground/10",
     },
     instagram: {
-        icon: <FontAwesome name="instagram" size={18} />,
+        icon: <FontAwesome name="instagram" size={20} />,
         color: "text-[#E4405F]",
         bgColor: "bg-[#E4405F]/20",
     },
     twitter: {
-        icon: <FontAwesome name="twitter" size={18} />,
+        icon: <FontAwesome name="twitter" size={20} />,
         color: "text-foreground",
         bgColor: "bg-foreground/10",
     },
     youtube: {
-        icon: <FontAwesome name="youtube-play" size={18} />,
+        icon: <FontAwesome name="youtube-play" size={20} />,
         color: "text-[#FF0000]",
         bgColor: "bg-[#FF0000]/20",
     },
@@ -52,7 +52,7 @@ export function SocialLinks({ links, className }: SocialLinksProps) {
     };
 
     return (
-        <View className={cn("flex-row flex-wrap gap-2", className)}>
+        <View className={cn("flex-row flex-wrap gap-3", className)}>
             {links.map((link) => {
                 const config = platformConfig[link.platform];
                 if (!config) return null;
@@ -62,13 +62,12 @@ export function SocialLinks({ links, className }: SocialLinksProps) {
                         key={link.platform}
                         onPress={() => handlePress(link.url)}
                         className={cn(
-                            "flex-row items-center gap-2 px-3 py-2 rounded-xl border border-border/30",
+                            "items-center justify-center w-10 h-10 rounded-full border border-border/30",
                             config.bgColor
                         )}
                         style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                     >
                         <Text className={config.color}>{config.icon}</Text>
-                        <Text className="text-sm font-medium text-foreground">{link.username}</Text>
                     </Pressable>
                 );
             })}

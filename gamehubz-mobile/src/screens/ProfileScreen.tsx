@@ -68,15 +68,41 @@ const tabs = [
     { label: 'Fair Play', value: 'fair-play' },
 ];
 
+import { EditProfileModal } from '../components/profile/EditProfileModal';
+
 export default function ProfileScreen() {
     const [activeTab, setActiveTab] = useState('stats');
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [profileData, setProfileData] = useState(playerData);
+
+    const handleSaveProfile = (data: { discord: string; tiktok: string; instagram: string }) => {
+        setProfileData(prev => ({
+            ...prev,
+            socials: prev.socials.map(s => {
+                if (s.platform === 'discord') return { ...s, username: data.discord };
+                if (s.platform === 'tiktok') return { ...s, username: data.tiktok };
+                if (s.platform === 'instagram') return { ...s, username: data.instagram };
+                return s;
+            })
+        }));
+    };
+
+    const getSocialValue = (platform: string) =>
+        profileData.socials.find(s => s.platform === platform)?.username || '';
+
+
 
     return (
         <SafeAreaView className="flex-1 bg-background">
             <PageHeader
                 title="Profile"
+                showNotifications={true}
                 rightElement={
-                    <Button onPress={() => { }} variant="ghost" size="sm">
+                    <Button
+                        onPress={() => setIsEditModalVisible(true)}
+                        variant="ghost"
+                        size="sm"
+                    >
                         <Text className="text-primary font-medium">Edit</Text>
                     </Button>
                 }
@@ -84,23 +110,35 @@ export default function ProfileScreen() {
             <ScrollView className="flex-1">
                 {/* Profile Header */}
                 <View className="px-4 py-6 bg-card border-b border-border/30 items-center">
-                    <PlayerAvatar src={undefined} name={playerData.username} size="xl" />
-                    <Text className="text-xl font-bold mt-4 text-foreground">{playerData.username}</Text>
+                    <PlayerAvatar src={undefined} name={profileData.username} size="xl" />
+                    <Text className="text-xl font-bold mt-4 text-foreground">{profileData.username}</Text>
 
                     <View className="mt-2 px-3 py-1 rounded-full bg-primary/20">
-                        <Text className="text-primary text-xs font-semibold">Level {playerData.level}</Text>
+                        <Text className="text-primary text-xs font-semibold">Level {profileData.level}</Text>
                     </View>
 
                     <View className="flex-row items-center gap-2 mt-3">
                         <Ionicons name="game-controller" size={16} color="hsl(220, 15%, 55%)" />
-                        <Text className="text-sm text-muted-foreground">{playerData.inGameNickname}</Text>
+                        <Text className="text-sm text-muted-foreground">{profileData.inGameNickname}</Text>
                     </View>
 
                     {/* Social icons in header */}
                     <View className="mt-4 w-full">
-                        <SocialLinks links={playerData.socials} className="justify-center" />
+                        <SocialLinks links={profileData.socials} className="justify-center" />
                     </View>
                 </View>
+
+                <EditProfileModal
+                    visible={isEditModalVisible}
+                    onClose={() => setIsEditModalVisible(false)}
+                    onSave={handleSaveProfile}
+                    initialData={{
+                        discord: getSocialValue('discord'),
+                        tiktok: getSocialValue('tiktok'),
+                        instagram: getSocialValue('instagram'),
+                    }}
+                />
+
 
                 {/* Tabs */}
                 <View className="px-4 py-4">
@@ -112,19 +150,19 @@ export default function ProfileScreen() {
                                 <Text className="text-lg font-bold mb-4 text-foreground">Statistics</Text>
                                 <View className="flex-row flex-wrap gap-3">
                                     <View className="flex-1 min-w-[45%]">
-                                        <StatCard icon="game-controller-outline" value={playerData.totalMatches} label="Matches" />
+                                        <StatCard icon="game-controller-outline" value={profileData.totalMatches} label="Matches" />
                                     </View>
                                     <View className="flex-1 min-w-[45%]">
-                                        <StatCard icon="trending-up" value={`${playerData.winPercentage}%`} label="Win Rate" variant="accent" />
+                                        <StatCard icon="trending-up" value={`${profileData.winPercentage}%`} label="Win Rate" variant="accent" />
                                     </View>
                                     <View className="flex-1 min-w-[45%]">
-                                        <StatCard icon="trophy" value={playerData.wins} label="Wins" variant="gold" />
+                                        <StatCard icon="trophy" value={profileData.wins} label="Wins" variant="gold" />
                                     </View>
                                     <View className="flex-1 min-w-[45%] bg-card p-4 rounded-xl border border-border/30">
                                         <View className="w-8 h-8 rounded-lg items-center justify-center bg-destructive/10 mb-2">
                                             <Ionicons name="close-circle" size={18} color="hsl(0, 72%, 51%)" />
                                         </View>
-                                        <Text className="text-2xl font-bold text-destructive">{playerData.losses}</Text>
+                                        <Text className="text-2xl font-bold text-destructive">{profileData.losses}</Text>
                                         <Text className="text-xs text-muted-foreground">Losses</Text>
                                     </View>
                                 </View>
@@ -152,16 +190,16 @@ export default function ProfileScreen() {
                             <View>
                                 <Text className="text-lg font-bold mb-4 text-foreground">Fair Play</Text>
                                 <FairPlayStats
-                                    fairPlayScore={playerData.fairPlayScore}
-                                    noShowCount={playerData.noShowCount}
-                                    reportsCount={playerData.reportsCount}
-                                    matchesPlayed={playerData.totalMatches}
+                                    fairPlayScore={profileData.fairPlayScore}
+                                    noShowCount={profileData.noShowCount}
+                                    reportsCount={profileData.reportsCount}
+                                    matchesPlayed={profileData.totalMatches}
                                 />
                             </View>
                         )}
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }

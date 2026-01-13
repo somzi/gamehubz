@@ -86,7 +86,7 @@ export default function HomeScreen() {
         <SafeAreaView className="flex-1 bg-background">
             <PageHeader
                 title="Home"
-                rightElement={<Ionicons name="notifications" size={24} color="hsl(220, 15%, 55%)" />}
+                showNotifications={true}
             />
             <ScrollView className="flex-1">
                 <View className="px-4 py-6 space-y-6">

@@ -5,6 +5,7 @@ import { MainTabNavigator } from './MainTabNavigator';
 import TournamentDetailsScreen from '../screens/TournamentDetailsScreen';
 import HubProfileScreen from '../screens/HubProfileScreen';
 import PlayerProfileScreen from '../screens/PlayerProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -31,6 +32,10 @@ export function RootNavigator() {
             <Stack.Screen
                 name="PlayerProfile"
                 component={PlayerProfileScreen}
+            />
+            <Stack.Screen
+                name="Notifications"
+                component={NotificationsScreen}
             />
             <Stack.Screen
                 name="NotFound"

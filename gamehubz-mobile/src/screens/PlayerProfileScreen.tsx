@@ -96,7 +96,7 @@ export default function PlayerProfileScreen() {
                             <Text className="text-lg font-bold mb-4 text-foreground">Statistics</Text>
                             <View className="flex-row flex-wrap gap-3">
                                 <View className="flex-1 min-w-[45%]">
-                                    <StatCard icon="target" value={playerData.totalMatches} label="Matches" />
+                                    <StatCard icon="game-controller" value={playerData.totalMatches} label="Matches" />
                                 </View>
                                 <View className="flex-1 min-w-[45%]">
                                     <StatCard icon="trending-up" value={`${playerData.winPercentage}%`} label="Win Rate" variant="accent" />
