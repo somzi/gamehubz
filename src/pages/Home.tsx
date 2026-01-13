@@ -1,8 +1,7 @@
-import { CalendarDays, Flame } from "lucide-react";
+import { CalendarDays, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FeedCard } from "@/components/cards/FeedCard";
 import { MatchScheduleCard } from "@/components/match/MatchScheduleCard";
-import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 // Placeholder data - ready for API integration
@@ -30,8 +29,8 @@ const feedData = [
   },
 ];
 
-// All matches consolidated - including ones needing scheduling
-const myMatchesData = [
+// Matches needing scheduling
+const pendingSchedulingMatches = [
   {
     id: "match-1",
     tournamentName: "Spring Showdown",
@@ -41,6 +40,10 @@ const myMatchesData = [
     deadline: "Jan 25, 2024",
     opponentAvailability: ["2024-01-23-14", "2024-01-23-16", "2024-01-24-18"],
   },
+];
+
+// Scheduled and ready matches
+const scheduledMatches = [
   {
     id: "match-2",
     tournamentName: "Pro League Season 3",
@@ -72,23 +75,11 @@ const myMatchesData = [
 export default function Home() {
   const navigate = useNavigate();
 
-  // Count active matches (not completed)
-  const activeMatchCount = myMatchesData.length;
-  const urgentCount = myMatchesData.filter(
-    (m) => m.status === "ready_phase" || m.status === "pending_availability"
-  ).length;
-
   return (
     <div className="min-h-screen pb-24">
       <PageHeader title="Home" />
 
       <div className="px-4 py-6 space-y-6 animate-slide-up">
-        {/* Stats Overview */}
-        <div className="flex gap-3">
-          <StatCard icon={Flame} value={activeMatchCount} label="Active Matches" variant="accent" />
-          <StatCard icon={CalendarDays} value={urgentCount} label="Need Action" variant="gold" />
-        </div>
-
         {/* Community News Feed */}
         <section>
           <h2 className="text-lg font-semibold mb-4">Community Feed</h2>
@@ -106,14 +97,41 @@ export default function Home() {
           </div>
         </section>
 
-        {/* My Matches - Consolidated */}
+        {/* Needs Scheduling Panel */}
+        {pendingSchedulingMatches.length > 0 && (
+          <section className="p-4 rounded-xl bg-accent/10 border border-accent/30">
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarDays className="w-5 h-5 text-accent" />
+              <h2 className="text-lg font-semibold">Schedule Your Matches</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Set your availability to find a match time
+            </p>
+            <div className="space-y-3">
+              {pendingSchedulingMatches.map((match) => (
+                <MatchScheduleCard
+                  key={match.id}
+                  matchId={match.id}
+                  tournamentName={match.tournamentName}
+                  roundName={match.roundName}
+                  opponentName={match.opponentName}
+                  status={match.status}
+                  deadline={match.deadline}
+                  opponentAvailability={match.opponentAvailability}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* My Matches - Scheduled/Ready */}
         <section>
-          <h2 className="text-lg font-semibold mb-2">My Matches</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Tap a match to set availability or confirm ready
-          </p>
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">My Matches</h2>
+          </div>
           <div className="space-y-3">
-            {myMatchesData.map((match) => (
+            {scheduledMatches.map((match) => (
               <MatchScheduleCard
                 key={match.id}
                 matchId={match.id}
@@ -121,9 +139,7 @@ export default function Home() {
                 roundName={match.roundName}
                 opponentName={match.opponentName}
                 status={match.status}
-                deadline={match.deadline}
                 scheduledTime={match.scheduledTime}
-                opponentAvailability={match.opponentAvailability}
                 opponentReady={match.opponentReady}
               />
             ))}
