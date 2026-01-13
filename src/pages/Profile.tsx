@@ -4,7 +4,9 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { StatCard } from "@/components/ui/StatCard";
 import { MatchHistoryCard } from "@/components/cards/MatchHistoryCard";
 import { SocialLinks } from "@/components/profile/SocialLinks";
+import { FairPlayStats } from "@/components/profile/FairPlayStats";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Placeholder data
 const playerData = {
@@ -16,6 +18,9 @@ const playerData = {
   wins: 32,
   losses: 16,
   level: 3,
+  fairPlayScore: 95,
+  noShowCount: 1,
+  reportsCount: 0,
   socials: [
     { platform: "discord" as const, username: "ProPlayer99#1234", url: "#" },
     { platform: "tiktok" as const, username: "@proplayer99", url: "https://tiktok.com/@proplayer99" },
@@ -83,36 +88,38 @@ export default function Profile() {
                 <span>{playerData.inGameNickname}</span>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Social Links */}
-        <div className="px-4 py-4">
-          <h2 className="text-lg font-semibold mb-3">Connected Accounts</h2>
-          <SocialLinks links={playerData.socials} />
-        </div>
-
-        {/* Stats */}
-        <div className="px-4 py-4">
-          <h2 className="text-lg font-semibold mb-4">Statistics</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard icon={Target} value={playerData.totalMatches} label="Total Matches" />
-            <StatCard icon={TrendingUp} value={`${playerData.winPercentage}%`} label="Win Rate" variant="accent" />
-            <StatCard icon={Trophy} value={playerData.wins} label="Wins" variant="gold" />
-            <div className="stat-card flex-1">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 bg-destructive/20">
-                <Trophy className="w-4 h-4 text-destructive" />
-              </div>
-              <p className="text-2xl font-bold text-destructive">{playerData.losses}</p>
-              <p className="text-xs text-muted-foreground">Losses</p>
+            {/* Compact social icons in header */}
+            <div className="mt-4">
+              <SocialLinks links={playerData.socials} variant="compact" />
             </div>
           </div>
         </div>
 
-        {/* Match History */}
-        <section className="px-4 py-4">
-          <h2 className="text-lg font-semibold mb-4">Match History</h2>
-          <div className="space-y-2">
+        {/* Tabs */}
+        <Tabs defaultValue="stats" className="px-4 py-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="stats">Stats</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="fair-play">Fair Play</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="stats" className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard icon={Target} value={playerData.totalMatches} label="Total Matches" />
+              <StatCard icon={TrendingUp} value={`${playerData.winPercentage}%`} label="Win Rate" variant="accent" />
+              <StatCard icon={Trophy} value={playerData.wins} label="Wins" variant="gold" />
+              <div className="stat-card flex-1">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 bg-destructive/20">
+                  <Trophy className="w-4 h-4 text-destructive" />
+                </div>
+                <p className="text-2xl font-bold text-destructive">{playerData.losses}</p>
+                <p className="text-xs text-muted-foreground">Losses</p>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-2">
             {matchHistory.map((match) => (
               <MatchHistoryCard
                 key={match.id}
@@ -122,8 +129,17 @@ export default function Profile() {
                 date={match.date}
               />
             ))}
-          </div>
-        </section>
+          </TabsContent>
+
+          <TabsContent value="fair-play">
+            <FairPlayStats
+              fairPlayScore={playerData.fairPlayScore}
+              noShowCount={playerData.noShowCount}
+              reportsCount={playerData.reportsCount}
+              matchesPlayed={playerData.totalMatches}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

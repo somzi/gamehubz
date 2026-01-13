@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Calendar, Clock, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AvailabilityPicker } from "./AvailabilityPicker";
+import { HourlyAvailabilityPicker } from "./HourlyAvailabilityPicker";
 import { MatchReadyButton } from "./MatchReadyButton";
 import {
   Dialog,
@@ -115,7 +114,7 @@ export function MatchScheduleCard({
           </DialogHeader>
           
           {currentStatus === "pending_availability" && (
-            <AvailabilityPicker
+            <HourlyAvailabilityPicker
               matchId={matchId}
               deadline={deadline}
               opponentName={opponentName}

@@ -1,7 +1,6 @@
-import { Trophy, Users } from "lucide-react";
+import { CalendarDays, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FeedCard } from "@/components/cards/FeedCard";
-import { ObligationCard } from "@/components/cards/ObligationCard";
 import { MatchScheduleCard } from "@/components/match/MatchScheduleCard";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -31,29 +30,8 @@ const feedData = [
   },
 ];
 
-const obligationsData = [
-  {
-    id: "1",
-    tournamentName: "Winter Championship",
-    matchType: "Quarterfinal",
-    scheduledTime: "Today at 18:00",
-    opponentName: "ProPlayer99",
-    status: "live" as const,
-    isUrgent: true,
-  },
-  {
-    id: "2",
-    tournamentName: "Weekly Cup #42",
-    matchType: "Semi-final",
-    scheduledTime: "Tomorrow at 20:00",
-    opponentName: "GamerX",
-    status: "scheduled" as const,
-    isUrgent: false,
-  },
-];
-
-// Matches that need scheduling
-const schedulingMatchesData = [
+// All matches consolidated - including ones needing scheduling
+const myMatchesData = [
   {
     id: "match-1",
     tournamentName: "Spring Showdown",
@@ -61,7 +39,7 @@ const schedulingMatchesData = [
     opponentName: "NightOwl",
     status: "pending_availability" as const,
     deadline: "Jan 25, 2024",
-    opponentAvailability: ["Jan 23-14:00", "Jan 23-16:00", "Jan 24-18:00"],
+    opponentAvailability: ["2024-01-23-14", "2024-01-23-16", "2024-01-24-18"],
   },
   {
     id: "match-2",
@@ -80,10 +58,25 @@ const schedulingMatchesData = [
     scheduledTime: "Now",
     opponentReady: true,
   },
+  {
+    id: "match-4",
+    tournamentName: "Winter Championship",
+    roundName: "Quarterfinal",
+    opponentName: "ProPlayer99",
+    status: "ready_phase" as const,
+    scheduledTime: "Today at 18:00",
+    opponentReady: false,
+  },
 ];
 
 export default function Home() {
   const navigate = useNavigate();
+
+  // Count active matches (not completed)
+  const activeMatchCount = myMatchesData.length;
+  const urgentCount = myMatchesData.filter(
+    (m) => m.status === "ready_phase" || m.status === "pending_availability"
+  ).length;
 
   return (
     <div className="min-h-screen pb-24">
@@ -92,8 +85,8 @@ export default function Home() {
       <div className="px-4 py-6 space-y-6 animate-slide-up">
         {/* Stats Overview */}
         <div className="flex gap-3">
-          <StatCard icon={Trophy} value={1} label="Live Now" variant="gold" />
-          <StatCard icon={Users} value={8} label="Players" variant="accent" />
+          <StatCard icon={Flame} value={activeMatchCount} label="Active Matches" variant="accent" />
+          <StatCard icon={CalendarDays} value={urgentCount} label="Need Action" variant="gold" />
         </div>
 
         {/* Community News Feed */}
@@ -113,14 +106,14 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Schedule Your Matches */}
+        {/* My Matches - Consolidated */}
         <section>
-          <h2 className="text-lg font-semibold mb-4">Schedule Matches</h2>
-          <p className="text-sm text-muted-foreground mb-3">
-            Tap a match to set your availability or confirm ready status
+          <h2 className="text-lg font-semibold mb-2">My Matches</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Tap a match to set availability or confirm ready
           </p>
           <div className="space-y-3">
-            {schedulingMatchesData.map((match) => (
+            {myMatchesData.map((match) => (
               <MatchScheduleCard
                 key={match.id}
                 matchId={match.id}
@@ -132,25 +125,6 @@ export default function Home() {
                 scheduledTime={match.scheduledTime}
                 opponentAvailability={match.opponentAvailability}
                 opponentReady={match.opponentReady}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* My Tournament Obligations */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4">My Matches</h2>
-          <div className="space-y-3">
-            {obligationsData.map((item) => (
-              <ObligationCard
-                key={item.id}
-                tournamentName={item.tournamentName}
-                matchType={item.matchType}
-                scheduledTime={item.scheduledTime}
-                opponentName={item.opponentName}
-                status={item.status}
-                isUrgent={item.isUrgent}
-                onClick={() => navigate("/tournaments/1")}
               />
             ))}
           </div>
