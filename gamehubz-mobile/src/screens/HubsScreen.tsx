@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -14,45 +14,71 @@ import { Card } from '../components/ui/Card';
 
 type HubsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
-const hubsData = [
-    {
-        id: "1",
-        name: "Esports Hub",
-        description: "Premier competitive gaming community",
-        followers: 1250,
-        tournaments: 45,
-    },
-    {
-        id: "2",
-        name: "Gaming League",
-        description: "Professional esports organization",
-        followers: 890,
-        tournaments: 32,
-    },
-    {
-        id: "3",
-        name: "Community Arena",
-        description: "Open tournaments for everyone",
-        followers: 2100,
-        tournaments: 78,
-    },
-    {
-        id: "4",
-        name: "Pro Circuit",
-        description: "Elite competitive series",
-        followers: 560,
-        tournaments: 18,
-    },
-];
+interface Hub {
+    id: string;
+    name: string;
+    description: string;
+    userId: string;
+    userDisplayName: string | null;
+    userHubs: any[]; // Assuming this relates to members/followers
+    tournaments: any[];
+}
 
 export default function HubsScreen() {
     const navigation = useNavigation<HubsScreenNavigationProp>();
     const [searchQuery, setSearchQuery] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [hubs, setHubs] = useState<Hub[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const filteredHubs = hubsData.filter((hub) =>
+    useEffect(() => {
+        fetchHubs();
+    }, []);
+
+    const fetchHubs = async () => {
+        try {
+            // Use 10.0.2.2 for Android Emulator to access host localhost
+            const baseUrl = Platform.OS === 'android' ? 'https://10.0.2.2:7057' : 'https://localhost:7057';
+            const apiUrl = `${baseUrl}/api/Hub?sortItems=%7B%22propertyName%22%3A%22string%22%2C%22direction%22%3A%22string%22%7D&filterItems=%7B%22propertyName%22%3A%22string%22%2C%22value%22%3A%22string%22%2C%22expressionOperator%22%3A0%2C%22logicalOperator%22%3A0%7D`;
+
+            console.log('Fetching hubs from:', apiUrl);
+
+            const response = await fetch(apiUrl);
+
+            if (!response.ok) {
+                const text = await response.text();
+                // Check if the response is HTML (often 404/500 from proxy/server)
+                const isHtml = text.trim().startsWith('<');
+                console.error('API Error Response:', isHtml ? 'HTML Error Page' : text);
+                throw new Error(`Failed to fetch hubs: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Handle response format: { items: Hub[], count: number }
+            // If data is array use it, otherwise check for .items
+            const hubsList = Array.isArray(data) ? data : (data.items || []);
+
+            // Validate data is an array to prevent crash
+            if (!Array.isArray(hubsList)) {
+                console.error('Invalid data format received:', data);
+                throw new Error('Invalid items format received from server');
+            }
+
+            setHubs(hubsList);
+            setError(null);
+        } catch (err) {
+            console.error('Fetch error:', err);
+            setError('Failed to load hubs. Please check your connection.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredHubs = hubs.filter((hub) =>
         hub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        hub.description.toLowerCase().includes(searchQuery.toLowerCase())
+        (hub.description && hub.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return (
@@ -76,43 +102,58 @@ export default function HubsScreen() {
                     className="mb-4"
                 />
 
-                <ScrollView className="flex-1">
-                    <View className="space-y-3 pb-8">
-                        {filteredHubs.length === 0 ? (
-                            <View className="items-center py-12 opacity-50">
-                                <Ionicons name="people-outline" size={48} color="#71717A" />
-                                <Text className="text-muted-foreground mt-4 font-medium">No hubs found</Text>
-                            </View>
-                        ) : (
-                            filteredHubs.map((hub) => (
-                                <Card
-                                    key={hub.id}
-                                    onPress={() => navigation.navigate('HubProfile', { id: hub.id })}
-                                >
-                                    <View className="flex-row gap-4">
-                                        <PlayerAvatar name={hub.name} size="lg" className="w-16 h-16" />
-                                        <View className="flex-1">
-                                            <Text className="text-lg font-bold text-foreground">{hub.name}</Text>
-                                            <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
-                                                {hub.description}
-                                            </Text>
-                                            <View className="flex-row items-center gap-4 mt-3">
-                                                <View className="flex-row items-center gap-1">
-                                                    <Ionicons name="people-outline" size={12} color="#A1A1AA" />
-                                                    <Text className="text-xs text-muted-foreground font-medium">{hub.followers.toLocaleString()}</Text>
-                                                </View>
-                                                <View className="flex-row items-center gap-1">
-                                                    <Ionicons name="trophy-outline" size={12} color="#A1A1AA" />
-                                                    <Text className="text-xs text-muted-foreground font-medium">{hub.tournaments} Tournaments</Text>
+                {loading ? (
+                    <View className="flex-1 items-center justify-center">
+                        <ActivityIndicator size="large" color="#8B5CF6" />
+                    </View>
+                ) : error ? (
+                    <View className="flex-1 items-center justify-center">
+                        <Text className="text-destructive mb-4">{error}</Text>
+                        <Button onPress={fetchHubs} size="sm">Retry</Button>
+                    </View>
+                ) : (
+                    <ScrollView className="flex-1">
+                        <View className="space-y-3 pb-8">
+                            {filteredHubs.length === 0 ? (
+                                <View className="items-center py-12 opacity-50">
+                                    <Ionicons name="people-outline" size={48} color="#71717A" />
+                                    <Text className="text-muted-foreground mt-4 font-medium">No hubs found</Text>
+                                </View>
+                            ) : (
+                                filteredHubs.map((hub) => (
+                                    <Card
+                                        key={hub.id}
+                                        onPress={() => navigation.navigate('HubProfile', { id: hub.id })}
+                                    >
+                                        <View className="flex-row gap-4">
+                                            <PlayerAvatar name={hub.name} size="lg" className="w-16 h-16" />
+                                            <View className="flex-1">
+                                                <Text className="text-lg font-bold text-foreground">{hub.name}</Text>
+                                                <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
+                                                    {hub.description}
+                                                </Text>
+                                                <View className="flex-row items-center gap-4 mt-3">
+                                                    <View className="flex-row items-center gap-1">
+                                                        <Ionicons name="people-outline" size={12} color="#A1A1AA" />
+                                                        <Text className="text-xs text-muted-foreground font-medium">
+                                                            {hub.userHubs ? hub.userHubs.length : 0}
+                                                        </Text>
+                                                    </View>
+                                                    <View className="flex-row items-center gap-1">
+                                                        <Ionicons name="trophy-outline" size={12} color="#A1A1AA" />
+                                                        <Text className="text-xs text-muted-foreground font-medium">
+                                                            {hub.tournaments ? hub.tournaments.length : 0} Tournaments
+                                                        </Text>
+                                                    </View>
                                                 </View>
                                             </View>
                                         </View>
-                                    </View>
-                                </Card>
-                            ))
-                        )}
-                    </View>
-                </ScrollView>
+                                    </Card>
+                                ))
+                            )}
+                        </View>
+                    </ScrollView>
+                )}
             </View>
 
             <Modal
