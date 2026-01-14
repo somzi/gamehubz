@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Modal, TextInput, Pressable } from 'react-native';
+import { View, Text, ScrollView, Modal, TextInput, Pressable, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -7,10 +7,11 @@ import { RootStackParamList } from '../types/navigation';
 import { TournamentCard } from '../components/cards/TournamentCard';
 import { StatCard } from '../components/ui/StatCard';
 import { PageHeader } from '../components/layout/PageHeader';
-import { FloatingActionButton } from '../components/layout/FloatingActionButton';
+// import { FloatingActionButton } from '../components/layout/FloatingActionButton'; // Removed
 import { Tabs } from '../components/ui/Tabs';
 import { Button } from '../components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
+import { CreateTournamentModal } from '../components/modals/CreateTournamentModal';
 
 type TournamentsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -143,47 +144,25 @@ export default function TournamentsScreen() {
                 </View>
             </ScrollView>
 
-            <FloatingActionButton onClick={() => setIsModalOpen(true)} />
-
-            <Modal
-                visible={isModalOpen}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setIsModalOpen(false)}
+            <TouchableOpacity
+                onPress={() => setIsModalOpen(true)}
+                className="absolute right-4 bg-primary flex-row items-center px-5 py-3 rounded-full shadow-lg z-50"
+                style={{
+                    bottom: 20, // We are inside SafeAreaView, so bottom padding is usually handled there, but let's double check.
+                    // Actually, if we want it to float over scrollview, absolute is correct. 
+                    // SafeAreaView usually adds padding. If we are INSIDE SafeAreaView, we might not need extra inset logic if SafeAreaView works as container.
+                    // But if SafeAreaView is just padding, absolute bottom 20 might be too close to home bar if not handled?
+                    // Let's use standard absolute bottom.
+                }}
             >
-                <View className="flex-1 justify-end bg-black/50">
-                    <View className="bg-card p-6 rounded-t-3xl border-t border-border space-y-4">
-                        <View className="flex-row justify-between items-center mb-2">
-                            <Text className="text-xl font-bold text-foreground">Create Tournament</Text>
-                            <Pressable onPress={() => setIsModalOpen(false)}>
-                                <Ionicons name="close" size={24} color="#71717A" />
-                            </Pressable>
-                        </View>
+                <Ionicons name="add" size={24} color="#FFF" style={{ marginRight: 8 }} />
+                <Text className="text-white font-bold text-base">Create Tournament</Text>
+            </TouchableOpacity>
 
-                        <View className="space-y-4">
-                            <View>
-                                <Text className="text-sm font-medium text-muted-foreground mb-1">Tournament Name</Text>
-                                <TextInput
-                                    className="bg-secondary p-3 rounded-lg text-foreground border border-border"
-                                    placeholder="e.g. Winter Cup"
-                                    placeholderTextColor="#71717A"
-                                />
-                            </View>
-                            <View>
-                                <Text className="text-sm font-medium text-muted-foreground mb-1">Prize Pool</Text>
-                                <TextInput
-                                    className="bg-secondary p-3 rounded-lg text-foreground border border-border"
-                                    placeholder="$100"
-                                    placeholderTextColor="#71717A"
-                                />
-                            </View>
-                            <Button onPress={() => setIsModalOpen(false)} className="mt-4">
-                                Create Tournament
-                            </Button>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <CreateTournamentModal
+                visible={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            />
         </SafeAreaView>
     );
 }
