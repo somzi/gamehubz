@@ -12,6 +12,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../lib/utils';
 import { Card } from '../components/ui/Card';
 
+import { API_BASE_URL, ENDPOINTS } from '../lib/api';
+
+// v2 - forcing refresh
 type HubsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 interface Hub {
@@ -20,8 +23,10 @@ interface Hub {
     description: string;
     userId: string;
     userDisplayName: string | null;
-    userHubs: any[]; // Assuming this relates to members/followers
-    tournaments: any[];
+    userHubs?: any[];
+    tournaments?: any[];
+    numberOfUsers: number;
+    numberOfTournaments: number;
 }
 
 export default function HubsScreen() {
@@ -38,9 +43,7 @@ export default function HubsScreen() {
 
     const fetchHubs = async () => {
         try {
-            // Use 10.0.2.2 for Android Emulator to access host localhost
-            const baseUrl = Platform.OS === 'android' ? 'https://10.0.2.2:7057' : 'https://localhost:7057';
-            const apiUrl = `${baseUrl}/api/Hub?sortItems=%7B%22propertyName%22%3A%22string%22%2C%22direction%22%3A%22string%22%7D&filterItems=%7B%22propertyName%22%3A%22string%22%2C%22value%22%3A%22string%22%2C%22expressionOperator%22%3A0%2C%22logicalOperator%22%3A0%7D`;
+            const apiUrl = ENDPOINTS.HUBS;
 
             console.log('Fetching hubs from:', apiUrl);
 
@@ -136,13 +139,13 @@ export default function HubsScreen() {
                                                     <View className="flex-row items-center gap-1">
                                                         <Ionicons name="people-outline" size={12} color="#A1A1AA" />
                                                         <Text className="text-xs text-muted-foreground font-medium">
-                                                            {hub.userHubs ? hub.userHubs.length : 0}
+                                                            {hub.numberOfUsers}
                                                         </Text>
                                                     </View>
                                                     <View className="flex-row items-center gap-1">
                                                         <Ionicons name="trophy-outline" size={12} color="#A1A1AA" />
                                                         <Text className="text-xs text-muted-foreground font-medium">
-                                                            {hub.tournaments ? hub.tournaments.length : 0} Tournaments
+                                                            {hub.numberOfTournaments} Tournaments
                                                         </Text>
                                                     </View>
                                                 </View>
