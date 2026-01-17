@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -37,9 +37,12 @@ export default function HubsScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchHubs();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            console.log('HubsScreen focused, fetching hubs...');
+            fetchHubs();
+        }, [])
+    );
 
     const fetchHubs = async () => {
         try {

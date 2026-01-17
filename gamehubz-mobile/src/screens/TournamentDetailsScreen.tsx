@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { RouteProp, useRoute, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TournamentBracket } from '../components/bracket/TournamentBracket';
+import { TournamentGroups } from '../components/bracket/TournamentGroups';
 import { Tabs } from '../components/ui/Tabs';
 import { Button } from '../components/ui/Button';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../lib/utils';
+import { ENDPOINTS } from '../lib/api';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
@@ -33,70 +35,79 @@ const tournamentData = {
     ],
 };
 
-const bracketData = [
-    {
-        name: "Quarterfinals",
-        matches: [
-            {
-                id: "qf1",
-                player1: { id: "1", name: "ProPlayer99", score: 2 },
-                player2: { id: "2", name: "GamerX", score: 1 },
-                winnerId: "1",
-            },
-            {
-                id: "qf2",
-                player1: { id: "3", name: "ChampionKing", score: 2 },
-                player2: { id: "4", name: "NightHawk", score: 0 },
-                winnerId: "3",
-            },
-            {
-                id: "qf3",
-                player1: { id: "5", name: "ShadowStrike", score: 1 },
-                player2: { id: "6", name: "BlazeMaster", score: 2 },
-                winnerId: "6",
-            },
-            {
-                id: "qf4",
-                player1: { id: "7", name: "IcePhoenix", score: 2 },
-                player2: { id: "8", name: "ThunderBolt", score: 1 },
-                winnerId: "7",
-            },
-        ],
-    },
-    {
-        name: "Semifinals",
-        matches: [
-            {
-                id: "sf1",
-                player1: { id: "1", name: "ProPlayer99" },
-                player2: { id: "3", name: "ChampionKing" },
-            },
-            {
-                id: "sf2",
-                player1: { id: "6", name: "BlazeMaster" },
-                player2: { id: "7", name: "IcePhoenix" },
-            },
-        ],
-    },
-    {
-        name: "Finals",
-        matches: [
-            {
-                id: "f1",
-            },
-        ],
-    },
-];
-
 export default function TournamentDetailsScreen() {
     const route = useRoute<TournamentDetailsRouteProp>();
+    const { id } = route.params;
     const [activeTab, setActiveTab] = useState('bracket');
+    const [stages, setStages] = useState<any[]>([]);
+    const [loadingBracket, setLoadingBracket] = useState(false);
+    const [bracketError, setBracketError] = useState<string | null>(null);
+
+    const fetchBracket = async () => {
+        if (!id) return;
+        setLoadingBracket(true);
+        setBracketError(null);
+        try {
+            const url = ENDPOINTS.GET_TOURNAMENT_STRUCTURE(id);
+            console.log('Fetching bracket from:', url);
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch bracket: ${response.status}`);
+            }
+            const data = await response.json();
+            setStages(data.stages || []);
+        } catch (err) {
+            console.error('Bracket fetch error:', err);
+            setBracketError('Failed to load bracket structure');
+        } finally {
+            setLoadingBracket(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'bracket') {
+            fetchBracket();
+        }
+    }, [id, activeTab]);
 
     const tabs = [
         { label: 'Overview', value: 'overview' },
-        { label: 'Bracket', value: 'bracket' },
+        { label: 'Bracket / League', value: 'bracket' },
         { label: 'Players', value: 'players' },
     ];
+
+    const renderStages = () => {
+        if (stages.length === 0) {
+            return (
+                <View className="py-20 items-center justify-center">
+                    <Ionicons name="trophy-outline" size={48} color="#71717A" />
+                    <Text className="text-muted-foreground mt-4">Bracket not available yet</Text>
+                </View>
+            );
+        }
+
+        return stages.map((stage, index) => (
+            <View key={stage.stageId || index} className="mb-8">
+                {stages.length > 1 && (
+                    <View className="px-4 py-2 bg-muted/20 border-y border-border/10 mb-4">
+                        <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                            Stage {index + 1}: {stage.name}
+                        </Text>
+                    </View>
+                )}
+
+                {stage.rounds && stage.rounds.length > 0 ? (
+                    <TournamentBracket rounds={stage.rounds} />
+                ) : stage.groups && stage.groups.length > 0 ? (
+                    <TournamentGroups groups={stage.groups} />
+                ) : (
+                    <View className="py-10 items-center justify-center">
+                        <Text className="text-muted-foreground">No matches scheduled for this stage</Text>
+                    </View>
+                )}
+            </View>
+        ));
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-background">
@@ -154,7 +165,22 @@ export default function TournamentDetailsScreen() {
 
                     {activeTab === 'bracket' && (
                         <View className="py-2">
-                            <TournamentBracket rounds={bracketData} />
+                            {loadingBracket ? (
+                                <View className="py-20 items-center justify-center">
+                                    <ActivityIndicator size="large" color="#8B5CF6" />
+                                    <Text className="text-muted-foreground mt-4">Loading structure...</Text>
+                                </View>
+                            ) : bracketError ? (
+                                <View className="py-20 items-center justify-center px-4">
+                                    <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+                                    <Text className="text-destructive mt-4 text-center">{bracketError}</Text>
+                                    <Button onPress={fetchBracket} variant="outline" size="sm" className="mt-4">
+                                        Retry
+                                    </Button>
+                                </View>
+                            ) : (
+                                renderStages()
+                            )}
                         </View>
                     )}
 

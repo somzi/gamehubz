@@ -31,7 +31,7 @@ interface Tournament {
 const tournamentsData: Record<string, Tournament[]> = {
     live: [
         {
-            id: "1",
+            id: "86F0D7B3-2BCC-4D30-E0FC-08DE55C5AA4E",
             name: "Winter Championship 2024",
             status: "live",
             date: "Jan 15, 2024",
@@ -42,7 +42,7 @@ const tournamentsData: Record<string, Tournament[]> = {
     ],
     upcoming: [
         {
-            id: "2",
+            id: "97E1E2F3-3CDD-5E41-F1DC-19EE66D6BB5F",
             name: "Spring Showdown",
             status: "upcoming",
             date: "Feb 1, 2024",
@@ -55,7 +55,7 @@ const tournamentsData: Record<string, Tournament[]> = {
     ],
     completed: [
         {
-            id: "4",
+            id: "A1B2C3D4-E5F6-4A5B-8C9D-E0F1A2B3D4C5",
             name: "Fall Championship",
             status: "completed",
             date: "Dec 15, 2023",
@@ -66,7 +66,7 @@ const tournamentsData: Record<string, Tournament[]> = {
     ],
     open: [
         {
-            id: "5",
+            id: "B2C3D4E5-F6A7-5B6C-9D0E-F1A2B3C4D5E6",
             name: "Community Cup #12",
             status: "upcoming",
             date: "Feb 20, 2024",

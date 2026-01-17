@@ -6,56 +6,57 @@ import { RootStackParamList } from '../../types/navigation';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { cn } from '../../lib/utils';
 
-interface Player {
-    id: string;
-    name: string;
-    avatar?: string;
-    score?: number;
+interface Participant {
+    participantId: string;
+    userId: string;
+    username: string;
+    score: number | null;
+    isWinner: boolean;
+    seed: number;
 }
 
 interface BracketMatchProps {
-    player1?: Player;
-    player2?: Player;
-    winnerId?: string;
+    home: Participant | null;
+    away: Participant | null;
     className?: string;
 }
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-export function BracketMatch({ player1, player2, winnerId, className }: BracketMatchProps) {
+export function BracketMatch({ home, away, className }: BracketMatchProps) {
     const navigation = useNavigation<NavigationProp>();
 
-    const handlePlayerClick = (playerId: string) => {
-        navigation.navigate('PlayerProfile', { id: playerId });
+    const handlePlayerClick = (userId: string) => {
+        navigation.navigate('PlayerProfile', { id: userId });
     };
 
-    const renderPlayer = (player?: Player) => {
-        if (!player) {
+    const renderParticipant = (participant: Participant | null) => {
+        if (!participant) {
             return (
-                <View className="flex-row items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg">
-                    <View className="w-6 h-6 rounded-full bg-muted" />
-                    <Text className="text-sm text-muted-foreground">TBD</Text>
+                <View className="flex-row items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg h-10">
+                    <View className="w-6 h-6 rounded-full bg-muted/50" />
+                    <Text className="text-sm text-muted-foreground italic">TBD</Text>
                 </View>
             );
         }
 
-        const isWinner = winnerId === player.id;
+        const isWinner = participant.isWinner;
 
         return (
             <Pressable
-                onPress={() => handlePlayerClick(player.id)}
+                onPress={() => handlePlayerClick(participant.userId)}
                 className={cn(
-                    "flex-row items-center gap-2 px-3 py-2 rounded-lg border border-transparent",
+                    "flex-row items-center gap-2 px-3 py-2 rounded-lg border border-transparent h-10",
                     isWinner ? "bg-accent/20 border-accent/30" : "bg-muted/30"
                 )}
             >
-                <PlayerAvatar src={player.avatar} name={player.name} size="sm" className="w-6 h-6" />
-                <Text className={cn("text-sm font-medium flex-1", isWinner ? "text-accent" : "text-foreground")}>
-                    {player.name}
+                <PlayerAvatar name={participant.username} size="sm" className="w-6 h-6" />
+                <Text className={cn("text-sm font-medium flex-1", isWinner ? "text-accent" : "text-foreground")} numberOfLines={1}>
+                    {participant.username}
                 </Text>
-                {player.score !== undefined && (
+                {participant.score !== null && (
                     <Text className={cn("text-sm font-bold", isWinner ? "text-accent" : "text-foreground")}>
-                        {player.score}
+                        {participant.score}
                     </Text>
                 )}
             </Pressable>
@@ -64,8 +65,8 @@ export function BracketMatch({ player1, player2, winnerId, className }: BracketM
 
     return (
         <View className={cn("flex-col gap-1 w-48", className)}>
-            {renderPlayer(player1)}
-            {renderPlayer(player2)}
+            {renderParticipant(home)}
+            {renderParticipant(away)}
         </View>
     );
 }

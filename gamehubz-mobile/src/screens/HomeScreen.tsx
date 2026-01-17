@@ -104,7 +104,7 @@ export default function HomeScreen() {
                                     message={item.message}
                                     tournamentName={item.tournamentName}
                                     timestamp={item.timestamp}
-                                    onClick={() => navigation.navigate('TournamentDetails', { id: '1' })}
+                                    onClick={() => navigation.navigate('TournamentDetails', { id: '86F0D7B3-2BCC-4D30-E0FC-08DE55C5AA4E' })}
                                 />
                             ))}
                         </View>
@@ -134,7 +134,7 @@ export default function HomeScreen() {
                                             status={match.status}
                                             deadline={match.deadline}
                                             opponentAvailability={match.opponentAvailability}
-                                            onPress={() => navigation.navigate('TournamentDetails', { id: '1' })}
+                                            onPress={() => navigation.navigate('TournamentDetails', { id: '86F0D7B3-2BCC-4D30-E0FC-08DE55C5AA4E' })}
                                         />
                                     ))}
                                 </View>
