@@ -14,10 +14,12 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, showBack, showNotifications = false, rightElement, className }: PageHeaderProps) {
     const navigation = useNavigation<any>();
-    const canGoBack = useNavigationState(state => state?.routes?.length > 1);
+
+    // We check if we can go back inside the render logic to decide whether to show the button
+    const canGoBack = showBack && navigation.canGoBack();
 
     const handleGoBack = () => {
-        if (canGoBack) {
+        if (navigation.canGoBack()) {
             navigation.goBack();
         }
     };

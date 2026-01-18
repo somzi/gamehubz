@@ -7,7 +7,7 @@ interface Standing {
     position: number;
     participantId: string;
     userId: string;
-    username?: string; // We might need to map this if it's not in standings
+    username?: string;
     points: number;
     matchesPlayed: number;
     wins: number;
@@ -46,10 +46,13 @@ interface Group {
 
 interface TournamentGroupsProps {
     groups: Group[];
+    onMatchPress?: (match: Match) => void;
+    currentUserId?: string;
+    currentUsername?: string;
+    isAdmin?: boolean;
 }
 
-export function TournamentGroups({ groups }: TournamentGroupsProps) {
-    // Helper to find username for standing if not present
+export function TournamentGroups({ groups, onMatchPress, currentUserId, currentUsername, isAdmin }: TournamentGroupsProps) {
     const getUsername = (userId: string, matches: Match[]) => {
         for (const match of matches) {
             if (match.home?.userId === userId) return match.home.username;
@@ -65,7 +68,6 @@ export function TournamentGroups({ groups }: TournamentGroupsProps) {
                     <View>
                         <Text className="text-lg font-bold text-foreground mb-4">{group.name}</Text>
 
-                        {/* Standings Table */}
                         <View className="bg-card rounded-xl border border-border/30 overflow-hidden">
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 <View className="min-w-full">
@@ -108,7 +110,6 @@ export function TournamentGroups({ groups }: TournamentGroupsProps) {
                         </View>
                     </View>
 
-                    {/* Group Matches */}
                     <View>
                         <Text className="text-sm font-semibold text-muted-foreground mb-4">Matches</Text>
                         <View className="flex-col gap-3">
@@ -118,6 +119,10 @@ export function TournamentGroups({ groups }: TournamentGroupsProps) {
                                         home={match.home}
                                         away={match.away}
                                         className="w-full"
+                                        onPress={() => onMatchPress?.(match)}
+                                        currentUserId={currentUserId}
+                                        currentUsername={currentUsername}
+                                        isAdmin={isAdmin}
                                     />
                                 </View>
                             ))}

@@ -221,6 +221,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.id]);
 
+    useEffect(() => {
+        console.log(`[AuthContext] Syncing token with API. Token exists: ${!!token}`);
+        setAuthToken(token);
+    }, [token]);
+
     const authContextValue = useMemo(() => ({
         user,
         token,

@@ -29,9 +29,13 @@ interface Round {
 
 interface TournamentBracketProps {
     rounds: Round[];
+    onMatchPress?: (match: Match) => void;
+    currentUserId?: string;
+    currentUsername?: string;
+    isAdmin?: boolean;
 }
 
-export function TournamentBracket({ rounds }: TournamentBracketProps) {
+export function TournamentBracket({ rounds, onMatchPress, currentUserId, currentUsername, isAdmin }: TournamentBracketProps) {
     return (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-8 p-4">
@@ -46,6 +50,10 @@ export function TournamentBracket({ rounds }: TournamentBracketProps) {
                                     <BracketMatch
                                         home={match.home}
                                         away={match.away}
+                                        onPress={() => onMatchPress?.(match)}
+                                        currentUserId={currentUserId}
+                                        currentUsername={currentUsername}
+                                        isAdmin={isAdmin}
                                     />
                                     {match.nextMatchId && (
                                         <View className="w-8 h-[1px] bg-border" />

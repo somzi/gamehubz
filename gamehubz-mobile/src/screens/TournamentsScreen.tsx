@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Modal, TextInput, Pressable, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { TournamentCard } from '../components/cards/TournamentCard';
@@ -12,81 +12,142 @@ import { Tabs } from '../components/ui/Tabs';
 import { Button } from '../components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { CreateTournamentModal } from '../components/modals/CreateTournamentModal';
+import { useAuth } from '../context/AuthContext';
+import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 
 type TournamentsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 interface Tournament {
     id: string;
     name: string;
+    description?: string;
     status: 'live' | 'upcoming' | 'completed';
-    date: string;
-    region: string;
-    prizePool: string;
-    players: any[];
-    isOpen?: boolean;
-    minLevel?: number;
+    startDate: string;
+    registrationDeadline: string;
+    region: number;
+    prize: number;
+    prizeCurrency: number;
+    participantsCount?: number;
 }
 
-// Mock data matching the web app
-const tournamentsData: Record<string, Tournament[]> = {
-    live: [
-        {
-            id: "86F0D7B3-2BCC-4D30-E0FC-08DE55C5AA4E",
-            name: "Winter Championship 2024",
-            status: "live",
-            date: "Jan 15, 2024",
-            region: "Europe",
-            prizePool: "$1,000",
-            players: new Array(8).fill({}),
-        },
-    ],
-    upcoming: [
-        {
-            id: "97E1E2F3-3CDD-5E41-F1DC-19EE66D6BB5F",
-            name: "Spring Showdown",
-            status: "upcoming",
-            date: "Feb 1, 2024",
-            region: "North America",
-            prizePool: "$500",
-            players: new Array(3).fill({}),
-            isOpen: true,
-            minLevel: 2,
-        },
-    ],
-    completed: [
-        {
-            id: "A1B2C3D4-E5F6-4A5B-8C9D-E0F1A2B3D4C5",
-            name: "Fall Championship",
-            status: "completed",
-            date: "Dec 15, 2023",
-            region: "Europe",
-            prizePool: "$1,500",
-            players: new Array(4).fill({}),
-        },
-    ],
-    open: [
-        {
-            id: "B2C3D4E5-F6A7-5B6C-9D0E-F1A2B3C4D5E6",
-            name: "Community Cup #12",
-            status: "upcoming",
-            date: "Feb 20, 2024",
-            region: "Global",
-            prizePool: "$250",
-            players: new Array(1).fill({}),
-            isOpen: true,
-            minLevel: 1,
-        },
-    ],
-};
+const PAGE_SIZE = 10;
 
-const currentUserLevel = 2;
+const TAB_TO_STATUS: Record<string, number> = {
+    'open': 0,
+    'upcoming': 1,
+    'live': 2,
+    'completed': 3,
+};
 
 export default function TournamentsScreen() {
     const navigation = useNavigation<TournamentsScreenNavigationProp>();
+    const { user } = useAuth();
+
     const [activeTab, setActiveTab] = useState('live');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const isEligible = (minLevel: number) => currentUserLevel >= minLevel;
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [page, setPage] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isMoreLoading, setIsMoreLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const fetchTournaments = async (pageNum: number, shouldAppend = false) => {
+        if (!user?.id) return;
+
+        if (pageNum === 0) setIsLoading(true);
+        else setIsMoreLoading(true);
+
+        setError(null);
+
+        try {
+            const status = TAB_TO_STATUS[activeTab] ?? 2;
+            const url = ENDPOINTS.GET_USER_TOURNAMENTS(user.id, status, pageNum, PAGE_SIZE);
+
+            const response = await authenticatedFetch(url);
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No body');
+                console.error(`Fetch failed with status ${response.status}: ${text}`);
+                throw new Error(`Failed to fetch tournaments (${response.status})`);
+            }
+
+            const data = await response.json();
+            // Handle various response structures: PascalCase, camelCase, or nested in 'result'
+            const resultData = data.result || data;
+            const items = resultData.Tournaments ||
+                resultData.tournaments ||
+                resultData.items ||
+                (Array.isArray(resultData) ? resultData : []);
+
+            if (shouldAppend) {
+                setTournaments(prev => [...prev, ...items]);
+            } else {
+                setTournaments(items);
+            }
+
+            setHasMore(items.length === PAGE_SIZE);
+        } catch (err: any) {
+            console.error('Error fetching tournaments:', err);
+            setError(err.message || 'An unexpected error occurred');
+        } finally {
+            setIsLoading(false);
+            setIsMoreLoading(false);
+            setIsRefreshing(false);
+        }
+    };
+
+    // useEffect removed - useFocusEffect below handles initialization and re-focus fetching
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchTournaments(0, false);
+        }, [activeTab, user?.id])
+    );
+
+    const onRefresh = () => {
+        setIsRefreshing(true);
+        setPage(0);
+        fetchTournaments(0, false);
+    };
+
+    const loadMore = () => {
+        if (!isLoading && !isMoreLoading && hasMore) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            fetchTournaments(nextPage, true);
+        }
+    };
+
+    const getRegionName = (region?: number) => {
+        switch (region) {
+            case 1: return 'North America';
+            case 2: return 'Europe';
+            case 3: return 'Asia';
+            case 4: return 'South America';
+            case 5: return 'Africa';
+            case 6: return 'Oceania';
+            default: return 'Global';
+        }
+    };
+
+    const getCurrencySymbol = (currency?: number | string) => {
+        if (typeof currency === 'string') {
+            const lower = currency.toLowerCase();
+            if (lower === 'eur') return '€';
+            if (lower === 'usd') return '$';
+            if (lower === 'starpass') return 'SP';
+            if (lower === 'fcp') return 'FCP';
+        }
+        switch (currency) {
+            case 1: return '€';
+            case 2: return '$';
+            case 3: return 'SP';
+            case 4: return 'FCP';
+            default: return '€';
+        }
+    };
 
     const tabs = [
         { label: 'Live', value: 'live' },
@@ -96,42 +157,88 @@ export default function TournamentsScreen() {
     ];
 
     const renderContent = () => {
-        const data = tournamentsData[activeTab as keyof typeof tournamentsData];
+        if (isLoading) {
+            return (
+                <View className="items-center py-20">
+                    <ActivityIndicator size="large" color="#10B981" />
+                    <Text className="text-muted-foreground mt-4 font-medium">Loading tournaments...</Text>
+                </View>
+            );
+        }
 
-        if (data.length === 0) {
+        if (error) {
+            return (
+                <View className="items-center py-12 px-6">
+                    <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+                    <Text className="text-destructive mt-4 text-center font-medium">{error}</Text>
+                    <Button onPress={() => fetchTournaments(0, false)} size="sm" className="mt-4">
+                        Retry
+                    </Button>
+                </View>
+            );
+        }
+
+        if (tournaments.length === 0) {
             return (
                 <View className="items-center py-12 opacity-50">
                     <Ionicons name="trophy-outline" size={48} color="#71717A" />
-                    <Text className="text-muted-foreground mt-4">No tournaments found</Text>
+                    <Text className="text-muted-foreground mt-4 font-medium">No tournaments found</Text>
                 </View>
             );
         }
 
         return (
-            <View className="space-y-3">
-                {data.map((tournament) => (
+            <View className="space-y-3 pb-24">
+                {tournaments.map((tournament: any, index: number) => (
                     <TournamentCard
-                        key={tournament.id}
-                        {...tournament}
-                        showApply={tournament.isOpen && isEligible(tournament.minLevel || 0)}
-                        onClick={() => navigation.navigate('TournamentDetails', { id: tournament.id })}
+                        key={tournament.Id || tournament.id || `t-${index}`}
+                        name={tournament.Name || tournament.name}
+                        description={tournament.Description || tournament.description}
+                        status={activeTab === 'open' ? 'upcoming' : (activeTab as any)}
+                        date={new Date(tournament.StartDate || tournament.startDate).toLocaleDateString()}
+                        region={getRegionName(tournament.Region ?? tournament.region)}
+                        prizePool={`${getCurrencySymbol(tournament.PrizeCurrency ?? tournament.prizeCurrency)}${tournament.Prize ?? tournament.prize}`}
+                        players={new Array(tournament.NumberOfParticipants ?? tournament.participantsCount ?? tournament.tournamentParticipants?.length ?? 0).fill({})}
+                        onClick={() => {
+                            const tId = tournament.Id || tournament.id || tournament.tournamentId;
+                            navigation.navigate('TournamentDetails', { id: tId });
+                        }}
                     />
                 ))}
+
+                {hasMore && (
+                    <TouchableOpacity
+                        onPress={loadMore}
+                        disabled={isMoreLoading}
+                        className="py-4 items-center bg-white/5 rounded-2xl border border-white/5 mt-2"
+                    >
+                        {isMoreLoading ? (
+                            <ActivityIndicator size="small" color="#10B981" />
+                        ) : (
+                            <Text className="text-primary font-bold">Load More</Text>
+                        )}
+                    </TouchableOpacity>
+                )}
             </View>
         );
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
             <PageHeader
                 title="Tournaments"
                 rightElement={<Ionicons name="trophy" size={24} color="#10B981" />}
             />
-            <ScrollView className="flex-1">
+            <ScrollView
+                className="flex-1"
+                refreshControl={
+                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#10B981" />
+                }
+            >
                 <View className="px-4 py-6 space-y-6">
                     <View className="flex-row gap-3">
-                        <StatCard icon="trophy" value={1} label="Live Now" variant="gold" className="flex-1" />
-                        <StatCard icon="lock-open-outline" value={tournamentsData.open.length} label="Open" variant="accent" className="flex-1" />
+                        <StatCard icon="trophy" value={activeTab === 'live' ? tournaments.length : '?'} label="Live Now" variant="gold" className="flex-1" />
+                        <StatCard icon="lock-open-outline" value={activeTab === 'open' ? tournaments.length : '?'} label="Open" variant="accent" className="flex-1" />
                     </View>
 
                     <Tabs
@@ -147,13 +254,7 @@ export default function TournamentsScreen() {
             <TouchableOpacity
                 onPress={() => setIsModalOpen(true)}
                 className="absolute right-4 bg-primary flex-row items-center px-5 py-3 rounded-full shadow-lg z-50"
-                style={{
-                    bottom: 20, // We are inside SafeAreaView, so bottom padding is usually handled there, but let's double check.
-                    // Actually, if we want it to float over scrollview, absolute is correct. 
-                    // SafeAreaView usually adds padding. If we are INSIDE SafeAreaView, we might not need extra inset logic if SafeAreaView works as container.
-                    // But if SafeAreaView is just padding, absolute bottom 20 might be too close to home bar if not handled?
-                    // Let's use standard absolute bottom.
-                }}
+                style={{ bottom: 20 }}
             >
                 <Ionicons name="add" size={24} color="#FFF" style={{ marginRight: 8 }} />
                 <Text className="text-white font-bold text-base">Create Tournament</Text>

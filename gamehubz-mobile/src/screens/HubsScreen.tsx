@@ -64,7 +64,8 @@ export default function HubsScreen() {
 
             // Handle response format: { items: Hub[], count: number }
             // If data is array use it, otherwise check for .items
-            const hubsList = Array.isArray(data) ? data : (data.items || []);
+            const resultData = data.result || data;
+            const hubsList = Array.isArray(resultData) ? resultData : (resultData.items || []);
 
             // Validate data is an array to prevent crash
             if (!Array.isArray(hubsList)) {

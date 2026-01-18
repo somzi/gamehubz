@@ -15,6 +15,7 @@ interface TournamentCardProps {
     prizePool: string;
     players: any[];
     showApply?: boolean;
+    onApply?: () => void;
     onClick: () => void;
     className?: string;
 }
@@ -28,6 +29,7 @@ export function TournamentCard({
     prizePool,
     players,
     showApply,
+    onApply,
     onClick,
     className,
 }: TournamentCardProps) {
@@ -77,7 +79,7 @@ export function TournamentCard({
                     </View>
 
                     {showApply ? (
-                        <Button onPress={onClick} size="sm">
+                        <Button onPress={onApply} size="sm">
                             Apply
                         </Button>
                     ) : (

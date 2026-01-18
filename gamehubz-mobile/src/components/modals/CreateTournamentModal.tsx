@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     TextInput,
     ScrollView,
-    Modal,
     TouchableOpacity,
     Pressable,
+    ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../ui/Button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../context/AuthContext';
+import { ENDPOINTS, authenticatedFetch } from '../../lib/api';
+import { DateTimePickerModal } from './DateTimePickerModal';
+import { TournamentFormat } from '../../types/tournament';
 
 interface CreateTournamentModalProps {
     visible: boolean;
@@ -27,37 +31,97 @@ const regions = [
     { value: 'oceania', label: 'Oceania' },
 ];
 
-const playerLevels = [
-    { value: '1', label: 'Level 1 - Beginner' },
-    { value: '2', label: 'Level 2 - Intermediate' },
-    { value: '3', label: 'Level 3 - Advanced' },
-    { value: '4', label: 'Level 4 - Expert' },
-    { value: '5', label: 'Level 5 - Professional' },
+const prizeCurrencies = [
+    { value: '1', label: 'EUR' },
+    { value: '2', label: 'USD' },
+    { value: '3', label: 'StarPass' },
+    { value: '4', label: 'FCP' },
 ];
 
-const maxPlayerOptions = [
-    { value: '8', label: '8 Players' },
-    { value: '16', label: '16 Players' },
-    { value: '32', label: '32 Players' },
-    { value: '64', label: '64 Players' },
-    { value: '128', label: '128 Players' },
+const tournamentFormats = [
+    { value: '0', label: 'League' },
+    { value: '1', label: 'Groups + Single Elimination' },
+    { value: '2', label: 'Groups + Double Elimination' },
+    { value: '3', label: 'Single Elimination' },
+    { value: '4', label: 'Double Elimination' },
+    { value: '5', label: 'Group Stage + Knockout' },
 ];
+
+const regionMapping: Record<string, number> = {
+    'global': 0,
+    'north-america': 1,
+    'europe': 2,
+    'asia': 3,
+    'south-america': 4,
+    'africa': 5,
+    'oceania': 6,
+};
 
 export function CreateTournamentModal({ visible, onClose }: CreateTournamentModalProps) {
     const insets = useSafeAreaInsets();
+    const { user } = useAuth();
+
+    // Form State
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [rules, setRules] = useState('');
-    const [minLevel, setMinLevel] = useState('1');
-    const [maxPlayers, setMaxPlayers] = useState('32');
+    const [selectedHubId, setSelectedHubId] = useState<string>('');
     const [selectedRegions, setSelectedRegions] = useState<string[]>(['global']);
     const [prizePool, setPrizePool] = useState('');
+    const [prizeCurrency, setPrizeCurrency] = useState('1'); // Default to Eur
+    const [maxPlayers, setMaxPlayers] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [registrationDeadline, setRegistrationDeadline] = useState('');
+    const [selectedFormat, setSelectedFormat] = useState('3'); // Default to Single Elimination (or choose a safer default)
     const [inviteFollowers, setInviteFollowers] = useState(false);
 
+    // Data State
+    const [hubs, setHubs] = useState<{ id: string; name: string }[]>([]);
+    const [isLoadingHubs, setIsLoadingHubs] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     // Picker States
-    const [showLevelPicker, setShowLevelPicker] = useState(false);
-    const [showPlayersPicker, setShowPlayersPicker] = useState(false);
+    const [showHubPicker, setShowHubPicker] = useState(false);
     const [showRegionPicker, setShowRegionPicker] = useState(false);
+    const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+    const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+    const [showRegDeadlinePicker, setShowRegDeadlinePicker] = useState(false);
+    const [showFormatPicker, setShowFormatPicker] = useState(false);
+
+    // Fetch Hubs
+    useEffect(() => {
+        if (visible && user?.id) {
+            const fetchHubs = async () => {
+                setIsLoadingHubs(true);
+                try {
+                    const response = await authenticatedFetch(ENDPOINTS.GET_USER_HUBS(user.id));
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Handle both direct array and wrapped { items: [] } pattern
+                        const hubsList = Array.isArray(data) ? data : (data.items || []);
+
+                        const formattedHubs = hubsList
+                            .filter((h: any) => h.id || h.hubId) // ONLY hubs with a GUID
+                            .map((h: any) => ({
+                                id: h.id || h.hubId,
+                                name: h.name || h.hubName || 'Unnamed Hub'
+                            }));
+
+                        setHubs(formattedHubs);
+                        if (formattedHubs.length > 0) {
+                            setSelectedHubId(formattedHubs[0].id);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching user hubs:', error);
+                } finally {
+                    setIsLoadingHubs(false);
+                }
+            };
+            fetchHubs();
+        }
+    }, [visible, user?.id]);
 
     const handleRegionSelect = (regionValue: string) => {
         if (regionValue === 'global') {
@@ -83,37 +147,101 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
         return `${selectedRegions.length} Regions Selected`;
     };
 
-    const handleSubmit = () => {
-        console.log({
-            name,
-            description,
-            rules,
-            minLevel,
-            maxPlayers,
-            regions: selectedRegions,
-            prizePool,
-            inviteFollowers,
-        });
-        onClose();
+    const getHubLabel = () => {
+        if (isLoadingHubs) return 'Loading hubs...';
+        if (hubs.length === 0) return 'No hubs found';
+        return hubs.find(h => h.id === selectedHubId)?.name || 'Select Hub';
+    };
+
+    const getCurrencyLabel = () => {
+        return prizeCurrencies.find(c => c.value === prizeCurrency)?.label || 'Currency';
+    };
+
+    const getFormatLabel = () => {
+        return tournamentFormats.find(f => f.value === selectedFormat)?.label || 'Select Format';
+    };
+
+    const handleSubmit = async () => {
+        if (!name || !selectedHubId) {
+            setError('Tournament name and Hub are required');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const formatToISO = (dateStr: string) => {
+                if (!dateStr) return null;
+                // Handle different date formats or default to now
+                try {
+                    const d = new Date(dateStr.replace(' ', 'T'));
+                    return d.toISOString();
+                } catch (e) {
+                    return new Date().toISOString();
+                }
+            };
+
+            const payload = {
+                hubId: selectedHubId,
+                name: name,
+                description: description || "",
+                rules: rules || "",
+                status: 1, // Always 1 per requirement
+                maxPlayers: parseInt(maxPlayers) || 0,
+                startDate: formatToISO(startDate),
+                registrationDeadline: formatToISO(registrationDeadline),
+                prize: parseFloat(prizePool) || 0,
+                prizeCurrency: parseInt(prizeCurrency) || 1,
+                region: regionMapping[selectedRegions[0]] ?? 0,
+                format: parseInt(selectedFormat)
+            };
+
+            console.log('Creating tournament with payload:', payload);
+
+            const response = await authenticatedFetch(ENDPOINTS.CREATE_TOURNAMENT, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to create tournament');
+            }
+
+            console.log('Tournament created successfully');
+            onClose();
+        } catch (err: any) {
+            console.error('Error creating tournament:', err);
+            setError(err.message || 'An unexpected error occurred');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const renderSelectField = (
         label: string,
         value: string,
         icon: keyof typeof Ionicons.glyphMap,
-        onPress: () => void
+        onPress: () => void,
+        isLoading = false
     ) => (
         <View className="flex-1">
             <View className="flex-row items-center mb-3">
-                <Ionicons name={icon} size={16} color="#fbbf24" style={{ marginRight: 6 }} />
+                <Ionicons name={icon} size={16} color="#10B981" style={{ marginRight: 6 }} />
                 <Text className="text-sm font-bold text-white">{label}</Text>
             </View>
             <TouchableOpacity
                 onPress={onPress}
-                className="bg-[#1f2937] p-3 h-12 rounded-xl border border-white/10 flex-row justify-between items-center"
+                disabled={isLoading}
+                className="bg-[#131B2E] p-3 h-12 rounded-xl border border-white/10 flex-row justify-between items-center"
             >
-                <Text className="text-white text-sm" numberOfLines={1}>{value}</Text>
-                <Ionicons name="chevron-down" size={16} color="#9ca3af" />
+                {isLoading ? (
+                    <ActivityIndicator size="small" color="#10B981" />
+                ) : (
+                    <Text className="text-white text-sm" numberOfLines={1}>{value}</Text>
+                )}
+                <Ionicons name="chevron-down" size={16} color="#94A3B8" />
             </TouchableOpacity>
         </View>
     );
@@ -121,50 +249,50 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
     const renderOptionsModal = (
         visible: boolean,
         onCloseModal: () => void,
-        options: { value: string; label: string }[],
+        options: { value: string; label: string | any }[],
         selected: string | string[],
         onSelect: (val: string) => void,
         multi = false
-    ) => (
-        <Modal transparent visible={visible} animationType="fade" onRequestClose={onCloseModal}>
-            <Pressable className="flex-1 bg-black/60 justify-center px-6" onPress={onCloseModal}>
-                <Pressable className="bg-[#111827] rounded-2xl border border-white/10 max-h-[50%] overflow-hidden">
-                    <ScrollView contentContainerStyle={{ padding: 8 }}>
-                        {options.map(opt => {
-                            const active = multi
-                                ? (selected as string[]).includes(opt.value)
-                                : selected === opt.value;
+    ) => {
+        if (!visible) return null;
+        return (
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
+                <Pressable className="flex-1 bg-black/60 justify-center px-6" onPress={onCloseModal}>
+                    <Pressable className="bg-[#131B2E] rounded-3xl border border-white/10 max-h-[60%] overflow-hidden shadow-2xl">
+                        <ScrollView contentContainerStyle={{ padding: 12 }}>
+                            {options.map(opt => {
+                                const active = multi
+                                    ? (selected as string[]).includes(opt.value)
+                                    : selected === opt.value;
 
-                            return (
-                                <TouchableOpacity
-                                    key={opt.value}
-                                    onPress={() => {
-                                        onSelect(opt.value);
-                                        if (!multi) onCloseModal();
-                                    }}
-                                    className={`p-4 mb-1 rounded-xl flex-row justify-between items-center ${active ? 'bg-[#fbbf24]' : 'bg-transparent'
-                                        }`}
-                                >
-                                    <Text className={`${active ? 'text-black' : 'text-white'} font-medium`}>
-                                        {opt.label}
-                                    </Text>
-                                    {active && <Ionicons name="checkmark" size={18} color="#000" />}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
+                                return (
+                                    <TouchableOpacity
+                                        key={opt.value}
+                                        onPress={() => {
+                                            onSelect(opt.value);
+                                            if (!multi) onCloseModal();
+                                        }}
+                                        className={`p-4 mb-2 rounded-2xl flex-row justify-between items-center ${active ? 'bg-[#10B981]' : 'bg-[#1E293B]'
+                                            }`}
+                                    >
+                                        <Text className={`${active ? 'text-black' : 'text-white'} font-semibold`}>
+                                            {opt.label}
+                                        </Text>
+                                        {active && <Ionicons name="checkmark" size={18} color="#000" />}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </Pressable>
                 </Pressable>
-            </Pressable>
-        </Modal>
-    );
+            </View>
+        );
+    };
+
+    if (!visible) return null;
 
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            onRequestClose={onClose}
-        >
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
             <View
                 className="flex-1 bg-black/80 px-4 justify-center"
                 style={{
@@ -172,24 +300,33 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                     paddingBottom: insets.bottom + 20,
                 }}
             >
-                <View className="bg-[#0f172a] w-full rounded-3xl border border-white/10 shadow-2xl overflow-hidden max-h-full">
-                    <View className="flex-row justify-between items-center p-5 border-b border-white/5">
+                <View className="bg-[#0f172a] w-full rounded-[40px] border border-white/10 shadow-2xl overflow-hidden max-h-full">
+                    <View className="flex-row justify-between items-center p-6 border-b border-white/5">
                         <Text className="text-xl font-bold text-white">Create Tournament</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={20} color="#9ca3af" />
+                        <TouchableOpacity onPress={onClose} className="bg-white/5 p-2 rounded-full">
+                            <Ionicons name="close" size={20} color="#94A3B8" />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView
-                        className="px-5 py-4"
+                        className="px-6 py-4"
                         contentContainerStyle={{ paddingBottom: 32 }}
-                        showsVerticalScrollIndicator={true}
+                        showsVerticalScrollIndicator={false}
                     >
-                        <View className="flex flex-col gap-y-8">
+                        <View className="flex flex-col gap-y-6">
+                            {/* Hub Selection */}
+                            {renderSelectField(
+                                'Select Hub',
+                                getHubLabel(),
+                                'business-outline',
+                                () => setShowHubPicker(true),
+                                isLoadingHubs
+                            )}
+
                             <View>
                                 <Text className="text-sm font-bold text-white mb-3">Tournament Name</Text>
                                 <TextInput
-                                    className="bg-[#1f2937] p-4 rounded-xl text-white border border-[#22d3ee] shadow-sm shadow-[#22d3ee]/20"
+                                    className="bg-[#131B2E] p-4 rounded-xl text-white border border-white/10"
                                     placeholder="Enter tournament name"
                                     placeholderTextColor="#6b7280"
                                     value={name}
@@ -201,7 +338,7 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                                 <Text className="text-sm font-bold text-white mb-3">Description</Text>
                                 <TextInput
                                     multiline
-                                    className="bg-[#1f2937] p-4 h-24 rounded-xl text-white border border-white/10"
+                                    className="bg-[#131B2E] p-4 h-24 rounded-xl text-white border border-white/10"
                                     placeholder="Describe your tournament..."
                                     placeholderTextColor="#6b7280"
                                     textAlignVertical="top"
@@ -212,13 +349,13 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
 
                             <View>
                                 <View className="flex-row items-center mb-3">
-                                    <Ionicons name="document-text-outline" size={16} color="#fbbf24" style={{ marginRight: 6 }} />
+                                    <Ionicons name="document-text-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
                                     <Text className="text-sm font-bold text-white">Rules</Text>
                                 </View>
                                 <TextInput
                                     multiline
-                                    className="bg-[#1f2937] p-4 h-24 rounded-xl text-white border border-white/10"
-                                    placeholder="Enter tournament rules (e.g., Best of 3, no exploits allowed...)"
+                                    className="bg-[#131B2E] p-4 h-24 rounded-xl text-white border border-white/10"
+                                    placeholder="Enter tournament rules (e.g., Best of 3...)"
                                     placeholderTextColor="#6b7280"
                                     textAlignVertical="top"
                                     value={rules}
@@ -227,68 +364,172 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                             </View>
 
                             <View className="flex-row gap-4">
-                                {renderSelectField(
-                                    'Min Level',
-                                    playerLevels.find(l => l.value === minLevel)?.label || 'Select',
-                                    'trophy-outline',
-                                    () => setShowLevelPicker(true)
-                                )}
-                                {renderSelectField(
-                                    'Max Players',
-                                    maxPlayerOptions.find(o => o.value === maxPlayers)?.label || 'Select',
-                                    'people-outline',
-                                    () => setShowPlayersPicker(true)
-                                )}
+                                <View className="flex-1">
+                                    <Text className="text-sm font-bold text-white mb-3">Max Players</Text>
+                                    <TextInput
+                                        className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
+                                        placeholder="No limit"
+                                        placeholderTextColor="#6b7280"
+                                        keyboardType="numeric"
+                                        value={maxPlayers}
+                                        onChangeText={setMaxPlayers}
+                                    />
+                                </View>
+                                <View className="flex-1">
+                                    {renderSelectField('Region', getRegionLabel(), 'globe-outline', () =>
+                                        setShowRegionPicker(true)
+                                    )}
+                                </View>
                             </View>
 
-                            {renderSelectField('Region', getRegionLabel(), 'globe-outline', () =>
-                                setShowRegionPicker(true)
-                            )}
+                            <View className="flex-row gap-4">
+                                <View className="flex-1">
+                                    {renderSelectField('Format', getFormatLabel(), 'list-outline', () =>
+                                        setShowFormatPicker(true)
+                                    )}
+                                </View>
+                            </View>
 
+                            <View className="flex-row gap-4">
+                                <View className="flex-1">
+                                    <View className="flex-row items-center mb-3">
+                                        <Ionicons name="calendar-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
+                                        <Text className="text-sm font-bold text-white">Start Date</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => setShowStartDatePicker(true)}
+                                        className="bg-[#131B2E] p-4 h-12 rounded-xl border border-white/10 justify-center"
+                                    >
+                                        <Text className={`${startDate ? 'text-white' : 'text-slate-500'} text-sm`}>
+                                            {startDate || 'Select Start Date'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View className="flex-1">
+                                    <View className="flex-row items-center mb-3">
+                                        <Ionicons name="timer-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
+                                        <Text className="text-sm font-bold text-white">Reg. Deadline</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => setShowRegDeadlinePicker(true)}
+                                        className="bg-[#131B2E] p-4 h-12 rounded-xl border border-white/10 justify-center"
+                                    >
+                                        <Text className={`${registrationDeadline ? 'text-white' : 'text-slate-500'} text-sm`}>
+                                            {registrationDeadline || 'Select Deadline'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Prize Pool & Currency */}
                             <View>
                                 <View className="flex-row items-center mb-3">
-                                    <Ionicons name="cash-outline" size={16} color="#fbbf24" style={{ marginRight: 6 }} />
+                                    <Ionicons name="cash-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
                                     <Text className="text-sm font-bold text-white">Prize Pool</Text>
                                 </View>
-                                <TextInput
-                                    className="bg-[#1f2937] p-4 rounded-xl text-white border border-white/10"
-                                    placeholder="e.g., $500 or 1000 V-Bucks"
-                                    placeholderTextColor="#6b7280"
-                                    value={prizePool}
-                                    onChangeText={setPrizePool}
-                                />
+                                <View className="flex-row gap-4">
+                                    <View className="flex-1">
+                                        <TextInput
+                                            className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
+                                            placeholder="Amount (e.g. 500)"
+                                            placeholderTextColor="#6b7280"
+                                            keyboardType="numeric"
+                                            value={prizePool}
+                                            onChangeText={setPrizePool}
+                                        />
+                                    </View>
+                                    <View className="w-32">
+                                        <TouchableOpacity
+                                            onPress={() => setShowCurrencyPicker(true)}
+                                            className="bg-[#131B2E] p-3 h-12 rounded-xl border border-white/10 flex-row justify-between items-center"
+                                        >
+                                            <Text className="text-white text-sm">{getCurrencyLabel()}</Text>
+                                            <Ionicons name="chevron-down" size={16} color="#94A3B8" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
                             </View>
 
                             {/* Invite Followers */}
-                            <View className="flex-row items-center bg-[#1f2937] p-4 rounded-xl border border-white/10">
-                                <View className="h-10 w-10 bg-white/5 rounded-lg justify-center items-center mr-4">
-                                    <Ionicons name="people" size={20} color="#9ca3af" />
+                            <View className="flex-row items-center bg-[#131B2E] p-4 rounded-2xl border border-white/5">
+                                <View className="h-10 w-10 bg-primary/10 rounded-xl justify-center items-center mr-4">
+                                    <Ionicons name="people" size={20} color="#10B981" />
                                 </View>
 
                                 <View className="flex-1 mr-4">
                                     <Text className="text-base font-bold text-white">Invite Hub Followers</Text>
-                                    <Text className="text-xs text-gray-400">Send notifications to all your hub followers</Text>
+                                    <Text className="text-xs text-slate-500">Notify everyone in your hub</Text>
                                 </View>
 
                                 <TouchableOpacity
                                     onPress={() => setInviteFollowers(!inviteFollowers)}
-                                    className={`h-6 w-6 rounded border ${inviteFollowers ? 'bg-[#fbbf24] border-[#fbbf24]' : 'border-gray-500'} justify-center items-center`}
+                                    className={`h-6 w-6 rounded-lg border ${inviteFollowers ? 'bg-[#10B981] border-[#10B981]' : 'border-slate-500'} justify-center items-center`}
                                 >
                                     {inviteFollowers && <Ionicons name="checkmark" size={16} color="#000" />}
                                 </TouchableOpacity>
                             </View>
 
-                            <Button size="lg" onPress={handleSubmit} disabled={!name} className="mt-8 bg-[#06b6d4]">
-                                Create Tournament
-                            </Button>
                         </View>
                     </ScrollView>
+
+                    <View className="p-6 bg-[#131B2E] border-t border-white/5">
+                        {error && (
+                            <Text className="text-red-500 text-xs mb-4 text-center">{error}</Text>
+                        )}
+                        <Button
+                            onPress={handleSubmit}
+                            disabled={isSubmitting}
+                            loading={isSubmitting}
+                            className="bg-primary py-4 rounded-2xl"
+                        >
+                            Create Tournament
+                        </Button>
+                    </View>
+                    {renderOptionsModal(
+                        showHubPicker,
+                        () => setShowHubPicker(false),
+                        hubs.map(h => ({ value: h.id, label: h.name })),
+                        selectedHubId,
+                        setSelectedHubId
+                    )}
+                    {renderOptionsModal(
+                        showRegionPicker,
+                        () => setShowRegionPicker(false),
+                        regions,
+                        selectedRegions,
+                        handleRegionSelect,
+                        true
+                    )}
+                    {renderOptionsModal(
+                        showCurrencyPicker,
+                        () => setShowCurrencyPicker(false),
+                        prizeCurrencies,
+                        prizeCurrency,
+                        setPrizeCurrency
+                    )}
+                    {renderOptionsModal(
+                        showFormatPicker,
+                        () => setShowFormatPicker(false),
+                        tournamentFormats,
+                        selectedFormat,
+                        setSelectedFormat
+                    )}
+                    <DateTimePickerModal
+                        visible={showStartDatePicker}
+                        onClose={() => setShowStartDatePicker(false)}
+                        onConfirm={setStartDate}
+                        title="Tournament Start"
+                        initialValue={startDate}
+                    />
+                    <DateTimePickerModal
+                        visible={showRegDeadlinePicker}
+                        onClose={() => setShowRegDeadlinePicker(false)}
+                        onConfirm={setRegistrationDeadline}
+                        title="Registration Deadline"
+                        initialValue={registrationDeadline}
+                    />
                 </View>
             </View>
-
-            {renderOptionsModal(showLevelPicker, () => setShowLevelPicker(false), playerLevels, minLevel, setMinLevel)}
-            {renderOptionsModal(showPlayersPicker, () => setShowPlayersPicker(false), maxPlayerOptions, maxPlayers, setMaxPlayers)}
-            {renderOptionsModal(showRegionPicker, () => setShowRegionPicker(false), regions, selectedRegions, handleRegionSelect, true)}
-        </Modal>
+        </View>
     );
 }
