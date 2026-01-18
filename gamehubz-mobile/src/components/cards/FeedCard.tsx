@@ -37,7 +37,7 @@ export function FeedCard({
                             onPress={onClick}
                         >
                             <Text className="text-sm font-medium text-primary">{tournamentName}</Text>
-                            <Ionicons name="chevron-forward" size={16} color="hsl(185, 75%, 45%)" />
+                            <Ionicons name="chevron-forward" size={16} color="#10B981" />
                         </Pressable>
                     )}
                 </View>

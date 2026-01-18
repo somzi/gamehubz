@@ -1,8 +1,16 @@
 import { Platform } from 'react-native';
 
-// Hardcoded for now as requested by user
-// Hardcoded for now as requested by user
-export const API_HOST = 'localhost';
+// For Android emulators, localhost is 10.0.2.2
+// For iOS simulators and Web, localhost is localhost
+// For physical devices, you MUST use your computer's local IP address (e.g., 192.168.1.5)
+const getApiHost = () => {
+    if (Platform.OS === 'android') {
+        return '10.0.2.2';
+    }
+    return 'localhost';
+};
+
+export const API_HOST = getApiHost();
 export const API_PORT = '7057';
 export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
 

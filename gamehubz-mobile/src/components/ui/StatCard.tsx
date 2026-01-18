@@ -26,7 +26,7 @@ export function StatCard({ icon, value, label, variant = 'default', className }:
     const colors = getVariantColors();
 
     // Use specific hex colors to match the theme precisely on native
-    const iconColor = variant === 'gold' ? '#EAB308' : variant === 'accent' ? '#10B981' : '#8B5CF6';
+    const iconColor = variant === 'gold' ? '#EAB308' : variant === 'accent' ? '#10B981' : '#10B981';
 
     return (
         <View className={cn("rounded-xl border p-4 bg-card", colors.border, className)}>

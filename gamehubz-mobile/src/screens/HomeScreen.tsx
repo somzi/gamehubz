@@ -93,7 +93,7 @@ export default function HomeScreen() {
                     {/* Community News Feed */}
                     <View className="border-b border-border/20 pb-6">
                         <View className="flex-row items-center gap-2 mb-4 px-1">
-                            <Ionicons name="newspaper-outline" size={20} color="hsl(220, 15%, 55%)" />
+                            <Ionicons name="newspaper-outline" size={20} color="#94A3B8" />
                             <Text className="text-xl font-bold text-foreground">Community Feed</Text>
                         </View>
                         <View className="gap-3">
@@ -116,7 +116,7 @@ export default function HomeScreen() {
                             <View className="p-4 rounded-2xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20">
                                 <View className="flex-row items-center gap-2 mb-2">
                                     <View className="bg-accent/20 p-1.5 rounded-lg">
-                                        <Ionicons name="calendar" size={20} color="hsl(45, 90%, 55%)" />
+                                        <Ionicons name="calendar" size={20} color="#10B981" />
                                     </View>
                                     <Text className="text-lg font-bold text-foreground">Action Required</Text>
                                 </View>
@@ -145,7 +145,7 @@ export default function HomeScreen() {
                     {/* My Matches - Scheduled/Ready */}
                     <View className="pb-8">
                         <View className="flex-row items-center gap-2 mb-4 px-1">
-                            <Ionicons name="game-controller-outline" size={24} color="hsl(185, 75%, 45%)" />
+                            <Ionicons name="game-controller-outline" size={24} color="#10B981" />
                             <Text className="text-xl font-bold text-foreground">My Matches</Text>
                         </View>
                         <View className="gap-3">

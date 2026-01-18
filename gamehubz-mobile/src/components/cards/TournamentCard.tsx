@@ -56,23 +56,23 @@ export function TournamentCard({
                 <View className="flex-row justify-between items-center">
                     <View className="flex-row items-center gap-4">
                         <View className="flex-row items-center gap-1">
-                            <Ionicons name="globe-outline" size={14} color="hsl(220, 15%, 55%)" />
+                            <Ionicons name="globe-outline" size={14} color="#94A3B8" />
                             <Text className="text-xs text-muted-foreground">{region}</Text>
                         </View>
                         <View className="flex-row items-center gap-1">
-                            <Ionicons name="people-outline" size={14} color="hsl(220, 15%, 55%)" />
+                            <Ionicons name="people-outline" size={14} color="#94A3B8" />
                             <Text className="text-xs text-muted-foreground">{players.length} players</Text>
                         </View>
                     </View>
                     <View className="flex-row items-center gap-1">
-                        <Ionicons name="cash-outline" size={14} color="hsl(45, 90%, 55%)" />
+                        <Ionicons name="cash-outline" size={14} color="#10B981" />
                         <Text className="text-sm font-bold text-accent">{prizePool}</Text>
                     </View>
                 </View>
 
                 <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2">
-                        <Ionicons name="calendar-outline" size={16} color="hsl(220, 15%, 55%)" />
+                        <Ionicons name="calendar-outline" size={16} color="#94A3B8" />
                         <Text className="text-sm text-muted-foreground">{date}</Text>
                     </View>
 
@@ -86,7 +86,7 @@ export function TournamentCard({
                             className="flex-row items-center gap-1"
                         >
                             <Text className="text-sm font-medium text-primary">View Bracket</Text>
-                            <Ionicons name="chevron-forward" size={16} color="hsl(185, 75%, 45%)" />
+                            <Ionicons name="chevron-forward" size={16} color="#10B981" />
                         </Pressable>
                     )}
                 </View>

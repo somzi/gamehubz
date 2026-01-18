@@ -8,47 +8,47 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Background colors - dark blue tones matching web
-        background: "hsl(222 47% 6%)",
-        foreground: "hsl(210 40% 98%)",
+        // Background colors - matching premium profile design
+        background: "#0F172A",
+        foreground: "#F8FAFC", // Slate-50
 
         // Card colors
-        card: "hsl(222 40% 10%)",
-        "card-foreground": "hsl(210 40% 98%)",
-        "card-elevated": "hsl(222 35% 14%)",
+        card: "#131B2E",
+        "card-foreground": "#F8FAFC",
+        "card-elevated": "#1E293B",
 
         // Popover
-        popover: "hsl(222 40% 10%)",
-        "popover-foreground": "hsl(210 40% 98%)",
+        popover: "#131B2E",
+        "popover-foreground": "#F8FAFC",
 
-        // Primary - Teal (matching web)
-        primary: "hsl(185 75% 45%)",
-        "primary-foreground": "hsl(222 47% 6%)",
+        // Primary - Emerald (matching premium design)
+        primary: "#10B981",
+        "primary-foreground": "#0F172A",
 
         // Secondary
-        secondary: "hsl(222 30% 18%)",
-        "secondary-foreground": "hsl(210 40% 98%)",
+        secondary: "#1E293B",
+        "secondary-foreground": "#F1F5F9",
 
         // Muted
-        muted: "hsl(222 25% 22%)",
-        "muted-foreground": "hsl(220 15% 55%)",
+        muted: "#1E293B",
+        "muted-foreground": "#94A3B8", // Slate-400
 
-        // Accent - Gold (matching web)
-        accent: "hsl(45 90% 55%)",
-        "accent-foreground": "hsl(222 47% 6%)",
+        // Accent - Emerald/Teal
+        accent: "#10B981",
+        "accent-foreground": "#0F172A",
 
         // Status colors
-        destructive: "hsl(0 72% 51%)",
-        "destructive-foreground": "hsl(210 40% 98%)",
-        success: "hsl(142 70% 45%)",
-        "success-foreground": "hsl(210 40% 98%)",
-        live: "hsl(0 85% 60%)",
-        "live-foreground": "hsl(210 40% 98%)",
+        destructive: "#EF4444",
+        "destructive-foreground": "#F8FAFC",
+        success: "#10B981",
+        "success-foreground": "#F8FAFC",
+        live: "#F43F5E",
+        "live-foreground": "#F8FAFC",
 
         // Border and input
-        border: "hsl(222 25% 18%)",
-        input: "hsl(222 25% 18%)",
-        ring: "hsl(185 75% 45%)",
+        border: "rgba(255, 255, 255, 0.1)",
+        input: "rgba(255, 255, 255, 0.05)",
+        ring: "#10B981",
       },
       borderRadius: {
         lg: "0.75rem",

@@ -10,19 +10,19 @@ interface TabsProps {
 
 export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
     return (
-        <View className="bg-secondary p-1 rounded-lg flex-row">
+        <View className="bg-card p-1 rounded-xl flex-row border border-white/5">
             {tabs.map((tab) => (
                 <Pressable
                     key={tab.value}
                     onPress={() => onTabChange(tab.value)}
                     className={cn(
-                        "flex-1 py-2 px-1 rounded-md items-center justify-center",
-                        activeTab === tab.value ? "bg-background" : ""
+                        "flex-1 py-3 px-1 rounded-lg items-center justify-center",
+                        activeTab === tab.value ? "bg-card-elevated border border-white/10" : ""
                     )}
                 >
                     <Text className={cn(
-                        "text-xs font-medium",
-                        activeTab === tab.value ? "text-foreground" : "text-muted-foreground"
+                        "text-xs font-semibold",
+                        activeTab === tab.value ? "text-primary" : "text-gray-500"
                     )}>
                         {tab.label}
                     </Text>
