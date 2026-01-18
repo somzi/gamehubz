@@ -7,15 +7,19 @@ import { NavigationContainer } from '@react-navigation/native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import './global.css';
 
+import { AuthProvider } from './src/context/AuthContext';
+
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
+        <AuthProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </AuthProvider>
         <StatusBar style="light" />
       </QueryClientProvider>
     </SafeAreaProvider>

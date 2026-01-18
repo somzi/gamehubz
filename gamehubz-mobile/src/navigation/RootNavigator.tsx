@@ -10,37 +10,65 @@ import NotFoundScreen from '../screens/NotFoundScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
+import { useAuth } from '../context/AuthContext';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import { View, ActivityIndicator } from 'react-native';
+
 export function RootNavigator() {
+    const { isAuthenticated, isLoading, user } = useAuth();
+
+    React.useEffect(() => {
+        console.log("[RootNavigator] Mounted");
+        return () => console.log("[RootNavigator] Unmounted");
+    }, []);
+
+    console.log(`[RootNavigator] Render - Auth: ${isAuthenticated}, Loading: ${isLoading}, User: ${user?.username}`);
+
     return (
         <Stack.Navigator
             screenOptions={{
                 headerShown: false, // We use our own PageHeader
             }}
         >
-            <Stack.Screen
-                name="MainTabs"
-                component={MainTabNavigator}
-            />
-            <Stack.Screen
-                name="TournamentDetails"
-                component={TournamentDetailsScreen}
-            />
-            <Stack.Screen
-                name="HubProfile"
-                component={HubProfileScreen}
-            />
-            <Stack.Screen
-                name="PlayerProfile"
-                component={PlayerProfileScreen}
-            />
-            <Stack.Screen
-                name="Notifications"
-                component={NotificationsScreen}
-            />
-            <Stack.Screen
-                name="NotFound"
-                component={NotFoundScreen}
-            />
+            {!isAuthenticated ? (
+                <>
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="Register" component={RegisterScreen} />
+                </>
+            ) : (
+                <>
+                    <Stack.Screen
+                        name="MainTabs"
+                        component={MainTabNavigator}
+                    />
+                    <Stack.Screen
+                        name="TournamentDetails"
+                        component={TournamentDetailsScreen}
+                    />
+                    <Stack.Screen
+                        name="HubProfile"
+                        component={HubProfileScreen}
+                    />
+                    <Stack.Screen
+                        name="PlayerProfile"
+                        component={PlayerProfileScreen}
+                    />
+                    <Stack.Screen
+                        name="Notifications"
+                        component={NotificationsScreen}
+                    />
+                    <Stack.Screen
+                        name="EditProfile"
+                        component={EditProfileScreen}
+                    />
+                    <Stack.Screen
+                        name="NotFound"
+                        component={NotFoundScreen}
+                    />
+                </>
+            )}
         </Stack.Navigator>
     );
 }

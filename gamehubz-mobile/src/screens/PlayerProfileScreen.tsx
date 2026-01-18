@@ -70,9 +70,6 @@ export default function PlayerProfileScreen() {
                         <PlayerAvatar name={playerData.username} size="lg" className="w-24 h-24" />
                         <Text className="text-2xl font-bold mt-4 text-foreground">{playerData.username}</Text>
 
-                        <View className="mt-2 px-3 py-1 rounded-full bg-accent/20">
-                            <Text className="text-accent text-xs font-bold uppercase">Level {playerData.level}</Text>
-                        </View>
 
                         <View className="flex-row items-center gap-2 mt-4">
                             <Ionicons name="game-controller" size={16} color="#71717A" />

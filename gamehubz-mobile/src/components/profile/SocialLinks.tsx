@@ -40,6 +40,11 @@ const platformConfig: any = {
         color: "text-[#FF0000]",
         bgColor: "bg-[#FF0000]/20",
     },
+    facebook: {
+        icon: <FontAwesome name="facebook" size={20} />,
+        color: "text-[#1877F2]",
+        bgColor: "bg-[#1877F2]/20",
+    },
 };
 
 export function SocialLinks({ links, className }: SocialLinksProps) {

@@ -11,7 +11,7 @@ import { Button } from '../components/ui/Button';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../lib/utils';
-import { ENDPOINTS } from '../lib/api';
+import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
@@ -50,7 +50,7 @@ export default function TournamentDetailsScreen() {
         try {
             const url = ENDPOINTS.GET_TOURNAMENT_STRUCTURE(id);
             console.log('Fetching bracket from:', url);
-            const response = await fetch(url);
+            const response = await authenticatedFetch(url);
             if (!response.ok) {
                 throw new Error(`Failed to fetch bracket: ${response.status}`);
             }

@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../lib/utils';
 import { Card } from '../components/ui/Card';
 
-import { API_BASE_URL, ENDPOINTS } from '../lib/api';
+import { API_BASE_URL, ENDPOINTS, authenticatedFetch } from '../lib/api';
 
 // v2 - forcing refresh
 type HubsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
@@ -50,7 +50,7 @@ export default function HubsScreen() {
 
             console.log('Fetching hubs from:', apiUrl);
 
-            const response = await fetch(apiUrl);
+            const response = await authenticatedFetch(apiUrl);
 
             if (!response.ok) {
                 const text = await response.text();
