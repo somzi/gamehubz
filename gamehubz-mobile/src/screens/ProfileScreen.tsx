@@ -14,6 +14,7 @@ import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { PlayerMatchesDto } from '../types/user';
 import { SocialType } from '../types/auth';
 import { cn } from '../lib/utils';
+import { getSocialUrl } from '../lib/social';
 
 const tabs = [
     { label: 'Stats', value: 'stats' },
@@ -82,7 +83,6 @@ export default function ProfileScreen() {
         return socials.map(s => {
             const type = s.socialType !== undefined ? s.socialType : s.type;
             let platform: any = 'discord';
-            let url = s.url || '#';
 
             switch (type) {
                 case SocialType.Instagram: platform = 'instagram'; break;
@@ -92,6 +92,8 @@ export default function ProfileScreen() {
                 case SocialType.YouTube: platform = 'youtube'; break;
                 case SocialType.Discord: platform = 'discord'; break;
             }
+
+            const url = s.url && s.url !== '#' ? s.url : getSocialUrl(platform, s.username);
             return { platform, username: s.username, url };
         });
     };

@@ -9,6 +9,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { MatchHistoryCard } from '../components/cards/MatchHistoryCard';
 import { SocialLinks } from '../components/profile/SocialLinks';
 import { Ionicons } from '@expo/vector-icons';
+import { getSocialUrl } from '../lib/social';
 import { Button } from '../components/ui/Button';
 
 type PlayerProfileRouteProp = RouteProp<RootStackParamList, 'PlayerProfile'>;
@@ -24,9 +25,9 @@ const getPlayerData = (id: string) => ({
     losses: Math.floor(5 + Math.random() * 20),
     level: Math.floor(1 + Math.random() * 5),
     socials: [
-        { platform: "discord" as const, username: `Player${id}#1234`, url: "#" },
-        { platform: "tiktok" as const, username: `@player${id}`, url: `https://tiktok.com/@player${id}` },
-        { platform: "instagram" as const, username: `@player${id}`, url: `https://instagram.com/player${id}` },
+        { platform: "discord" as const, username: `Player${id}#1234`, url: getSocialUrl("discord", `Player${id}#1234`) },
+        { platform: "tiktok" as const, username: `@player${id}`, url: getSocialUrl("tiktok", `player${id}`) },
+        { platform: "instagram" as const, username: `@player${id}`, url: getSocialUrl("instagram", `player${id}`) },
     ],
 });
 
