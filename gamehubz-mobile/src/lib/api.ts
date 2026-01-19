@@ -22,6 +22,7 @@ export const ENDPOINTS = {
     USER_SOCIAL: `${API_BASE_URL}/api/UserSocial`,
     GET_USER_INFO: (id: string) => `${API_BASE_URL}/api/UserProfile/${id}/info`,
     GET_USER_HUBS: (userId: string) => `${API_BASE_URL}/api/Hub/user/${userId}`,
+    GET_PROFILE_TOURNAMENTS: (userId: string) => `${API_BASE_URL}/api/UserProfile/${userId}/tournaments`,
     CREATE_TOURNAMENT: `${API_BASE_URL}/api/tournament`,
     GET_USER_TOURNAMENTS: (userId: string, status: number, page: number, pageSize: number = 10) =>
         `${API_BASE_URL}/api/User/${userId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,

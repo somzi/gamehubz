@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../types/navigation';
 import { BracketMatch } from './BracketMatch';
 import { cn } from '../../lib/utils';
 
@@ -53,6 +56,15 @@ interface TournamentGroupsProps {
 }
 
 export function TournamentGroups({ groups, onMatchPress, currentUserId, currentUsername, isAdmin }: TournamentGroupsProps) {
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+    const handlePlayerPress = (participant: any) => {
+        const userId = participant.id || participant.userId || participant.UserId;
+        if (userId) {
+            navigation.navigate('PlayerProfile', { id: userId });
+        }
+    };
+
     const getUsername = (userId: string, matches: Match[]) => {
         for (const match of matches) {
             if (match.home?.userId === userId) return match.home.username;
@@ -84,12 +96,16 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                         <Text className="w-12 text-xs font-bold text-muted-foreground text-center">Pts</Text>
                                     </View>
                                     {group.standings.map((standing, index) => (
-                                        <View
+                                        <Pressable
                                             key={standing.participantId}
+                                            onPress={() => handlePlayerPress(standing)}
                                             className={cn(
                                                 "flex-row py-3 px-4 border-b border-border/10 items-center",
                                                 index === group.standings.length - 1 && "border-b-0"
                                             )}
+                                            style={({ pressed }: { pressed: boolean }) => ({
+                                                backgroundColor: pressed ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
+                                            })}
                                         >
                                             <Text className="w-8 text-sm font-medium text-muted-foreground text-center">{standing.position}</Text>
                                             <Text className="w-32 text-sm font-bold text-foreground ml-2" numberOfLines={1}>
@@ -103,7 +119,7 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                             <Text className="w-10 text-sm text-center text-muted-foreground">{standing.goalsAgainst}</Text>
                                             <Text className="w-10 text-sm text-center text-muted-foreground">{standing.goalDifference > 0 ? `+${standing.goalDifference}` : standing.goalDifference}</Text>
                                             <Text className="w-12 text-sm text-center font-bold text-accent">{standing.points}</Text>
-                                        </View>
+                                        </Pressable>
                                     ))}
                                 </View>
                             </ScrollView>

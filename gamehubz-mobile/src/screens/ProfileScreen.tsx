@@ -27,24 +27,34 @@ export default function ProfileScreen() {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
     const [activeTab, setActiveTab] = useState('stats');
     const [playerMatches, setPlayerMatches] = useState<PlayerMatchesDto | null>(null);
+    const [userTournaments, setUserTournaments] = useState<any[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             if (!user?.id) return;
             setIsLoadingData(true);
+            setError(null);
             try {
-                const [statsRes] = await Promise.all([
+                const [statsRes, tournamentsRes] = await Promise.all([
                     authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(user.id)),
+                    authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(user.id)),
                     refreshUser()
                 ]);
 
                 if (statsRes.ok) {
-                    const statsData: PlayerMatchesDto = await statsRes.json();
-                    setPlayerMatches(statsData);
+                    const statsData = await statsRes.json();
+                    setPlayerMatches(statsData.result || statsData);
                 }
-            } catch (error) {
+
+                if (tournamentsRes.ok) {
+                    const tournamentsData = await tournamentsRes.json();
+                    setUserTournaments(tournamentsData.result || tournamentsData);
+                }
+            } catch (error: any) {
                 console.error('Error fetching profile data:', error);
+                setError('Failed to refresh data');
             } finally {
                 setIsLoadingData(false);
             }
@@ -97,12 +107,6 @@ export default function ProfileScreen() {
             return { platform, username: s.username, url };
         });
     };
-
-    const mockTournamentResults = [
-        { id: '1', title: 'Winter Championship 2026', date: 'Jan 15, 2026', players: 128, rank: '1st Place', prize: '$500', rankColor: 'bg-yellow-500/20', textColor: 'text-yellow-500' },
-        { id: '2', title: 'New Year Cup', date: 'Jan 5, 2026', players: 64, rank: '3rd Place', prize: '$100', rankColor: 'bg-orange-500/20', textColor: 'text-orange-500' },
-        { id: '3', title: 'Holiday Tournament', date: 'Dec 25, 2025', players: 32, rank: '5th Place', prize: '$50', rankColor: 'bg-blue-500/20', textColor: 'text-blue-500' },
-    ];
 
 
 
@@ -224,32 +228,47 @@ export default function ProfileScreen() {
                         {activeTab === 'tournaments' && (
                             <View>
                                 <Text className="text-lg font-bold text-white mb-4">Tournaments</Text>
-                                {mockTournamentResults.map((t) => (
-                                    <View key={t.id} className="bg-card-elevated p-6 rounded-3xl mb-4 border border-white/5">
-                                        <View className="flex-row justify-between items-start mb-4">
-                                            <View className="flex-1">
-                                                <Text className="text-white font-bold text-lg">{t.title}</Text>
-                                                <View className="flex-row items-center mt-2 flex-wrap">
-                                                    <View className="flex-row items-center mr-4 mb-1">
-                                                        <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                                                        <Text className="text-gray-500 text-xs ml-1">{t.date}</Text>
-                                                    </View>
-                                                    <View className="flex-row items-center mb-1">
-                                                        <Ionicons name="people-outline" size={14} color="#64748B" />
-                                                        <Text className="text-gray-500 text-xs ml-1">{t.players} players</Text>
+                                {userTournaments.length > 0 ? (
+                                    userTournaments.map((t) => (
+                                        <Pressable
+                                            key={t.id}
+                                            onPress={() => navigation.navigate('TournamentDetails', { id: t.id })}
+                                            className="bg-card-elevated p-6 rounded-3xl mb-4 border border-white/5"
+                                        >
+                                            <View className="flex-row justify-between items-start mb-4">
+                                                <View className="flex-1">
+                                                    <Text className="text-white font-bold text-lg">{t.name || t.title}</Text>
+                                                    <View className="flex-row items-center mt-2 flex-wrap">
+                                                        <View className="flex-row items-center mr-4 mb-1">
+                                                            <Ionicons name="calendar-outline" size={14} color="#64748B" />
+                                                            <Text className="text-gray-500 text-xs ml-1">
+                                                                {t.startDate ? new Date(t.startDate).toLocaleDateString() : 'N/A'}
+                                                            </Text>
+                                                        </View>
+                                                        <View className="flex-row items-center mb-1">
+                                                            <Ionicons name="people-outline" size={14} color="#64748B" />
+                                                            <Text className="text-gray-500 text-xs ml-1">{t.numberOfParticipants || 0} players</Text>
+                                                        </View>
                                                     </View>
                                                 </View>
                                             </View>
-                                        </View>
-                                        <View className="flex-row justify-between items-center mt-2">
-                                            <View className={cn("px-4 py-2 rounded-full flex-row items-center", t.rankColor)}>
-                                                <Ionicons name="trophy" size={14} className={t.textColor} />
-                                                <Text className={cn("ml-2 font-bold text-sm", t.textColor)}>{t.rank}</Text>
+                                            <View className="flex-row justify-between items-center mt-2">
+                                                <View className={cn("px-4 py-2 rounded-full flex-row items-center bg-primary/20")}>
+                                                    <Ionicons name="trophy" size={14} className="text-primary" />
+                                                    <Text className={cn("ml-2 font-bold text-sm text-primary")}>Participating</Text>
+                                                </View>
+                                                <Text className="text-emerald-500 font-bold text-lg">
+                                                    {t.prizeCurrency === 1 ? '$' : t.prizeCurrency === 2 ? '€' : ''}{t.prize}
+                                                </Text>
                                             </View>
-                                            <Text className="text-emerald-500 font-bold text-xl">{t.prize}</Text>
-                                        </View>
+                                        </Pressable>
+                                    ))
+                                ) : (
+                                    <View className="items-center py-12">
+                                        <Ionicons name="trophy-outline" size={48} color="#1E293B" />
+                                        <Text className="text-gray-500 italic mt-4 text-center">No tournaments found.</Text>
                                     </View>
-                                ))}
+                                )}
                             </View>
                         )}
 

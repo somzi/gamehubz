@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useRoute, useFocusEffect } from '@react-navigation/native';
+import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TournamentBracket } from '../components/bracket/TournamentBracket';
@@ -18,6 +19,7 @@ import { ReportResultModal } from '../components/modals/ReportResultModal';
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
 export default function TournamentDetailsScreen() {
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
     const route = useRoute<TournamentDetailsRouteProp>();
     const { id } = route.params;
     const [activeTab, setActiveTab] = useState('overview');
@@ -531,17 +533,26 @@ export default function TournamentDetailsScreen() {
                                 </View>
                             ) : (
                                 participants.map((participant: any, index: number) => (
-                                    <View
+                                    <Pressable
                                         key={index}
+                                        onPress={() => {
+                                            const uId = participant.id || participant.userId || participant.UserId;
+                                            if (uId) {
+                                                navigation.navigate('PlayerProfile', { id: uId });
+                                            } else {
+                                                console.warn('[TournamentDetails] Participant missing id:', participant);
+                                            }
+                                        }}
                                         className="flex-row items-center gap-4 p-4 rounded-xl bg-card border border-border/30"
+                                        style={({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.7 : 1 })}
                                     >
                                         <Text className="w-6 text-center text-sm font-bold text-muted-foreground">
                                             {index + 1}
                                         </Text>
-                                        <PlayerAvatar name={participant.username || participant.Username || `Player ${index + 1}`} size="sm" className="w-10 h-10" />
-                                        <Text className="font-bold text-foreground flex-1">{participant.username || participant.Username || `Player ${index + 1}`}</Text>
+                                        <PlayerAvatar name={participant.username || participant.Username || participant.name || `Player ${index + 1}`} size="sm" className="w-10 h-10" />
+                                        <Text className="font-bold text-foreground flex-1">{participant.username || participant.Username || participant.name || `Player ${index + 1}`}</Text>
                                         <Ionicons name="chevron-forward" size={16} color="#3F3F46" />
-                                    </View>
+                                    </Pressable>
                                 ))
                             )}
                         </View>
@@ -560,14 +571,25 @@ export default function TournamentDetailsScreen() {
                             ) : (
                                 pendingRegistrations.map((reg: any, index: number) => (
                                     <View
-                                        key={reg.Id || reg.id || reg.userId || index}
+                                        key={reg.Id || reg.id || reg.userId || reg.UserId || index}
                                         className="flex-row items-center gap-4 p-4 rounded-xl bg-card border border-border/30"
                                     >
-                                        <PlayerAvatar name={reg.username || reg.Username} size="sm" className="w-10 h-10" />
-                                        <View className="flex-1">
-                                            <Text className="font-bold text-foreground">{reg.username || reg.Username}</Text>
-                                            <Text className="text-xs text-muted-foreground">Pending Approval</Text>
-                                        </View>
+                                        <Pressable
+                                            onPress={() => {
+                                                const uId = reg.id || reg.UserId || reg.userId;
+                                                if (uId) {
+                                                    navigation.navigate('PlayerProfile', { id: uId });
+                                                }
+                                            }}
+                                            className="flex-row items-center gap-4 flex-1"
+                                            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                                        >
+                                            <PlayerAvatar name={reg.username || reg.Username} size="sm" className="w-10 h-10" />
+                                            <View className="flex-1">
+                                                <Text className="font-bold text-foreground">{reg.username || reg.Username}</Text>
+                                                <Text className="text-xs text-muted-foreground">Pending Approval</Text>
+                                            </View>
+                                        </Pressable>
                                         <View className="flex-row gap-2">
                                             <Button
                                                 size="sm"
