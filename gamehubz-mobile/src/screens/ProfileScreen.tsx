@@ -173,25 +173,38 @@ export default function ProfileScreen() {
                         {activeTab === 'stats' && (
                             <View>
                                 <Text className="text-lg font-bold text-white mb-2">Performance Trend</Text>
-                                <Text className="text-gray-500 text-xs mb-4">Last 10 Games Overview</Text>
+                                <Text className="text-gray-500 text-xs mb-4">Last {Math.min(matches.length, 10)} Games Overview</Text>
                                 <View className="bg-card-elevated rounded-3xl p-6 border border-white/5">
-                                    <View className="flex-row items-end justify-between h-32 mb-4 px-2">
-                                        {[40, 45, 42, 55, 60, 65, 80, 75, 85, 90].map((h, i) => (
-                                            <View key={i} className="items-center">
-                                                <View
-                                                    style={{ height: `${h}%` }}
-                                                    className="w-1.5 bg-primary/20 rounded-t-full relative"
-                                                >
-                                                    <View className="absolute top-0 left-0 right-0 h-1.5 w-1.5 bg-primary rounded-full" />
-                                                </View>
+                                    {matches.length > 0 ? (
+                                        <>
+                                            <View className="flex-row items-center justify-between mb-4 px-2">
+                                                {matches.slice(0, 10).map((match, i) => (
+                                                    <View key={i} className="items-center">
+                                                        <View
+                                                            className={cn(
+                                                                "w-8 h-8 rounded-full items-center justify-center",
+                                                                match.isWin ? "bg-accent/20" : "bg-destructive/20"
+                                                            )}
+                                                        >
+                                                            <Text className={cn(
+                                                                "font-bold text-sm",
+                                                                match.isWin ? "text-accent" : "text-destructive"
+                                                            )}>
+                                                                {match.isWin ? 'W' : 'L'}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                ))}
                                             </View>
-                                        ))}
-                                    </View>
-                                    <View className="flex-row justify-between border-t border-white/5 pt-4">
-                                        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(w => (
-                                            <Text key={w} className="text-[10px] text-gray-500 font-bold">{w}</Text>
-                                        ))}
-                                    </View>
+                                            <View className="flex-row justify-between border-t border-white/5 pt-4">
+                                                {matches.slice(0, 10).map((_, i) => (
+                                                    <Text key={i} className="text-[10px] text-gray-500 font-bold">{i + 1}</Text>
+                                                ))}
+                                            </View>
+                                        </>
+                                    ) : (
+                                        <Text className="text-gray-500 text-center py-8">No match history available</Text>
+                                    )}
                                 </View>
 
                                 <Text className="text-lg font-bold text-white mt-8 mb-4">Statistics</Text>
@@ -280,9 +293,12 @@ export default function ProfileScreen() {
                                         <MatchHistoryCard
                                             key={idx}
                                             tournamentName={match.tournamentName}
+                                            hubName={match.hubName}
                                             opponentName={match.opponentName}
                                             result={match.isWin ? 'win' : 'loss'}
-                                            date={match.scheduledTime ? new Date(match.scheduledTime).toLocaleDateString() : 'N/A'}
+                                            userScore={match.userScore ?? undefined}
+                                            opponentScore={match.opponentScore ?? undefined}
+                                            date={match.scheduledTime ? new Date(match.scheduledTime).toLocaleDateString() : (match.isWin ? 'W' : 'L')}
                                         />
                                     ))
                                 ) : (

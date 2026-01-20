@@ -90,33 +90,13 @@ export default function HomeScreen() {
             />
             <ScrollView className="flex-1">
                 <View className="px-4 py-6 space-y-6">
-                    {/* Community News Feed */}
-                    <View className="border-b border-border/20 pb-6">
-                        <View className="flex-row items-center gap-2 mb-4 px-1">
-                            <Ionicons name="newspaper-outline" size={20} color="#94A3B8" />
-                            <Text className="text-xl font-bold text-foreground">Community Feed</Text>
-                        </View>
-                        <View className="gap-3">
-                            {feedData.map((item) => (
-                                <FeedCard
-                                    key={item.id}
-                                    hubName={item.hubName}
-                                    message={item.message}
-                                    tournamentName={item.tournamentName}
-                                    timestamp={item.timestamp}
-                                    onClick={() => navigation.navigate('TournamentDetails', { id: '86F0D7B3-2BCC-4D30-E0FC-08DE55C5AA4E' })}
-                                />
-                            ))}
-                        </View>
-                    </View>
-
-                    {/* Needs Scheduling Panel */}
+                    {/* Action Required Panel */}
                     {pendingSchedulingMatches.length > 0 && (
                         <View className="border-b border-border/20 pb-6">
-                            <View className="p-4 rounded-2xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20">
+                            <View className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20">
                                 <View className="flex-row items-center gap-2 mb-2">
-                                    <View className="bg-accent/20 p-1.5 rounded-lg">
-                                        <Ionicons name="calendar" size={20} color="#10B981" />
+                                    <View className="bg-yellow-500/20 p-1.5 rounded-lg">
+                                        <Ionicons name="alert-circle" size={20} color="#EAB308" />
                                     </View>
                                     <Text className="text-lg font-bold text-foreground">Action Required</Text>
                                 </View>
@@ -141,6 +121,26 @@ export default function HomeScreen() {
                             </View>
                         </View>
                     )}
+
+                    {/* Community News Feed */}
+                    <View className="border-b border-border/20 pb-6">
+                        <View className="flex-row items-center gap-2 mb-4 px-1">
+                            <Ionicons name="newspaper-outline" size={20} color="#94A3B8" />
+                            <Text className="text-xl font-bold text-foreground">Community Feed</Text>
+                        </View>
+                        <View className="gap-3">
+                            {feedData.map((item) => (
+                                <FeedCard
+                                    key={item.id}
+                                    hubName={item.hubName}
+                                    message={item.message}
+                                    tournamentName={item.tournamentName}
+                                    timestamp={item.timestamp}
+                                    onClick={() => navigation.navigate('TournamentDetails', { id: '86F0D7B3-2BCC-4D30-E0FC-08DE55C5AA4E' })}
+                                />
+                            ))}
+                        </View>
+                    </View>
 
                     {/* My Matches - Scheduled/Ready */}
                     <View className="pb-8">

@@ -16,6 +16,7 @@ export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
 
 export const ENDPOINTS = {
     HUBS: `${API_BASE_URL}/api/Hub/getAll`,
+    GET_HUB: (id: string) => `${API_BASE_URL}/api/Hub/${id}`,
     GET_TOURNAMENT_STRUCTURE: (id: string) => `${API_BASE_URL}/api/tournament/${id}/structure`,
     UPDATE_PROFILE: `${API_BASE_URL}/api/Users/updateProfile`,
     GET_PLAYER_STATS: (id: string) => `${API_BASE_URL}/api/userProfile/${id}/stats`,
@@ -34,6 +35,11 @@ export const ENDPOINTS = {
     GET_TOURNAMENT_PARTICIPANTS: (tournamentId: string) => `${API_BASE_URL}/api/TournamentParticipant/tournament/${tournamentId}`,
     CREATE_BRACKET: (tournamentId: string) => `${API_BASE_URL}/api/tournament/${tournamentId}/createBracket`,
     REPORT_MATCH_RESULT: `${API_BASE_URL}/api/tournament/matchResult`,
+    GET_HUB_TOURNAMENTS: (hubId: string, status: number, page: number, pageSize: number = 10) =>
+        `${API_BASE_URL}/api/Hub/${hubId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,
+    FOLLOW_HUB: `${API_BASE_URL}/api/userHub`,
+    UNFOLLOW_HUB: (userId: string, hubId: string) => `${API_BASE_URL}/api/userHub/unfollow?userId=${userId}&hubId=${hubId}`,
+    UPDATE_HUB: `${API_BASE_URL}/api/hub/update`,
 };
 
 let authToken: string | null = null;

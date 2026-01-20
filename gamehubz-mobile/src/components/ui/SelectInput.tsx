@@ -78,46 +78,49 @@ export function SelectInput({
                 </Text>
             )}
 
-            {modalVisible && (
-                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, elevation: 10 }}>
-                    <Pressable
-                        className="flex-1 bg-black/50 justify-center items-center px-6"
-                        onPress={() => setModalVisible(false)}
-                    >
-                        <View className="bg-card w-full rounded-xl border border-border/30 max-h-[70%] overflow-hidden">
-                            <View className="p-4 border-b border-border/30 flex-row justify-between items-center">
-                                <Text className="text-lg font-bold text-foreground">
-                                    {label || 'Select'}
-                                </Text>
-                                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                    <Ionicons name="close" size={24} color="hsl(220, 15%, 55%)" />
-                                </TouchableOpacity>
-                            </View>
-
-                            <FlatList
-                                data={options}
-                                keyExtractor={(item) => String(item.value)}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        className={`
-                                            p-4 border-b border-border/10 flex-row justify-between items-center
-                                            ${value === item.value ? 'bg-primary/10' : ''}
-                                        `}
-                                        onPress={() => handleSelect(item.value)}
-                                    >
-                                        <Text className={`text-base ${value === item.value ? 'text-primary font-bold' : 'text-foreground'}`}>
-                                            {item.label}
-                                        </Text>
-                                        {value === item.value && (
-                                            <Ionicons name="checkmark" size={20} color="hsl(185, 75%, 45%)" />
-                                        )}
-                                    </TouchableOpacity>
-                                )}
-                            />
+            <Modal
+                visible={modalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <Pressable
+                    className="flex-1 bg-black/50 justify-center items-center px-6"
+                    onPress={() => setModalVisible(false)}
+                >
+                    <View className="bg-card w-full rounded-xl border border-border/30 max-h-[70%] overflow-hidden">
+                        <View className="p-4 border-b border-border/30 flex-row justify-between items-center">
+                            <Text className="text-lg font-bold text-foreground">
+                                {label || 'Select'}
+                            </Text>
+                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                                <Ionicons name="close" size={24} color="hsl(220, 15%, 55%)" />
+                            </TouchableOpacity>
                         </View>
-                    </Pressable>
-                </View>
-            )}
+
+                        <FlatList
+                            data={options}
+                            keyExtractor={(item) => String(item.value)}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    className={`
+                                        p-4 border-b border-border/10 flex-row justify-between items-center
+                                        ${value === item.value ? 'bg-primary/10' : ''}
+                                    `}
+                                    onPress={() => handleSelect(item.value)}
+                                >
+                                    <Text className={`text-base ${value === item.value ? 'text-primary font-bold' : 'text-foreground'}`}>
+                                        {item.label}
+                                    </Text>
+                                    {value === item.value && (
+                                        <Ionicons name="checkmark" size={20} color="hsl(185, 75%, 45%)" />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </Pressable>
+            </Modal>
         </View>
     );
 }
