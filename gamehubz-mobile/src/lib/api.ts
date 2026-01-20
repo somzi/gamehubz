@@ -40,6 +40,8 @@ export const ENDPOINTS = {
     FOLLOW_HUB: `${API_BASE_URL}/api/userHub`,
     UNFOLLOW_HUB: (userId: string, hubId: string) => `${API_BASE_URL}/api/userHub/unfollow?userId=${userId}&hubId=${hubId}`,
     UPDATE_HUB: `${API_BASE_URL}/api/hub/update`,
+    SUBMIT_MATCH_AVAILABILITY: `${API_BASE_URL}/api/match/availability`,
+    GET_USER_HOME_MATCHES: (userId: string) => `${API_BASE_URL}/api/match/home/${userId}`,
 };
 
 let authToken: string | null = null;

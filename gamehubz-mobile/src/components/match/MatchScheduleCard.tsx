@@ -5,6 +5,7 @@ import { Card } from '../ui/Card';
 import { HourlyAvailabilityPicker } from './HourlyAvailabilityPicker';
 import { MatchReadyButton } from './MatchReadyButton';
 import { cn } from '../../lib/utils';
+import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
 
 type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
 
@@ -36,16 +37,36 @@ export function MatchScheduleCard({
     const [modalVisible, setModalVisible] = useState(false);
     const [currentStatus, setCurrentStatus] = useState<MatchStatus>(initialStatus);
     const [matchTime, setMatchTime] = useState(initialScheduledTime);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleAvailabilitySubmit = (slots: string[]) => {
-        console.log('Availability submitted:', slots);
-        // Simulate auto-scheduling when both players have availability
-        if (opponentAvailability.length > 0) {
-            const commonSlot = slots.find((s) => opponentAvailability.includes(s));
-            if (commonSlot) {
-                setMatchTime(commonSlot.replace('-', ' at '));
-                setCurrentStatus('scheduled');
+    const handleAvailabilitySubmit = async (slots: string[], dateTimeSlots: string[]) => {
+        try {
+            setIsSubmitting(true);
+            const response = await authenticatedFetch(ENDPOINTS.SUBMIT_MATCH_AVAILABILITY, {
+                method: 'POST',
+                body: JSON.stringify({
+                    matchId: matchId,
+                    selectedSlots: dateTimeSlots,
+                }),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+
+                // Check if match was scheduled (both players submitted)
+                if (result.data?.confirmedTime) {
+                    const confirmedDate = new Date(result.data.confirmedTime);
+                    setMatchTime(confirmedDate.toLocaleString());
+                    setCurrentStatus('scheduled');
+                } else {
+                    // Availability saved, waiting for opponent
+                    console.log(result.message || 'Availability saved');
+                }
             }
+        } catch (error) {
+            console.error('Error submitting availability:', error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 

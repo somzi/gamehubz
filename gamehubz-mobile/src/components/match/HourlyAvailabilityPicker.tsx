@@ -9,7 +9,7 @@ interface HourlyAvailabilityPickerProps {
     deadline: string;
     opponentName: string;
     opponentAvailability?: string[];
-    onSubmit: (selectedSlots: string[]) => void;
+    onSubmit: (selectedSlots: string[], dateTimeSlots: string[]) => void | Promise<void>;
 }
 
 const HOURS = [10, 12, 14, 16, 18, 20, 22]; // 10am to 10pm, every 2 hours
@@ -76,8 +76,15 @@ export function HourlyAvailabilityPicker({
         });
     };
 
-    const handleSubmit = () => {
-        onSubmit(Array.from(selectedSlots));
+    const handleSubmit = async () => {
+        // Convert slot IDs (e.g., "2024-01-23-14") to DateTime objects
+        const dateTimeSlots = Array.from(selectedSlots).map(slot => {
+            const [year, month, day, hour] = slot.split('-');
+            // Create ISO 8601 datetime string
+            return `${year}-${month}-${day}T${hour.padStart(2, '0')}:00:00`;
+        });
+
+        onSubmit(Array.from(selectedSlots), dateTimeSlots);
         setSubmitted(true);
     };
 
