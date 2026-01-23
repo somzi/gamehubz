@@ -6,6 +6,7 @@ import { HourlyAvailabilityPicker } from './HourlyAvailabilityPicker';
 import { MatchReadyButton } from './MatchReadyButton';
 import { cn } from '../../lib/utils';
 import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
+import { useAuth } from '../../context/AuthContext';
 
 type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
 
@@ -19,6 +20,7 @@ interface MatchScheduleCardProps {
     scheduledTime?: string;
     opponentAvailability?: string[];
     opponentReady?: boolean;
+    onMatchUpdate?: () => void;
     onPress?: () => void;
 }
 
@@ -30,37 +32,79 @@ export function MatchScheduleCard({
     status: initialStatus,
     deadline = 'Jan 22, 2024',
     scheduledTime: initialScheduledTime,
-    opponentAvailability = [],
+    opponentAvailability: initialOpponentAvailability = [],
     opponentReady = false,
+    onMatchUpdate,
     onPress,
 }: MatchScheduleCardProps) {
+    const { user } = useAuth();
     const [modalVisible, setModalVisible] = useState(false);
     const [currentStatus, setCurrentStatus] = useState<MatchStatus>(initialStatus);
     const [matchTime, setMatchTime] = useState(initialScheduledTime);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Slots state
+    const [mySlots, setMySlots] = useState<string[]>([]);
+    const [opponentSlots, setOpponentSlots] = useState<string[]>(initialOpponentAvailability);
+    const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+
+    const fetchAvailability = async () => {
+        if (!user?.id || !matchId) return;
+        setIsLoadingAvailability(true);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_MATCH_AVAILABILITY(matchId, user.id));
+            if (response.ok) {
+                const data = await response.json();
+                if (data.mySlots) setMySlots(data.mySlots);
+                if (data.opponentSlots) setOpponentSlots(data.opponentSlots);
+                if (data.confirmedTime) {
+                    const confirmedDate = new Date(data.confirmedTime);
+                    setMatchTime(confirmedDate.toLocaleString());
+                    setCurrentStatus('scheduled');
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching availability:', error);
+        } finally {
+            setIsLoadingAvailability(false);
+        }
+    };
+
+    // Fetch availability when modal opens
+    React.useEffect(() => {
+        if (modalVisible && currentStatus === 'pending_availability') {
+            fetchAvailability();
+        }
+    }, [modalVisible, currentStatus, matchId]);
+
     const handleAvailabilitySubmit = async (slots: string[], dateTimeSlots: string[]) => {
         try {
             setIsSubmitting(true);
+            if (!matchId) return;
+
+            const payload = {
+                matchId: matchId,
+                selectedSlots: dateTimeSlots,
+            };
+
             const response = await authenticatedFetch(ENDPOINTS.SUBMIT_MATCH_AVAILABILITY, {
                 method: 'POST',
-                body: JSON.stringify({
-                    matchId: matchId,
-                    selectedSlots: dateTimeSlots,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (response.ok) {
                 const result = await response.json();
 
-                // Check if match was scheduled (both players submitted)
+                // Check if match was scheduled
                 if (result.data?.confirmedTime) {
                     const confirmedDate = new Date(result.data.confirmedTime);
                     setMatchTime(confirmedDate.toLocaleString());
                     setCurrentStatus('scheduled');
-                } else {
-                    // Availability saved, waiting for opponent
-                    console.log(result.message || 'Availability saved');
+                }
+
+                // Notify parent to refresh immediately
+                if (onMatchUpdate) {
+                    onMatchUpdate();
                 }
             }
         } catch (error) {
@@ -156,7 +200,8 @@ export function MatchScheduleCard({
                                     matchId={matchId}
                                     deadline={deadline}
                                     opponentName={opponentName}
-                                    opponentAvailability={opponentAvailability}
+                                    opponentAvailability={opponentSlots}
+                                    initialSlots={mySlots}
                                     onSubmit={handleAvailabilitySubmit}
                                 />
                             )}

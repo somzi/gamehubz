@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
     const [token, setToken] = useState<string | null>(null);
+    const [refreshToken, setRefreshToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (data.isSuccessful && data.accessToken?.token) {
                 setToken(data.accessToken.token);
                 setAuthToken(data.accessToken.token);
+                setRefreshToken(data.refreshToken);
                 setUser(data.user);
                 return true;
             } else {
@@ -104,11 +106,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
+        if (refreshToken) {
+            try {
+                console.log('[AuthContext] Logging out with API...');
+                // Call the API endpoint as requested: POST /api/Auth/logout
+                // Body: string (refreshToken) - Note: [FromBody] string refreshToken often expects just the string in quotes or specific handling
+                // but standard JSON body with "refreshToken" key is safer if model binding allows, OR standard JSON string.
+                // The user snippet was: public async Task<IActionResult> Logout([FromBody] string refreshToken)
+                // Sending just the string as JSON body usually works for [FromBody] string in .NET if Content-Type is application/json.
+
+                await fetch(`${API_BASE_URL}/api/Auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify(refreshToken), // Send as JSON string
+                });
+            } catch (error) {
+                console.error('[AuthContext] Logout API error:', error);
+            }
+        }
+
         setUser(null);
         setToken(null);
+        setRefreshToken(null);
         setAuthToken(null);
-    }, []);
+    }, [refreshToken, token]);
 
     const updateProfile = useCallback(async (data: any): Promise<boolean> => {
         setIsLoading(true);

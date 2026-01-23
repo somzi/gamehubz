@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
+import { TournamentRegion } from '../types/tournament';
 import { TournamentCard } from '../components/cards/TournamentCard';
 import { StatCard } from '../components/ui/StatCard';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -122,12 +123,13 @@ export default function TournamentsScreen() {
 
     const getRegionName = (region?: number) => {
         switch (region) {
-            case 1: return 'North America';
-            case 2: return 'Europe';
-            case 3: return 'Asia';
-            case 4: return 'South America';
-            case 5: return 'Africa';
-            case 6: return 'Oceania';
+            case TournamentRegion.NorthAmerica: return 'North America';
+            case TournamentRegion.Europe: return 'Europe';
+            case TournamentRegion.Asia: return 'Asia';
+            case TournamentRegion.SouthAmerica: return 'South America';
+            case TournamentRegion.Africa: return 'Africa';
+            case TournamentRegion.Oceania: return 'Oceania';
+            case TournamentRegion.Global:
             default: return 'Global';
         }
     };
@@ -236,11 +238,6 @@ export default function TournamentsScreen() {
                 }
             >
                 <View className="px-4 py-6 space-y-6">
-                    <View className="flex-row gap-3">
-                        <StatCard icon="trophy" value={activeTab === 'live' ? tournaments.length : '?'} label="Live Now" variant="gold" className="flex-1" />
-                        <StatCard icon="lock-open-outline" value={activeTab === 'open' ? tournaments.length : '?'} label="Open" variant="accent" className="flex-1" />
-                    </View>
-
                     <Tabs
                         tabs={tabs}
                         activeTab={activeTab}

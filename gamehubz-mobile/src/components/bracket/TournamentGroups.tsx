@@ -86,6 +86,7 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                     <View className="flex-row bg-muted/30 py-3 px-4 border-b border-border/30">
                                         <Text className="w-8 text-xs font-bold text-muted-foreground text-center">#</Text>
                                         <Text className="w-32 text-xs font-bold text-muted-foreground ml-2">Player</Text>
+                                        <Text className="w-12 text-xs font-bold text-muted-foreground text-center">Pts</Text>
                                         <Text className="w-8 text-xs font-bold text-muted-foreground text-center">P</Text>
                                         <Text className="w-8 text-xs font-bold text-muted-foreground text-center">W</Text>
                                         <Text className="w-8 text-xs font-bold text-muted-foreground text-center">D</Text>
@@ -93,7 +94,6 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                         <Text className="w-10 text-xs font-bold text-muted-foreground text-center">GF</Text>
                                         <Text className="w-10 text-xs font-bold text-muted-foreground text-center">GA</Text>
                                         <Text className="w-10 text-xs font-bold text-muted-foreground text-center">GD</Text>
-                                        <Text className="w-12 text-xs font-bold text-muted-foreground text-center">Pts</Text>
                                     </View>
                                     {group.standings.map((standing, index) => (
                                         <Pressable
@@ -111,6 +111,7 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                             <Text className="w-32 text-sm font-bold text-foreground ml-2" numberOfLines={1}>
                                                 {standing.username || getUsername(standing.userId, group.matches)}
                                             </Text>
+                                            <Text className="w-12 text-sm text-center font-bold text-accent">{standing.points}</Text>
                                             <Text className="w-8 text-sm text-center text-muted-foreground">{standing.matchesPlayed}</Text>
                                             <Text className="w-8 text-sm text-center text-muted-foreground">{standing.wins}</Text>
                                             <Text className="w-8 text-sm text-center text-muted-foreground">{standing.draws}</Text>
@@ -118,7 +119,6 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                             <Text className="w-10 text-sm text-center text-muted-foreground">{standing.goalsFor}</Text>
                                             <Text className="w-10 text-sm text-center text-muted-foreground">{standing.goalsAgainst}</Text>
                                             <Text className="w-10 text-sm text-center text-muted-foreground">{standing.goalDifference > 0 ? `+${standing.goalDifference}` : standing.goalDifference}</Text>
-                                            <Text className="w-12 text-sm text-center font-bold text-accent">{standing.points}</Text>
                                         </Pressable>
                                     ))}
                                 </View>

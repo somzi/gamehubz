@@ -242,9 +242,11 @@ export default function PlayerProfileScreen() {
                                                     </View>
                                                 ))}
                                             </View>
-                                            <View className="flex-row justify-between border-t border-white/5 pt-4">
+                                            <View className="flex-row justify-between border-t border-white/5 pt-4 px-2">
                                                 {matches.slice(0, 10).map((_, i) => (
-                                                    <Text key={i} className="text-[10px] text-gray-500 font-bold">{i + 1}</Text>
+                                                    <View key={i} className="w-8 items-center">
+                                                        <Text className="text-[10px] text-gray-500 font-bold">{i + 1}</Text>
+                                                    </View>
                                                 ))}
                                             </View>
                                         </>
@@ -339,7 +341,6 @@ export default function PlayerProfileScreen() {
                                         <MatchHistoryCard
                                             key={idx}
                                             tournamentName={match.tournamentName}
-                                            hubName={match.hubName}
                                             opponentName={match.opponentName}
                                             result={match.isWin ? 'win' : 'loss'}
                                             userScore={match.userScore ?? undefined}

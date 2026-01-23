@@ -17,7 +17,7 @@ type EditProfileNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function EditProfileScreen() {
     const navigation = useNavigation<EditProfileNavigationProp>();
-    const { user, updateProfile, saveUserSocial, refreshUser, isLoading } = useAuth();
+    const { user, updateProfile, saveUserSocial, refreshUser, isLoading, logout } = useAuth();
 
     const [username, setUsername] = useState(user?.username || '');
 
@@ -120,6 +120,23 @@ export default function EditProfileScreen() {
         }
     };
 
+    const handleLogout = () => {
+        Alert.alert(
+            'Log Out',
+            'Are you sure you want to log out?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Log Out',
+                    style: 'destructive',
+                    onPress: () => {
+                        logout();
+                    }
+                }
+            ]
+        );
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-background">
             <PageHeader title="Edit Profile" showBack />
@@ -209,9 +226,17 @@ export default function EditProfileScreen() {
                     </View>
                 </ScrollView>
 
-                <View className="p-4 border-t border-border/30 bg-background">
+                <View className="p-4 border-t border-border/30 bg-background gap-3">
                     <Button onPress={handleSave} loading={isLoading} size="lg">
                         Save Changes
+                    </Button>
+                    <Button
+                        onPress={handleLogout}
+                        variant="ghost"
+                        size="lg"
+                        className="border border-red-500/50"
+                    >
+                        <Text className="text-red-500 font-bold">Log Out</Text>
                     </Button>
                 </View>
             </KeyboardAvoidingView>

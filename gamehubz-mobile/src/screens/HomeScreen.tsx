@@ -39,6 +39,7 @@ const feedData = [
 ];
 
 interface MatchOverviewDto {
+    id?: string; // ID from API response
     matchId?: string; // Optional since API didn't explicitly specify it, but usually needed
     tournamentName: string;
     hubName: string;
@@ -78,14 +79,16 @@ export default function HomeScreen() {
                 const data: MatchOverviewDto[] = await response.json();
 
                 // Filter matches based on status
-                // Status 1 = Action Required
-                const actionNeeded = data.filter(m => m.status === 1);
+                // Action Required if no scheduled time
+                const actionNeeded = data.filter(m => !m.scheduledTime);
 
-                // Status 2 = My Matches (Scheduled)
-                const scheduled = data.filter(m => m.status === 2);
+                // My Matches if scheduled time exists
+                const scheduled = data.filter(m => m.scheduledTime);
 
                 setActionRequiredMatches(actionNeeded);
                 setMyMatches(scheduled);
+            } else {
+                console.error('Failed to fetch home matches', response.status);
             }
         } catch (error) {
             console.error('Error fetching home matches:', error);
@@ -149,12 +152,13 @@ export default function HomeScreen() {
                                     {actionRequiredMatches.map((match, index) => (
                                         <MatchScheduleCard
                                             key={match.matchId || `pending-${index}`}
-                                            matchId={match.matchId || ''}
+                                            matchId={match.id || match.matchId || ''}
                                             tournamentName={match.tournamentName}
                                             roundName={match.hubName} // Using HubName as round/context for now
                                             opponentName={match.opponentName}
                                             status="pending_availability"
                                             deadline="Action Required"
+                                            onMatchUpdate={fetchMatches}
                                             onPress={() => { }}
                                         />
                                     ))}
@@ -185,7 +189,7 @@ export default function HomeScreen() {
 
                     {/* My Matches - Scheduled/Ready */}
                     <View className="pb-8">
-                        {renderSectionHeader('My Matches', 'game-controller-outline', '#10B981', 'myMatches', myMatches.length)}
+                        {renderSectionHeader('My Matches', 'game-controller-outline', '#10B981', 'myMatches')}
 
                         {expandedSections.myMatches && (
                             <View className="gap-3">

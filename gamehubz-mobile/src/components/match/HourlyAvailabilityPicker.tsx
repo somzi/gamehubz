@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../ui/Button';
@@ -9,6 +9,7 @@ interface HourlyAvailabilityPickerProps {
     deadline: string;
     opponentName: string;
     opponentAvailability?: string[];
+    initialSlots?: string[];
     onSubmit: (selectedSlots: string[], dateTimeSlots: string[]) => void | Promise<void>;
 }
 
@@ -40,11 +41,49 @@ export function HourlyAvailabilityPicker({
     deadline,
     opponentName,
     opponentAvailability = [],
+    initialSlots = [],
     onSubmit,
 }: HourlyAvailabilityPickerProps) {
-    const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+    // Convert initial ISO strings back to keys (e.g. "2024-01-23-14")
+    const initialKeys = useMemo(() => {
+        return new Set((initialSlots || []).map(iso => {
+            if (!iso) return '';
+            try {
+                const [datePart, timePart] = iso.split('T');
+                const [hourStr] = timePart.split(':');
+                const hour = parseInt(hourStr, 10);
+                return `${datePart}-${hour}`;
+            } catch (e) {
+                console.error('Error parsing slot:', iso, e);
+                return '';
+            }
+        }).filter(Boolean));
+    }, [initialSlots]);
+
+    const [selectedSlots, setSelectedSlots] = useState<Set<string>>(initialKeys);
     const [submitted, setSubmitted] = useState(false);
     const [weekOffset, setWeekOffset] = useState(0);
+
+    // Sync state when props change
+    useEffect(() => {
+        setSelectedSlots(initialKeys);
+    }, [initialKeys]);
+
+    // Process opponent availability keys
+    const processedOpponentKeys = useMemo(() => {
+        return new Set((opponentAvailability || []).map(iso => {
+            if (!iso) return '';
+            try {
+                const [datePart, timePart] = iso.split('T');
+                const [hourStr] = timePart.split(':');
+                const hour = parseInt(hourStr, 10);
+                return `${datePart}-${hour}`;
+            } catch (e) {
+                console.error('Error parsing opponent slot:', iso, e);
+                return '';
+            }
+        }).filter(Boolean));
+    }, [opponentAvailability]);
 
     // Generate 5 days starting from today + weekOffset
     const days = useMemo(() => {
@@ -91,7 +130,7 @@ export function HourlyAvailabilityPicker({
     const formatHour = (hour: number) => `${hour}:00`;
 
     const isOpponentAvailable = (dayKey: string, hour: number) => {
-        return opponentAvailability.includes(`${dayKey}-${hour}`);
+        return processedOpponentKeys.has(`${dayKey}-${hour}`);
     };
 
     return (

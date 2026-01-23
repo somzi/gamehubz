@@ -15,6 +15,7 @@ import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 import { ReportResultModal } from '../components/modals/ReportResultModal';
+import { TournamentRegion } from '../types/tournament';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
@@ -62,7 +63,7 @@ export default function TournamentDetailsScreen() {
                 throw new Error(errorData.message || 'Failed to join tournament');
             }
 
-            alert('Successfully joined the tournament!');
+            alert('Successfully registred to the tournament!');
             fetchTournamentDetails(); // Refresh details
         } catch (err: any) {
             console.error('Join error:', err);
@@ -77,7 +78,7 @@ export default function TournamentDetailsScreen() {
         setIsLoading(true);
         setError(null);
         try {
-            const url = ENDPOINTS.GET_TOURNAMENT(id);
+            const url = ENDPOINTS.GET_TOURNAMENT_OVERVIEW(id);
             const response = await authenticatedFetch(url);
             if (!response.ok) {
                 throw new Error(`Failed to fetch tournament: ${response.status}`);
@@ -119,8 +120,16 @@ export default function TournamentDetailsScreen() {
         setIsCreatingBracket(true);
         try {
             const url = ENDPOINTS.CREATE_BRACKET(id);
+
+            const payload: any = {};
+            if (tournament?.format === 5 || tournament?.Format === 5) {
+                payload.groupsCount = tournament.groupsCount || tournament.GroupsCount;
+                payload.qualifiersPerGroup = tournament.qualifiersPerGroup || tournament.QualifiersPerGroup;
+            }
+
             const response = await authenticatedFetch(url, {
-                method: 'POST'
+                method: 'POST',
+                body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined
             });
 
             if (!response.ok) {
@@ -136,6 +145,30 @@ export default function TournamentDetailsScreen() {
             alert(err.message || 'Failed to create bracket');
         } finally {
             setIsCreatingBracket(false);
+        }
+    };
+
+    const handleCloseRegistration = async () => {
+        if (!id) return;
+        setIsLoading(true); // Reuse main loading or add specific one
+        try {
+            const url = ENDPOINTS.CLOSE_REGISTRATION(id);
+            const response = await authenticatedFetch(url, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No response body');
+                throw new Error(`Failed to close registration: ${text}`);
+            }
+
+            alert('Registration closed successfully!');
+            fetchTournamentDetails(); // Refresh details
+        } catch (err: any) {
+            console.error('Close registration error:', err);
+            alert(err.message || 'Failed to close registration');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -224,6 +257,34 @@ export default function TournamentDetailsScreen() {
         }
     };
 
+    const handleApproveAll = async () => {
+        if (pendingRegistrations.length === 0) return;
+
+        setIsLoadingPending(true);
+        try {
+            const ids = pendingRegistrations.map((reg: any) => reg.Id || reg.id || reg.registrationId);
+            const response = await authenticatedFetch(ENDPOINTS.APPROVE_ALL_REGISTRATIONS, {
+                method: 'POST',
+                body: JSON.stringify(ids)
+            });
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No response body');
+                throw new Error(`Failed to approve all: ${text}`);
+            }
+
+            alert('All registrations approved!');
+            fetchPendingRegistrations();
+            fetchParticipants();
+            fetchTournamentDetails();
+        } catch (err: any) {
+            console.error('[ApproveAll] Error:', err);
+            alert(err.message || 'Failed to approve all registrations');
+        } finally {
+            setIsLoadingPending(false);
+        }
+    };
+
     useEffect(() => {
         fetchTournamentDetails();
         fetchParticipants(); // Fetch participants on mount to check join status
@@ -232,6 +293,9 @@ export default function TournamentDetailsScreen() {
     const handleMatchPress = (match: any) => {
         // Only allow reporting if match has participants and is not TBD
         if (!match.home || !match.away) return;
+
+        // Only allow reporting if match status is 2 (In Progress/Live)
+        if (match.status !== 2) return;
 
         setSelectedMatch(match);
         setShowReportModal(true);
@@ -251,22 +315,24 @@ export default function TournamentDetailsScreen() {
         { label: 'Overview', value: 'overview' },
         { label: 'Bracket / League', value: 'bracket' },
         { label: 'Players', value: 'players' },
-        ...(tournament?.createdBy === user?.id ? [{ label: 'Registrations', value: 'registrations' }] : []),
+        ...((tournament?.createdBy || tournament?.createdby || tournament?.CreatedBy)?.toLowerCase() === user?.id?.toLowerCase() ? [{ label: 'Registrations', value: 'registrations' }] : []),
     ];
 
     const getStatusText = (status: number) => {
         switch (status) {
             case 0: return 'Open';
             case 1: return 'Upcoming';
-            case 2: return 'Live';
-            case 3: return 'Completed';
+            case 2: return 'Reg. Closed';
+            case 3: return 'Live';
+            case 4: return 'Completed';
             default: return 'IDLE';
         }
     };
 
     const renderStages = () => {
         if (stages.length === 0) {
-            const isCreator = tournament?.createdBy === user?.id;
+            const creatorId = tournament?.createdBy || tournament?.createdby || tournament?.CreatedBy;
+            const isCreator = creatorId && user?.id && creatorId.toLowerCase() === user.id.toLowerCase();
             const isFull = participants.length > 0 && participants.length === tournament?.maxPlayers;
 
             return (
@@ -378,9 +444,7 @@ export default function TournamentDetailsScreen() {
                         <View className="flex-row justify-between items-start mb-4">
                             <View className="flex-1 mr-4">
                                 <Text className="text-xl font-bold text-foreground">{tournament.name}</Text>
-                                <Text className="text-sm text-muted-foreground mt-1 leading-5">
-                                    {tournament.description || 'No description provided.'}
-                                </Text>
+
                             </View>
                             <View className="bg-primary/20 px-2 py-1 rounded">
                                 <Text className="text-[10px] font-bold text-primary uppercase">{getStatusText(tournament.status)}</Text>
@@ -392,22 +456,33 @@ export default function TournamentDetailsScreen() {
                                 <Ionicons name="people-outline" size={16} color="#71717A" />
                                 <Text className="text-sm text-muted-foreground">{tournament.numberOfParticipants || 0} Participants</Text>
                             </View>
-                            <View className="flex-row items-center gap-2">
-                                <Ionicons name="calendar-outline" size={16} color="#71717A" />
-                                <Text className="text-sm text-muted-foreground">
-                                    {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString() : 'TBD'}
-                                </Text>
-                            </View>
+                            {/* Date removed as requested */}
                         </View>
 
                         {(() => {
-                            const isCreator = tournament.createdBy === user?.id;
+                            const creatorId = tournament.createdBy || tournament.createdby || tournament.CreatedBy;
+                            const isCreator = creatorId && user?.id && creatorId.toLowerCase() === user.id.toLowerCase();
                             const isParticipant = participants.some(p =>
                                 (p.username || p.Username)?.toLowerCase() === user?.username?.toLowerCase()
                             );
                             const isOpenOrUpcoming = tournament.status === 0 || tournament.status === 1;
 
-                            if (isCreator || isParticipant || !isOpenOrUpcoming) return null;
+                            if (isCreator) {
+                                // Close Registration Button for Creator
+                                if (tournament.status === 1 && tournament.numberOfParticipants >= tournament.maxPlayers) {
+                                    return (
+                                        <Button
+                                            className="w-full bg-red-600"
+                                            onPress={handleCloseRegistration}
+                                        >
+                                            Close Registration
+                                        </Button>
+                                    );
+                                }
+                                return null;
+                            }
+
+                            if (isParticipant || !isOpenOrUpcoming) return null;
 
                             return (
                                 <Button
@@ -473,7 +548,13 @@ export default function TournamentDetailsScreen() {
                                         <Text className="text-xs text-muted-foreground font-medium">Region</Text>
                                     </View>
                                     <Text className="text-lg font-bold text-foreground uppercase">
-                                        {tournament.region === 1 ? 'EU' : tournament.region === 2 ? 'NA' : 'Global'}
+                                        {tournament.region === TournamentRegion.Europe ? 'EU'
+                                            : tournament.region === TournamentRegion.NorthAmerica ? 'NA'
+                                                : tournament.region === TournamentRegion.Asia ? 'Asia'
+                                                    : tournament.region === TournamentRegion.SouthAmerica ? 'SA'
+                                                        : tournament.region === TournamentRegion.Africa ? 'AFR'
+                                                            : tournament.region === TournamentRegion.Oceania ? 'OCE'
+                                                                : 'Global'}
                                     </Text>
                                 </View>
                             </View>
@@ -569,54 +650,69 @@ export default function TournamentDetailsScreen() {
                                     <Text className="text-muted-foreground">No pending registrations</Text>
                                 </View>
                             ) : (
-                                pendingRegistrations.map((reg: any, index: number) => (
-                                    <View
-                                        key={reg.Id || reg.id || reg.userId || reg.UserId || index}
-                                        className="flex-row items-center gap-4 p-4 rounded-xl bg-card border border-border/30"
-                                    >
-                                        <Pressable
-                                            onPress={() => {
-                                                const uId = reg.id || reg.UserId || reg.userId;
-                                                if (uId) {
-                                                    navigation.navigate('PlayerProfile', { id: uId });
-                                                }
-                                            }}
-                                            className="flex-row items-center gap-4 flex-1"
-                                            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                                <>
+                                    <View className="mb-2">
+                                        <Button
+                                            onPress={handleApproveAll}
+                                            loading={isLoadingPending}
+                                            className="bg-primary/20 border border-primary/30"
                                         >
-                                            <PlayerAvatar name={reg.username || reg.Username} size="sm" className="w-10 h-10" />
-                                            <View className="flex-1">
-                                                <Text className="font-bold text-foreground">{reg.username || reg.Username}</Text>
-                                                <Text className="text-xs text-muted-foreground">Pending Approval</Text>
+                                            <View className="flex-row items-center gap-2">
+                                                <Ionicons name="checkmark-done" size={18} color="#10B981" />
+                                                <Text className="text-primary font-bold">Approve All ({pendingRegistrations.length})</Text>
                                             </View>
-                                        </Pressable>
-                                        <View className="flex-row gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="px-3 border-destructive/50"
-                                                onPress={() => {
-                                                    const rId = reg.Id || reg.id || reg.registrationId;
-                                                    handleReject(rId);
-                                                }}
-                                                loading={processingId === (reg.Id || reg.id || reg.registrationId)}
-                                            >
-                                                <Text className="text-destructive text-xs font-bold">Reject</Text>
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                className="px-3 bg-primary"
-                                                onPress={() => {
-                                                    const rId = reg.Id || reg.id || reg.registrationId;
-                                                    handleApprove(rId);
-                                                }}
-                                                loading={processingId === (reg.Id || reg.id || reg.registrationId)}
-                                            >
-                                                Accept
-                                            </Button>
-                                        </View>
+                                        </Button>
                                     </View>
-                                ))
+
+                                    {pendingRegistrations.map((reg: any, index: number) => (
+                                        <View
+                                            key={reg.Id || reg.id || reg.userId || reg.UserId || index}
+                                            className="flex-row items-center gap-4 p-4 rounded-xl bg-card border border-border/30"
+                                        >
+                                            <Pressable
+                                                onPress={() => {
+                                                    const uId = reg.id || reg.UserId || reg.userId;
+                                                    if (uId) {
+                                                        navigation.navigate('PlayerProfile', { id: uId });
+                                                    }
+                                                }}
+                                                className="flex-row items-center gap-4 flex-1"
+                                                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                                            >
+                                                <PlayerAvatar name={reg.username || reg.Username} size="sm" className="w-10 h-10" />
+                                                <View className="flex-1">
+                                                    <Text className="font-bold text-foreground">{reg.username || reg.Username}</Text>
+                                                    <Text className="text-xs text-muted-foreground">Pending Approval</Text>
+                                                </View>
+                                            </Pressable>
+                                            <View className="flex-row gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="px-3 border-destructive/50"
+                                                    onPress={() => {
+                                                        const rId = reg.Id || reg.id || reg.registrationId;
+                                                        handleReject(rId);
+                                                    }}
+                                                    loading={processingId === (reg.Id || reg.id || reg.registrationId)}
+                                                >
+                                                    <Text className="text-destructive text-xs font-bold">Reject</Text>
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    className="px-3 bg-primary"
+                                                    onPress={() => {
+                                                        const rId = reg.Id || reg.id || reg.registrationId;
+                                                        handleApprove(rId);
+                                                    }}
+                                                    loading={processingId === (reg.Id || reg.id || reg.registrationId)}
+                                                >
+                                                    Accept
+                                                </Button>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </>
                             )}
                         </View>
                     )}

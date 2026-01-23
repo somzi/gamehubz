@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch } from '../../lib/api';
 import { DateTimePickerModal } from './DateTimePickerModal';
-import { TournamentFormat } from '../../types/tournament';
+import { TournamentFormat, TournamentRegion } from '../../types/tournament';
 
 interface CreateTournamentModalProps {
     visible: boolean;
@@ -48,13 +48,13 @@ const tournamentFormats = [
 ];
 
 const regionMapping: Record<string, number> = {
-    'global': 0,
-    'north-america': 1,
-    'europe': 2,
-    'asia': 3,
-    'south-america': 4,
-    'africa': 5,
-    'oceania': 6,
+    'global': TournamentRegion.Global,
+    'north-america': TournamentRegion.NorthAmerica,
+    'europe': TournamentRegion.Europe,
+    'asia': TournamentRegion.Asia,
+    'south-america': TournamentRegion.SouthAmerica,
+    'africa': TournamentRegion.Africa,
+    'oceania': TournamentRegion.Oceania,
 };
 
 export function CreateTournamentModal({ visible, onClose }: CreateTournamentModalProps) {
@@ -73,6 +73,8 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
     const [startDate, setStartDate] = useState('');
     const [registrationDeadline, setRegistrationDeadline] = useState('');
     const [selectedFormat, setSelectedFormat] = useState('3'); // Default to Single Elimination (or choose a safer default)
+    const [groupsCount, setGroupsCount] = useState('4');
+    const [qualifiersPerGroup, setQualifiersPerGroup] = useState('2');
     const [inviteFollowers, setInviteFollowers] = useState(false);
 
     // Data State
@@ -194,7 +196,9 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                 prize: parseFloat(prizePool) || 0,
                 prizeCurrency: parseInt(prizeCurrency) || 1,
                 region: regionMapping[selectedRegions[0]] ?? 0,
-                format: parseInt(selectedFormat)
+                format: parseInt(selectedFormat),
+                groupsCount: selectedFormat === '5' ? parseInt(groupsCount) : undefined,
+                qualifiersPerGroup: selectedFormat === '5' ? parseInt(qualifiersPerGroup) : undefined
             };
 
             console.log('Creating tournament with payload:', payload);
@@ -389,6 +393,33 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                                     )}
                                 </View>
                             </View>
+
+                            {selectedFormat === '5' && (
+                                <View className="flex-row gap-4">
+                                    <View className="flex-1">
+                                        <Text className="text-sm font-bold text-white mb-3">Groups Count</Text>
+                                        <TextInput
+                                            className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
+                                            placeholder="e.g. 4"
+                                            placeholderTextColor="#6b7280"
+                                            keyboardType="numeric"
+                                            value={groupsCount}
+                                            onChangeText={setGroupsCount}
+                                        />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className="text-sm font-bold text-white mb-3">Qualifiers / Group</Text>
+                                        <TextInput
+                                            className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
+                                            placeholder="e.g. 2"
+                                            placeholderTextColor="#6b7280"
+                                            keyboardType="numeric"
+                                            value={qualifiersPerGroup}
+                                            onChangeText={setQualifiersPerGroup}
+                                        />
+                                    </View>
+                                </View>
+                            )}
 
                             <View className="flex-row gap-4">
                                 <View className="flex-1">

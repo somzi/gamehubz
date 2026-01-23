@@ -28,12 +28,15 @@ export const ENDPOINTS = {
     GET_USER_TOURNAMENTS: (userId: string, status: number, page: number, pageSize: number = 10) =>
         `${API_BASE_URL}/api/User/${userId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,
     GET_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}`,
+    GET_TOURNAMENT_OVERVIEW: (id: string) => `${API_BASE_URL}/api/tournament/${id}/overview`,
     REGISTER_TOURNAMENT: `${API_BASE_URL}/api/tournamentRegistration`,
     GET_PENDING_REGISTRATIONS: (tournamentId: string) => `${API_BASE_URL}/api/tournamentRegistration/tournament/${tournamentId}/pending`,
     APPROVE_REGISTRATION: `${API_BASE_URL}/api/tournamentRegistration/approve`,
+    APPROVE_ALL_REGISTRATIONS: `${API_BASE_URL}/api/tournamentRegistration/approveAll`,
     REJECT_REGISTRATION: `${API_BASE_URL}/api/tournamentRegistration/reject`,
     GET_TOURNAMENT_PARTICIPANTS: (tournamentId: string) => `${API_BASE_URL}/api/TournamentParticipant/tournament/${tournamentId}`,
     CREATE_BRACKET: (tournamentId: string) => `${API_BASE_URL}/api/tournament/${tournamentId}/createBracket`,
+    CLOSE_REGISTRATION: (id: string) => `${API_BASE_URL}/api/tournament/${id}/closeRegistration`,
     REPORT_MATCH_RESULT: `${API_BASE_URL}/api/tournament/matchResult`,
     GET_HUB_TOURNAMENTS: (hubId: string, status: number, page: number, pageSize: number = 10) =>
         `${API_BASE_URL}/api/Hub/${hubId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,
@@ -41,6 +44,7 @@ export const ENDPOINTS = {
     UNFOLLOW_HUB: (userId: string, hubId: string) => `${API_BASE_URL}/api/userHub/unfollow?userId=${userId}&hubId=${hubId}`,
     UPDATE_HUB: `${API_BASE_URL}/api/hub/update`,
     SUBMIT_MATCH_AVAILABILITY: `${API_BASE_URL}/api/match/availability`,
+    GET_MATCH_AVAILABILITY: (matchId: string, userId: string) => `${API_BASE_URL}/api/match/${matchId}/availability/user/${userId}`,
     GET_USER_HOME_MATCHES: (userId: string) => `${API_BASE_URL}/api/match/home/${userId}`,
 };
 
