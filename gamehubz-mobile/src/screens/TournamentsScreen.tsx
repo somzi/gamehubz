@@ -151,6 +151,14 @@ export default function TournamentsScreen() {
         }
     };
 
+    const getTournamentStatus = (status: number): 'live' | 'upcoming' | 'completed' => {
+        switch (status) {
+            case 3: return 'live';
+            case 4: return 'completed';
+            default: return 'upcoming';
+        }
+    };
+
     const tabs = [
         { label: 'Live', value: 'live' },
         { label: 'Upcoming', value: 'upcoming' },
@@ -196,7 +204,7 @@ export default function TournamentsScreen() {
                         key={tournament.Id || tournament.id || `t-${index}`}
                         name={tournament.Name || tournament.name}
                         description={tournament.Description || tournament.description}
-                        status={activeTab === 'open' ? 'upcoming' : (activeTab as any)}
+                        status={getTournamentStatus(tournament.Status ?? tournament.status)}
                         date={new Date(tournament.StartDate || tournament.startDate).toLocaleDateString()}
                         region={getRegionName(tournament.Region ?? tournament.region)}
                         prizePool={`${getCurrencySymbol(tournament.PrizeCurrency ?? tournament.prizeCurrency)}${tournament.Prize ?? tournament.prize}`}

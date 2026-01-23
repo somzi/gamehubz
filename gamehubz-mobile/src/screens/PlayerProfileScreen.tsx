@@ -14,6 +14,7 @@ import { PlayerMatchesDto } from '../types/user';
 import { cn } from '../lib/utils';
 import { getSocialUrl } from '../lib/social';
 import { Button } from '../components/ui/Button';
+import { TournamentCard } from '../components/cards/TournamentCard';
 
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -107,6 +108,14 @@ export default function PlayerProfileScreen() {
             const url = s.url && s.url !== '#' ? s.url : getSocialUrl(platform, s.username);
             return { platform, username: s.username, url };
         });
+    };
+
+    const getTournamentStatus = (status: number): 'live' | 'upcoming' | 'completed' => {
+        switch (status) {
+            case 3: return 'live';
+            case 4: return 'completed';
+            default: return 'upcoming';
+        }
     };
 
     if (isLoading) {
@@ -287,42 +296,20 @@ export default function PlayerProfileScreen() {
                         )}
 
                         {activeTab === 'tournaments' && (
-                            <View>
-                                <Text className="text-lg font-bold text-white mb-4">Tournaments</Text>
+                            <View className="gap-4">
+                                <Text className="text-lg font-bold text-white">Tournaments</Text>
                                 {userTournaments.length > 0 ? (
                                     userTournaments.map((t) => (
-                                        <Pressable
+                                        <TournamentCard
                                             key={t.id}
-                                            onPress={() => navigation.navigate('TournamentDetails', { id: t.id })}
-                                            className="bg-card-elevated p-6 rounded-3xl mb-4 border border-white/5"
-                                        >
-                                            <View className="flex-row justify-between items-start mb-4">
-                                                <View className="flex-1">
-                                                    <Text className="text-white font-bold text-lg">{t.name || t.title}</Text>
-                                                    <View className="flex-row items-center mt-2 flex-wrap">
-                                                        <View className="flex-row items-center mr-4 mb-1">
-                                                            <Ionicons name="calendar-outline" size={14} color="#64748B" />
-                                                            <Text className="text-gray-500 text-xs ml-1">
-                                                                {t.startDate ? new Date(t.startDate).toLocaleDateString() : 'N/A'}
-                                                            </Text>
-                                                        </View>
-                                                        <View className="flex-row items-center mb-1">
-                                                            <Ionicons name="people-outline" size={14} color="#64748B" />
-                                                            <Text className="text-gray-500 text-xs ml-1">{t.numberOfParticipants || 0} players</Text>
-                                                        </View>
-                                                    </View>
-                                                </View>
-                                            </View>
-                                            <View className="flex-row justify-between items-center mt-2">
-                                                <View className={cn("px-4 py-2 rounded-full flex-row items-center bg-primary/20")}>
-                                                    <Ionicons name="trophy" size={14} className="text-primary" />
-                                                    <Text className={cn("ml-2 font-bold text-sm text-primary")}>Participating</Text>
-                                                </View>
-                                                <Text className="text-emerald-500 font-bold text-lg">
-                                                    {t.prizeCurrency === 1 ? '$' : t.prizeCurrency === 2 ? '€' : ''}{t.prize}
-                                                </Text>
-                                            </View>
-                                        </Pressable>
+                                            name={t.name || t.title}
+                                            status={getTournamentStatus(t.status)}
+                                            date={t.startDate ? new Date(t.startDate).toLocaleDateString() : 'N/A'}
+                                            region="Global" // Map properly if available
+                                            prizePool={`${t.prizeCurrency === 1 ? '$' : t.prizeCurrency === 2 ? '€' : ''}${t.prize}`}
+                                            players={new Array(t.numberOfParticipants || 0).fill({})}
+                                            onClick={() => navigation.navigate('TournamentDetails', { id: t.id })}
+                                        />
                                     ))
                                 ) : (
                                     <View className="items-center py-12">
@@ -334,8 +321,8 @@ export default function PlayerProfileScreen() {
                         )}
 
                         {activeTab === 'matches' && (
-                            <View>
-                                <Text className="text-lg font-bold text-white mb-4">Match History</Text>
+                            <View className="gap-4">
+                                <Text className="text-lg font-bold text-white">Match History</Text>
                                 {matches.length > 0 ? (
                                     matches.map((match, idx) => (
                                         <MatchHistoryCard

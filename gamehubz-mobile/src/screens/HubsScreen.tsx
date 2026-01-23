@@ -120,7 +120,7 @@ export default function HubsScreen() {
                     </View>
                 ) : (
                     <ScrollView className="flex-1">
-                        <View className="space-y-3 pb-8">
+                        <View className="pb-8">
                             {filteredHubs.length === 0 ? (
                                 <View className="items-center py-12 opacity-50">
                                     <Ionicons name="people-outline" size={48} color="#71717A" />
@@ -131,25 +131,26 @@ export default function HubsScreen() {
                                     <Card
                                         key={hub.id}
                                         onPress={() => navigation.navigate('HubProfile', { id: hub.id })}
+                                        className="mb-4 p-4"
                                     >
-                                        <View className="flex-row gap-4">
-                                            <PlayerAvatar name={hub.name} size="lg" className="w-16 h-16" />
+                                        <View className="flex-row gap-3">
+                                            <PlayerAvatar name={hub.name} size="md" className="w-12 h-12" />
                                             <View className="flex-1">
-                                                <Text className="text-lg font-bold text-foreground">{hub.name}</Text>
-                                                <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
+                                                <Text className="text-base font-bold text-foreground">{hub.name}</Text>
+                                                <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={2}>
                                                     {hub.description}
                                                 </Text>
-                                                <View className="flex-row items-center gap-4 mt-3">
+                                                <View className="flex-row items-center gap-3 mt-2">
                                                     <View className="flex-row items-center gap-1">
-                                                        <Ionicons name="people-outline" size={12} color="#A1A1AA" />
-                                                        <Text className="text-xs text-muted-foreground font-medium">
-                                                            {hub.numberOfUsers}
+                                                        <Ionicons name="people-outline" size={10} color="#64748B" />
+                                                        <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                                            {hub.numberOfUsers} Fans
                                                         </Text>
                                                     </View>
                                                     <View className="flex-row items-center gap-1">
-                                                        <Ionicons name="trophy-outline" size={12} color="#A1A1AA" />
-                                                        <Text className="text-xs text-muted-foreground font-medium">
-                                                            {hub.numberOfTournaments} Tournaments
+                                                        <Ionicons name="trophy-outline" size={10} color="#64748B" />
+                                                        <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                                            {hub.numberOfTournaments} Events
                                                         </Text>
                                                     </View>
                                                 </View>

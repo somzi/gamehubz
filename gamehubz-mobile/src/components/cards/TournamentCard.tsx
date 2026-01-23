@@ -37,63 +37,62 @@ export function TournamentCard({
         <Card
             onPress={onClick}
             className={cn(
-                "mb-3",
+                "mb-4",
                 status === 'live' && "border-live/30",
                 className
             )}
         >
-            <View className="space-y-3">
-                <View className="flex-row justify-between items-start">
-                    <View className="flex-1 mr-2">
-                        <Text className="text-lg font-bold text-foreground">{name}</Text>
-                        {description && (
-                            <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
-                                {description}
-                            </Text>
+            <View className="flex-row items-center gap-4">
+                {/* Visual Indicator / Icon */}
+                <View className={cn(
+                    "w-12 h-12 rounded-2xl items-center justify-center",
+                    status === 'live' ? "bg-live/10" : "bg-white/5"
+                )}>
+                    <Ionicons
+                        name={status === 'live' ? "flash" : "trophy-outline"}
+                        size={24}
+                        color={status === 'live' ? "#10B981" : "#64748B"}
+                    />
+                </View>
+
+                <View className="flex-1 min-w-0">
+                    <View className="flex-row justify-between items-center mb-0.5">
+                        <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-widest" numberOfLines={1}>
+                            {region} • {date}
+                        </Text>
+                        <StatusBadge status={status} />
+                    </View>
+
+                    <Text className="text-lg font-bold text-white" numberOfLines={1}>
+                        {name}
+                    </Text>
+
+                    <View className="flex-row items-center justify-between mt-1">
+                        <View className="flex-row items-center gap-3">
+                            <View className="flex-row items-center gap-1">
+                                <Ionicons name="people-outline" size={12} color="#475569" />
+                                <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
+                                    {players.length} Players
+                                </Text>
+                            </View>
+                            <View className="flex-row items-center gap-1">
+                                <Ionicons name="cash-outline" size={12} color="#10B981" />
+                                <Text className="text-[10px] text-primary font-bold uppercase tracking-tight">
+                                    {prizePool} Pool
+                                </Text>
+                            </View>
+                        </View>
+
+                        {showApply ? (
+                            <Button onPress={onApply} size="sm" className="h-7 px-3">
+                                <Text className="text-[10px] font-black uppercase">Apply</Text>
+                            </Button>
+                        ) : (
+                            <Ionicons name="chevron-forward" size={16} color="#334155" />
                         )}
                     </View>
-                    <StatusBadge status={status} />
-                </View>
-
-                <View className="flex-row justify-between items-center">
-                    <View className="flex-row items-center gap-4">
-                        <View className="flex-row items-center gap-1">
-                            <Ionicons name="globe-outline" size={14} color="#94A3B8" />
-                            <Text className="text-xs text-muted-foreground">{region}</Text>
-                        </View>
-                        <View className="flex-row items-center gap-1">
-                            <Ionicons name="people-outline" size={14} color="#94A3B8" />
-                            <Text className="text-xs text-muted-foreground">{players.length} players</Text>
-                        </View>
-                    </View>
-                    <View className="flex-row items-center gap-1">
-                        <Ionicons name="cash-outline" size={14} color="#10B981" />
-                        <Text className="text-sm font-bold text-accent">{prizePool}</Text>
-                    </View>
-                </View>
-
-                <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-2">
-                        <Ionicons name="calendar-outline" size={16} color="#94A3B8" />
-                        <Text className="text-sm text-muted-foreground">{date}</Text>
-                    </View>
-
-                    {showApply ? (
-                        <Button onPress={onApply} size="sm">
-                            Apply
-                        </Button>
-                    ) : (
-                        <Pressable
-                            onPress={onClick}
-                            className="flex-row items-center gap-1"
-                        >
-                            <Text className="text-sm font-medium text-primary">View Bracket</Text>
-                            <Ionicons name="chevron-forward" size={16} color="#10B981" />
-                        </Pressable>
-                    )}
                 </View>
             </View>
         </Card>
     );
 }
-

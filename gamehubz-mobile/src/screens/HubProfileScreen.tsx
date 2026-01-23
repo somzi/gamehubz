@@ -184,7 +184,7 @@ export default function HubProfileScreen() {
                     <TournamentCard
                         key={tournament.id}
                         name={tournament.name}
-                        status={tournament.status === 3 ? 'completed' : (tournament.status === 2 ? 'live' : 'upcoming')}
+                        status={tournament.status === 3 ? 'live' : (tournament.status === 4 ? 'completed' : 'upcoming')}
                         date={new Date(tournament.startDate).toLocaleDateString()}
                         region={tournament.region === 1 ? 'North America' : 'Europe'}
                         prizePool={`${tournament.prizeCurrency === 1 ? '$' : '€'}${tournament.prize}`}

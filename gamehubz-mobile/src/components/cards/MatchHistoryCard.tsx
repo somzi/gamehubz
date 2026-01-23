@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Card } from '../ui/Card';
 import { cn } from '../../lib/utils';
 
 interface MatchHistoryCardProps {
@@ -27,47 +28,58 @@ export function MatchHistoryCard({
     className,
 }: MatchHistoryCardProps) {
     const isWin = result === "win";
-    const displayName = hubName ? `${tournamentName} - ${hubName}` : tournamentName;
+    const displayName = hubName ? `${tournamentName}` : tournamentName;
 
     return (
-        <Pressable
-            onPress={onPress}
-            className={cn(
-                "flex-row items-center gap-4 p-3 rounded-xl bg-card border border-border/30",
-                className
-            )}
+        <Card onPress={onPress} className={className}>
+            <View className="flex-row items-center gap-4">
+                <View
+                    className={cn(
+                        "w-12 h-12 rounded-2xl items-center justify-center",
+                        isWin ? "bg-primary/10" : "bg-destructive/10"
+                    )}
+                >
+                    <Ionicons
+                        name={isWin ? "trophy" : "close-circle"}
+                        size={24}
+                        color={isWin ? "#10B981" : "#EF4444"}
+                    />
+                </View>
 
-        >
-            <View
-                className={cn(
-                    "w-10 h-10 rounded-lg items-center justify-center",
-                    isWin ? "bg-accent/20" : "bg-destructive/20"
-                )}
-            >
-                {isWin ? (
-                    <Ionicons name="trophy" size={20} color="#10B981" />
-                ) : (
-                    <Ionicons name="close" size={20} color="#EF4444" />
-                )}
-            </View>
+                <View className="flex-1 min-w-0">
+                    <View className="flex-row justify-between items-center mb-0.5">
+                        <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-widest" numberOfLines={1}>
+                            {displayName}
+                        </Text>
+                        <Text className="text-[10px] font-medium text-slate-500 uppercase">{date}</Text>
+                    </View>
 
-            <View className="flex-1 min-w-0">
-                <Text className="font-medium text-foreground" numberOfLines={1}>{displayName}</Text>
-                <Text className="text-sm text-muted-foreground">vs {opponentName}</Text>
-            </View>
-
-            <View className="items-end">
-                {userScore !== undefined && opponentScore !== undefined ? (
-                    <Text className={cn("font-bold text-lg", isWin ? "text-accent" : "text-destructive")}>
-                        {userScore} - {opponentScore}
+                    <Text className="text-lg font-bold text-white" numberOfLines={1}>
+                        vs {opponentName}
                     </Text>
-                ) : (
-                    <Text className={cn("font-semibold", isWin ? "text-accent" : "text-destructive")}>
-                        {isWin ? "Win" : "Loss"}
-                    </Text>
-                )}
-                <Text className="text-xs text-muted-foreground">{date}</Text>
+
+                    <View className="flex-row items-center mt-1">
+                        <View className={cn(
+                            "px-2 py-0.5 rounded-md flex-row items-center",
+                            isWin ? "bg-primary/10" : "bg-destructive/10"
+                        )}>
+                            <Text className={cn(
+                                "text-[10px] font-black uppercase tracking-tighter",
+                                isWin ? "text-primary" : "text-destructive"
+                            )}>
+                                {isWin ? "Victory" : "Defeat"}
+                            </Text>
+                        </View>
+                        {userScore !== undefined && opponentScore !== undefined && (
+                            <Text className="ml-3 text-sm font-bold text-slate-400">
+                                {userScore} <Text className="text-slate-600">-</Text> {opponentScore}
+                            </Text>
+                        )}
+                    </View>
+                </View>
+
+                <Ionicons name="chevron-forward" size={16} color="#334155" />
             </View>
-        </Pressable>
+        </Card>
     );
 }
