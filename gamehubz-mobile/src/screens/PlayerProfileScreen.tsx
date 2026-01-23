@@ -173,7 +173,11 @@ export default function PlayerProfileScreen() {
                 </Pressable>
             </View>
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView
+                className="flex-1"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 150 }}
+            >
                 {/* Profile Header Section */}
                 <View className="items-center mt-4">
                     <View className="relative">
@@ -224,7 +228,7 @@ export default function PlayerProfileScreen() {
                         ))}
                     </View>
 
-                    <View className="px-6 pb-20">
+                    <View className="px-6 pb-12">
                         {activeTab === 'stats' && (
                             <View>
                                 <Text className="text-lg font-bold text-white mb-2">Performance Trend</Text>
