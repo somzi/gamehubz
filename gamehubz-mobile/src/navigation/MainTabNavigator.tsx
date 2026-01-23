@@ -33,6 +33,7 @@ export function MainTabNavigator() {
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
+                headerShown: false,
                 tabBarActiveTintColor: '#8B5CF6',
                 tabBarInactiveTintColor: '#71717A',
                 tabBarStyle: {
@@ -46,15 +47,6 @@ export function MainTabNavigator() {
                 tabBarLabelStyle: {
                     fontSize: 12,
                     fontWeight: '500',
-                },
-                headerStyle: {
-                    backgroundColor: '#0A0A0A',
-                    borderBottomColor: '#27272A',
-                    borderBottomWidth: 1,
-                },
-                headerTintColor: '#FAFAFA',
-                headerTitleStyle: {
-                    fontWeight: '600',
                 },
             })}
         >
