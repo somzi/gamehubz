@@ -13,11 +13,10 @@ export function Card({ children, onPress, className, variant = 'gradient' }: Car
     const cardContent = (
         <View
             className={cn(
-                "rounded-2xl border border-border/50 p-4",
-                variant === 'gradient' ? "bg-card" : "bg-card",
+                "rounded-[24px] border border-white/5 p-5",
+                variant === 'gradient' ? "bg-white/[0.03]" : "bg-card",
                 className
             )}
-            style={styles.cardShadow}
         >
             {children}
         </View>
@@ -27,7 +26,7 @@ export function Card({ children, onPress, className, variant = 'gradient' }: Car
         return (
             <Pressable
                 onPress={onPress}
-                style={styles.pressed}
+                className="active:opacity-70"
             >
                 {cardContent}
             </Pressable>
@@ -38,16 +37,6 @@ export function Card({ children, onPress, className, variant = 'gradient' }: Car
 }
 
 const styles = StyleSheet.create({
-    cardShadow: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 6,
-    },
-    pressed: {
-        opacity: 0.9,
-    },
 });
 
 export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {

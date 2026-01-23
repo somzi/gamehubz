@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Pressable, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -10,10 +10,10 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
+import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
-// Placeholder data for feed
 const feedData = [
     {
         id: '1',
@@ -39,13 +39,13 @@ const feedData = [
 ];
 
 interface MatchOverviewDto {
-    id?: string; // ID from API response
-    matchId?: string; // Optional since API didn't explicitly specify it, but usually needed
+    id?: string;
+    matchId?: string;
     tournamentName: string;
     hubName: string;
     scheduledTime: string | null;
     opponentName: string;
-    status: number; // 1 = Action Required, 2 = My Matches
+    status: number;
 }
 
 export default function HomeScreen() {
@@ -55,7 +55,6 @@ export default function HomeScreen() {
     const [myMatches, setMyMatches] = useState<MatchOverviewDto[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Collapsible states
     const [expandedSections, setExpandedSections] = useState({
         actionRequired: true,
         communityFeed: true,
@@ -71,24 +70,12 @@ export default function HomeScreen() {
 
     const fetchMatches = async () => {
         if (!user?.id) return;
-
         try {
-            // setLoading(true); // Don't show full loader on refresh
             const response = await authenticatedFetch(ENDPOINTS.GET_USER_HOME_MATCHES(user.id));
             if (response.ok) {
                 const data: MatchOverviewDto[] = await response.json();
-
-                // Filter matches based on status
-                // Action Required if no scheduled time
-                const actionNeeded = data.filter(m => !m.scheduledTime);
-
-                // My Matches if scheduled time exists
-                const scheduled = data.filter(m => m.scheduledTime);
-
-                setActionRequiredMatches(actionNeeded);
-                setMyMatches(scheduled);
-            } else {
-                console.error('Failed to fetch home matches', response.status);
+                setActionRequiredMatches(data.filter(m => !m.scheduledTime));
+                setMyMatches(data.filter(m => m.scheduledTime));
             }
         } catch (error) {
             console.error('Error fetching home matches:', error);
@@ -109,55 +96,51 @@ export default function HomeScreen() {
             className="flex-row items-center justify-between mb-4 px-1"
         >
             <View className="flex-row items-center gap-2">
-                <View className={title === 'Action Required' ? "bg-yellow-500/20 p-1.5 rounded-lg" : ""}>
-                    <Ionicons name={icon} size={title === 'Action Required' ? 20 : 24} color={color} />
+                <View className="p-1 px-1.5 bg-white/5 rounded-lg border border-white/10">
+                    <Ionicons name={icon} size={16} color={color} />
                 </View>
-                <Text className="text-xl font-bold text-foreground">{title}</Text>
+                <Text className="text-sm font-bold text-slate-400 uppercase tracking-[2px]">{title}</Text>
                 {badge !== undefined && badge > 0 && (
-                    <View className="bg-destructive px-2 py-0.5 rounded-full ml-1">
-                        <Text className="text-xs font-bold text-white">{badge}</Text>
+                    <View className="bg-primary/20 border border-primary/30 px-1.5 py-0.5 rounded-md ml-1">
+                        <Text className="text-[10px] font-black text-primary">{badge}</Text>
                     </View>
                 )}
             </View>
             <Ionicons
                 name={expandedSections[sectionKey] ? "chevron-up" : "chevron-down"}
-                size={20}
-                color="#94A3B8"
+                size={16}
+                color="#64748B"
             />
         </Pressable>
     );
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <PageHeader
-                title="Home"
-                showNotifications={true}
-            />
-            <ScrollView className="flex-1" refreshControl={
-                <RefreshControl refreshing={loading} onRefresh={fetchMatches} tintColor="#10B981" />
-            } contentContainerStyle={{ paddingBottom: 20 }}>
-                <View className="px-4 py-6 space-y-6">
-                    {/* Action Required Panel */}
-                    {actionRequiredMatches.length > 0 && (
-                        <View className="border-b border-border/20 pb-6">
-                            {renderSectionHeader('Action Required', 'alert-circle', '#EAB308', 'actionRequired', actionRequiredMatches.length)}
+            <PageHeader title="Dashboard" showNotifications={true} className="border-b-0" />
 
+            <ScrollView
+                className="flex-1"
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchMatches} tintColor="#10B981" />}
+                contentContainerStyle={{ paddingBottom: 100 }}
+            >
+                <View className="px-4 py-4 space-y-32">
+
+
+
+                    {/* Action Required */}
+                    {actionRequiredMatches.length > 0 && (
+                        <View>
+                            {renderSectionHeader('Attention', 'alert-circle', '#EAB308', 'actionRequired', actionRequiredMatches.length)}
                             {expandedSections.actionRequired && (
-                                <View className="gap-3">
-                                    <View className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 mb-2">
-                                        <Text className="text-sm text-muted-foreground ml-1">
-                                            You have {actionRequiredMatches.length} matches needing action
-                                        </Text>
-                                    </View>
+                                <View className="gap-3 mt-1">
                                     {actionRequiredMatches.map((match, index) => (
                                         <MatchScheduleCard
                                             key={match.matchId || `pending-${index}`}
                                             matchId={match.id || match.matchId || ''}
                                             tournamentName={match.tournamentName}
-                                            roundName={match.hubName} // Using HubName as round/context for now
+                                            roundName={match.hubName}
                                             opponentName={match.opponentName}
                                             status="pending_availability"
-                                            deadline="Action Required"
                                             onMatchUpdate={fetchMatches}
                                             onPress={() => { }}
                                         />
@@ -168,11 +151,11 @@ export default function HomeScreen() {
                     )}
 
                     {/* Community News Feed */}
-                    <View className="border-b border-border/20 pb-6">
-                        {renderSectionHeader('Community Feed', 'newspaper-outline', '#94A3B8', 'communityFeed')}
+                    <View>
+                        {renderSectionHeader('Highlights', 'planet-outline', '#10B981', 'communityFeed')}
 
                         {expandedSections.communityFeed && (
-                            <View className="gap-3">
+                            <View className="gap-3 mt-1">
                                 {feedData.map((item) => (
                                     <FeedCard
                                         key={item.id}
@@ -187,12 +170,12 @@ export default function HomeScreen() {
                         )}
                     </View>
 
-                    {/* My Matches - Scheduled/Ready */}
-                    <View className="pb-8">
-                        {renderSectionHeader('My Matches', 'game-controller-outline', '#10B981', 'myMatches')}
+                    {/* My Matches */}
+                    <View>
+                        {renderSectionHeader('Active Matches', 'game-controller-outline', '#6366F1', 'myMatches')}
 
                         {expandedSections.myMatches && (
-                            <View className="gap-3">
+                            <View className="gap-3 mt-1">
                                 {myMatches.length > 0 ? (
                                     myMatches.map((match, index) => (
                                         <MatchScheduleCard
@@ -203,11 +186,15 @@ export default function HomeScreen() {
                                             opponentName={match.opponentName}
                                             status="scheduled"
                                             scheduledTime={match.scheduledTime ? new Date(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'TBD'}
+                                            onMatchUpdate={fetchMatches}
                                             onPress={() => { }}
                                         />
                                     ))
                                 ) : (
-                                    <Text className="text-muted-foreground text-center py-4 italic">No upcoming matches scheduled</Text>
+                                    <View className="py-10 items-center justify-center border border-dashed border-white/5 rounded-3xl">
+                                        <Ionicons name="calendar-outline" size={24} color="#334155" />
+                                        <Text className="text-slate-500 text-xs font-medium mt-3">No upcoming matches</Text>
+                                    </View>
                                 )}
                             </View>
                         )}
@@ -217,3 +204,4 @@ export default function HomeScreen() {
         </SafeAreaView>
     );
 }
+

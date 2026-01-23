@@ -122,23 +122,23 @@ export function MatchScheduleCard({
         switch (currentStatus) {
             case 'pending_availability':
                 return (
-                    <View className="flex-row items-center gap-2">
-                        <Ionicons name="calendar-outline" size={16} color="hsl(185, 75%, 45%)" />
-                        <Text className="text-sm text-muted-foreground">Set your availability</Text>
+                    <View className="flex-row items-center gap-2 mt-2 bg-yellow-500/10 self-start px-2.5 py-1.5 rounded-lg border border-yellow-500/20">
+                        <Ionicons name="calendar-outline" size={14} color="#EAB308" />
+                        <Text className="text-[12px] font-bold text-yellow-500 uppercase tracking-tight">Set Availability</Text>
                     </View>
                 );
             case 'scheduled':
                 return (
-                    <View className="flex-row items-center gap-2">
-                        <Ionicons name="time-outline" size={16} color="hsl(45, 90%, 55%)" />
-                        <Text className="text-sm font-medium text-accent">{matchTime}</Text>
+                    <View className="flex-row items-center gap-2 mt-2 bg-primary/10 self-start px-2.5 py-1.5 rounded-lg border border-primary/20">
+                        <Ionicons name="time-outline" size={14} color="#10B981" />
+                        <Text className="text-[12px] font-bold text-primary uppercase tracking-tight">{matchTime}</Text>
                     </View>
                 );
             case 'ready_phase':
                 return (
-                    <View className="flex-row items-center gap-2">
-                        <Ionicons name="people-outline" size={16} color="hsl(185, 75%, 45%)" />
-                        <Text className="text-sm font-medium text-primary">Ready check active</Text>
+                    <View className="flex-row items-center gap-2 mt-2 bg-indigo-500/10 self-start px-2.5 py-1.5 rounded-lg border border-indigo-500/20">
+                        <Ionicons name="flash-outline" size={14} color="#6366F1" />
+                        <Text className="text-[12px] font-bold text-indigo-500 uppercase tracking-tight">Ready Check</Text>
                     </View>
                 );
             default:
@@ -151,21 +151,34 @@ export function MatchScheduleCard({
             <Card
                 onPress={() => setModalVisible(true)}
                 className={cn(
-                    "mb-3",
-                    currentStatus === 'ready_phase' && "border-primary/50"
+                    "mb-2",
+                    currentStatus === 'ready_phase' && "border-indigo-500/30"
                 )}
             >
-                <View className="space-y-2">
-                    <View className="flex-row items-center justify-between">
-                        <Text className="text-base font-semibold text-foreground">{tournamentName}</Text>
-                        <View className="bg-secondary px-2 py-0.5 rounded-full">
-                            <Text className="text-xs text-muted-foreground">{roundName}</Text>
-                        </View>
+                <View className="flex-row items-center gap-4">
+                    <View className={cn(
+                        "w-12 h-12 rounded-2xl items-center justify-center",
+                        currentStatus === 'pending_availability' ? "bg-yellow-500/10" :
+                            currentStatus === 'scheduled' ? "bg-primary/10" : "bg-indigo-500/10"
+                    )}>
+                        <Ionicons
+                            name={currentStatus === 'pending_availability' ? "alert-circle" : "game-controller"}
+                            size={24}
+                            color={currentStatus === 'pending_availability' ? "#EAB308" :
+                                currentStatus === 'scheduled' ? "#10B981" : "#6366F1"}
+                        />
                     </View>
-                    <Text className="text-sm text-foreground">
-                        vs <Text className="font-semibold">{opponentName}</Text>
-                    </Text>
-                    {getStatusContent()}
+
+                    <View className="flex-1">
+                        <View className="flex-row items-center justify-between">
+                            <Text className="text-sm font-bold text-slate-400 uppercase tracking-wider">{tournamentName}</Text>
+                            <Text className="text-[10px] font-medium text-slate-500">{roundName}</Text>
+                        </View>
+                        <Text className="text-lg font-bold text-white mt-0.5" numberOfLines={1}>
+                            vs {opponentName}
+                        </Text>
+                        {getStatusContent()}
+                    </View>
                 </View>
             </Card>
 

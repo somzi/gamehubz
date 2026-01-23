@@ -25,26 +25,27 @@ export function PageHeader({ title, showBack, showNotifications = false, rightEl
     };
 
     return (
-        <View className={cn("bg-background border-b border-border/50", className)}>
-            <View className="flex-row items-center justify-between h-14 px-4">
-                <View className="flex-row items-center gap-3">
+        <View className={cn("bg-transparent", className)}>
+            <View className="flex-row items-center justify-between h-16 px-6">
+                <View className="flex-row items-center gap-4">
                     {showBack && canGoBack && (
                         <Pressable
                             onPress={handleGoBack}
-                            className="w-10 h-10 rounded-full flex items-center justify-center bg-secondary/50"
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
                         >
                             <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
                         </Pressable>
                     )}
-                    <Text className="text-lg font-semibold text-foreground">{title}</Text>
+                    <Text className="text-xl font-bold text-white tracking-tight">{title}</Text>
                 </View>
-                <View className="flex-row items-center gap-2">
+                <View className="flex-row items-center gap-3">
                     {showNotifications && (
                         <Pressable
                             onPress={() => navigation.navigate('Notifications')}
-                            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary/50"
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
                         >
-                            <Ionicons name="notifications-outline" size={22} color="#FAFAFA" />
+                            <Ionicons name="notifications-outline" size={20} color="#FAFAFA" />
+                            <View className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border border-background" />
                         </Pressable>
                     )}
                     {rightElement}
