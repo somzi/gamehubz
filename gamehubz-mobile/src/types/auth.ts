@@ -27,6 +27,7 @@ export interface UserSocial {
 export interface UserInfo {
     id: string;
     username: string;
+    nickName?: string;
     region: RegionType;
     userSocials: UserSocial[];
 }
@@ -41,6 +42,7 @@ export interface User {
     userRoleSystemName: string;
     language: string | null;
     username: string;
+    nickName?: string;
     region: RegionType;
     userHubs: any[];
     tournamentRegistrations: any[];

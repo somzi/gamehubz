@@ -35,6 +35,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [refreshToken, setRefreshToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Helpers
+    const normalizeUser = (apiUser: any): User => {
+        return {
+            ...apiUser,
+            id: apiUser.Id || apiUser.id,
+            username: apiUser.Username || apiUser.username,
+            nickName: apiUser.Nickname || apiUser.nickName || apiUser.nickname,
+            region: apiUser.Region !== undefined ? apiUser.Region : apiUser.region,
+            userSocials: (apiUser.UserSocials || apiUser.userSocials || []).map((s: any) => ({
+                ...s,
+                id: s.Id || s.id,
+                username: s.Username || s.username,
+                socialType: s.Type !== undefined ? s.Type : (s.SocialType !== undefined ? s.SocialType : (s.type !== undefined ? s.type : s.socialType))
+            }))
+        };
+    };
+
+    const refreshUser = useCallback(async () => {
+        if (!user?.id) return;
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_USER_INFO(user.id));
+            if (response.ok) {
+                const userInfo = await response.json();
+                const apiInfo = userInfo.result || userInfo;
+                setUser(normalizeUser(apiInfo));
+            }
+        } catch (error) {
+            console.error('Refresh user error:', error);
+        }
+    }, [user?.id]);
+
     const login = useCallback(async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
         try {
@@ -60,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setToken(data.accessToken.token);
                 setAuthToken(data.accessToken.token);
                 setRefreshToken(data.refreshToken);
-                setUser(data.user);
+                setUser(normalizeUser(data.user));
                 return true;
             } else {
                 console.error('Login failed:', data.messages);
@@ -106,48 +137,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const logout = useCallback(async () => {
-        if (refreshToken) {
-            try {
-                console.log('[AuthContext] Logging out with API...');
-                // Call the API endpoint as requested: POST /api/Auth/logout
-                // Body: string (refreshToken) - Note: [FromBody] string refreshToken often expects just the string in quotes or specific handling
-                // but standard JSON body with "refreshToken" key is safer if model binding allows, OR standard JSON string.
-                // The user snippet was: public async Task<IActionResult> Logout([FromBody] string refreshToken)
-                // Sending just the string as JSON body usually works for [FromBody] string in .NET if Content-Type is application/json.
-
-                await fetch(`${API_BASE_URL}/api/Auth/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': token ? `Bearer ${token}` : ''
-                    },
-                    body: JSON.stringify(refreshToken), // Send as JSON string
-                });
-            } catch (error) {
-                console.error('[AuthContext] Logout API error:', error);
-            }
-        }
-
-        setUser(null);
-        setToken(null);
-        setRefreshToken(null);
-        setAuthToken(null);
-    }, [refreshToken, token]);
-
     const updateProfile = useCallback(async (data: any): Promise<boolean> => {
         setIsLoading(true);
         try {
+            const payload = {
+                Nickname: data.nickName || data.nickname || '',
+                UserId: data.id || data.userId,
+                Username: data.username || ''
+            };
+
             const response = await authenticatedFetch(ENDPOINTS.UPDATE_PROFILE, {
                 method: 'POST',
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
             });
 
             if (response.ok) {
                 try {
-                    const updatedUser: User = await response.json();
-                    setUser(updatedUser);
-                } catch (e) { }
+                    const result = await response.json();
+                    const apiUser = result.result || result;
+
+                    if (apiUser && (apiUser.id || apiUser.Id)) {
+                        setUser(normalizeUser(apiUser));
+                    } else {
+                        await refreshUser();
+                    }
+                } catch (e) {
+                    await refreshUser();
+                }
                 return true;
             }
             return false;
@@ -157,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [refreshUser]);
 
     const saveUserSocial = useCallback(async (social: UserSocial): Promise<boolean> => {
         if (!user?.id) return false;
@@ -185,26 +201,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(prev => {
                     if (!prev) return null;
                     const socialType = savedSocial.type !== undefined ? savedSocial.type : savedSocial.socialType;
-                    console.log(`[AuthContext] Updating social account. Type: ${socialType}, Internal ID: ${savedSocial.id}`);
-
                     const currentSocials = prev.userSocials || [];
                     const existingIndex = currentSocials.findIndex(s => {
                         const sType = s.socialType !== undefined ? s.socialType : s.type;
                         return sType === socialType;
                     });
                     let newSocials = [...currentSocials];
-
                     const normalizedSocial = {
                         ...savedSocial,
                         socialType: socialType
                     };
-
                     if (existingIndex >= 0) {
                         newSocials[existingIndex] = normalizedSocial;
                     } else {
                         newSocials.push(normalizedSocial);
                     }
-
                     return { ...prev, userSocials: newSocials };
                 });
                 return true;
@@ -218,36 +229,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.id]);
 
-    const refreshUser = useCallback(async () => {
-        if (!user?.id) return;
-        try {
-            const response = await authenticatedFetch(ENDPOINTS.GET_USER_INFO(user.id));
-            if (response.ok) {
-                const userInfo = await response.json();
-                const normalizedSocials = (userInfo.userSocials || []).map((s: any) => ({
-                    ...s,
-                    socialType: s.type !== undefined ? s.type : s.socialType
-                }));
-
-                console.log(`[AuthContext] Refreshing user info. Socials count: ${normalizedSocials.length}`);
-
-                setUser(prev => {
-                    if (!prev) return null;
-                    return {
-                        ...prev,
-                        username: userInfo.username,
-                        region: userInfo.region,
-                        userSocials: normalizedSocials
-                    };
+    const logout = useCallback(async () => {
+        if (refreshToken) {
+            try {
+                await fetch(`${API_BASE_URL}/api/Auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify(refreshToken),
                 });
+            } catch (error) {
+                console.error('[AuthContext] Logout API error:', error);
             }
-        } catch (error) {
-            console.error('Refresh user error:', error);
         }
-    }, [user?.id]);
+        setUser(null);
+        setToken(null);
+        setRefreshToken(null);
+        setAuthToken(null);
+    }, [refreshToken, token]);
 
     useEffect(() => {
-        console.log(`[AuthContext] Syncing token with API. Token exists: ${!!token}`);
         setAuthToken(token);
     }, [token]);
 

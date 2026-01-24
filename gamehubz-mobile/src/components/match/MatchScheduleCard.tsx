@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
+import { View, Text, Pressable, Modal, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
 import { HourlyAvailabilityPicker } from './HourlyAvailabilityPicker';
-import { MatchReadyButton } from './MatchReadyButton';
+import { Button } from '../ui/Button';
+import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { cn } from '../../lib/utils';
 import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
@@ -12,6 +13,7 @@ type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'compl
 
 interface MatchScheduleCardProps {
     matchId: string;
+    tournamentId: string;
     tournamentName: string;
     roundName: string;
     opponentName: string;
@@ -19,13 +21,13 @@ interface MatchScheduleCardProps {
     deadline?: string;
     scheduledTime?: string;
     opponentAvailability?: string[];
-    opponentReady?: boolean;
     onMatchUpdate?: () => void;
     onPress?: () => void;
 }
 
 export function MatchScheduleCard({
     matchId,
+    tournamentId,
     tournamentName,
     roundName,
     opponentName,
@@ -33,7 +35,6 @@ export function MatchScheduleCard({
     deadline = 'Jan 22, 2024',
     scheduledTime: initialScheduledTime,
     opponentAvailability: initialOpponentAvailability = [],
-    opponentReady = false,
     onMatchUpdate,
     onPress,
 }: MatchScheduleCardProps) {
@@ -47,6 +48,11 @@ export function MatchScheduleCard({
     const [mySlots, setMySlots] = useState<string[]>([]);
     const [opponentSlots, setOpponentSlots] = useState<string[]>(initialOpponentAvailability);
     const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+
+    // Result reporting state
+    const [homeScore, setHomeScore] = useState('');
+    const [awayScore, setAwayScore] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     const fetchAvailability = async () => {
         if (!user?.id || !matchId) return;
@@ -114,8 +120,62 @@ export function MatchScheduleCard({
         }
     };
 
-    const handleReady = () => {
-        console.log('Player ready for match:', matchId);
+    const handleSubmitResult = async () => {
+        console.log('[MatchScheduleCard] handleSubmitResult called');
+        console.log('[MatchScheduleCard] matchId:', matchId);
+        console.log('[MatchScheduleCard] tournamentId:', tournamentId);
+        console.log('[MatchScheduleCard] homeScore:', homeScore);
+        console.log('[MatchScheduleCard] awayScore:', awayScore);
+
+        if (!matchId || !tournamentId) {
+            console.log('[MatchScheduleCard] Missing matchId or tournamentId');
+            return;
+        }
+        if (homeScore === '' || awayScore === '') {
+            console.log('[MatchScheduleCard] Missing scores');
+            setError('Please enter scores for both players');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const payload = {
+                MatchId: matchId,
+                HomeScore: parseInt(homeScore, 10),
+                AwayScore: parseInt(awayScore, 10),
+                TournamentId: tournamentId
+            };
+
+            console.log('[MatchScheduleCard] Payload:', JSON.stringify(payload));
+            console.log('[MatchScheduleCard] Calling API:', ENDPOINTS.REPORT_MATCH_RESULT);
+
+            const response = await authenticatedFetch(ENDPOINTS.REPORT_MATCH_RESULT, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            console.log('[MatchScheduleCard] Response status:', response.status);
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No body');
+                console.log('[MatchScheduleCard] Error response:', text);
+                throw new Error(`Failed to report result: ${text}`);
+            }
+
+            console.log('[MatchScheduleCard] Success! Closing modal and refreshing');
+            // Success - close modal and refresh
+            setModalVisible(false);
+            if (onMatchUpdate) {
+                onMatchUpdate();
+            }
+        } catch (err: any) {
+            console.error('[MatchScheduleCard] Report result error:', err);
+            setError(err.message || 'An error occurred while reporting result');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getStatusContent = () => {
@@ -220,13 +280,79 @@ export function MatchScheduleCard({
                             )}
 
                             {(currentStatus === 'scheduled' || currentStatus === 'ready_phase') && matchTime && (
-                                <MatchReadyButton
-                                    matchId={matchId}
-                                    scheduledTime={matchTime}
-                                    opponentName={opponentName}
-                                    opponentReady={opponentReady}
-                                    onReady={handleReady}
-                                />
+                                <View className="space-y-4">
+                                    {/* Match Info */}
+                                    <View className="items-center mb-2">
+                                        <Text className="text-sm text-muted-foreground">Match Time</Text>
+                                        <Text className="text-lg font-bold text-primary mt-1">{matchTime}</Text>
+                                    </View>
+
+                                    {/* Error Message */}
+                                    {error && (
+                                        <View className="bg-destructive/10 p-4 rounded-2xl mb-2">
+                                            <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+                                        </View>
+                                    )}
+
+                                    {/* Players and Score Inputs */}
+                                    <View className="flex-row items-center justify-between gap-4">
+                                        {/* Home Player (You) */}
+                                        <View className="flex-1 items-center gap-3">
+                                            <PlayerAvatar name={user?.username || 'You'} size="lg" />
+                                            <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                                {user?.username || 'You'}
+                                            </Text>
+                                            <TextInput
+                                                className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                placeholder="0"
+                                                placeholderTextColor="#71717A"
+                                                keyboardType="numeric"
+                                                value={homeScore}
+                                                onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
+                                            />
+                                        </View>
+
+                                        <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
+
+                                        {/* Away Player (Opponent) */}
+                                        <View className="flex-1 items-center gap-3">
+                                            <PlayerAvatar name={opponentName} size="lg" />
+                                            <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                                {opponentName}
+                                            </Text>
+                                            <TextInput
+                                                className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                placeholder="0"
+                                                placeholderTextColor="#71717A"
+                                                keyboardType="numeric"
+                                                value={awayScore}
+                                                onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
+                                            />
+                                        </View>
+                                    </View>
+
+                                    {/* Action Buttons */}
+                                    <View className="mt-6 flex-row gap-3">
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                            onPress={() => {
+                                                setHomeScore('');
+                                                setAwayScore('');
+                                                setError(null);
+                                            }}
+                                        >
+                                            Clear
+                                        </Button>
+                                        <Button
+                                            className="flex-1"
+                                            onPress={handleSubmitResult}
+                                            loading={isSubmitting}
+                                        >
+                                            Submit Result
+                                        </Button>
+                                    </View>
+                                </View>
                             )}
 
                             {currentStatus === 'completed' && (

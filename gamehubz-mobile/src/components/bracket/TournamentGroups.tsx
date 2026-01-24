@@ -134,6 +134,8 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                     <BracketMatch
                                         home={match.home}
                                         away={match.away}
+                                        startTime={match.startTime}
+                                        status={match.status}
                                         className="w-full"
                                         onPress={() => onMatchPress?.(match)}
                                         currentUserId={currentUserId}

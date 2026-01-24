@@ -9,6 +9,7 @@ import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types/navigation';
+import { StatusModal } from '../components/modals/StatusModal';
 
 export default function LoginScreen() {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -18,6 +19,12 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [statusModalConfig, setStatusModalConfig] = useState<{
+        type: 'success' | 'error' | 'info';
+        title: string;
+        message: string;
+    }>({ type: 'error', title: 'Login Failed', message: '' });
 
     const validate = () => {
         const newErrors: { email?: string; password?: string } = {};
@@ -32,7 +39,12 @@ export default function LoginScreen() {
 
         const success = await login(email, password);
         if (!success) {
-            Alert.alert('Login Failed', 'Please check your credentials and try again.');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Login Failed',
+                message: 'Please check your credentials and try again.'
+            });
+            setShowStatusModal(true);
         }
         // Navigation is handled by RootNavigator observing user state usually, 
         // or we can manually navigate if not using conditional rendering for stacks.
@@ -88,7 +100,14 @@ export default function LoginScreen() {
 
                         <TouchableOpacity
                             className="self-end"
-                            onPress={() => Alert.alert('Coming Soon', 'Forgot Password flow to be implemented')}
+                            onPress={() => {
+                                setStatusModalConfig({
+                                    type: 'info',
+                                    title: 'Coming Soon',
+                                    message: 'Forgot Password flow to be implemented'
+                                });
+                                setShowStatusModal(true);
+                            }}
                         >
                             <Text className="text-primary text-sm font-medium">Forgot Password?</Text>
                         </TouchableOpacity>
@@ -111,6 +130,14 @@ export default function LoginScreen() {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            <StatusModal
+                visible={showStatusModal}
+                onClose={() => setShowStatusModal(false)}
+                type={statusModalConfig.type}
+                title={statusModalConfig.title}
+                message={statusModalConfig.message}
+            />
         </SafeAreaView>
     );
 }

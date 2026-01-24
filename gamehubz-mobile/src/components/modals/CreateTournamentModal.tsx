@@ -197,8 +197,8 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                 prizeCurrency: parseInt(prizeCurrency) || 1,
                 region: regionMapping[selectedRegions[0]] ?? 0,
                 format: parseInt(selectedFormat),
-                groupsCount: selectedFormat === '5' ? parseInt(groupsCount) : undefined,
-                qualifiersPerGroup: selectedFormat === '5' ? parseInt(qualifiersPerGroup) : undefined
+                GroupsCount: selectedFormat === '5' ? parseInt(groupsCount) : null,
+                QualifiersPerGroup: selectedFormat === '5' ? parseInt(qualifiersPerGroup) : null
             };
 
             console.log('Creating tournament with payload:', payload);

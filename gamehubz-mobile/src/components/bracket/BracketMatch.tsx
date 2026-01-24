@@ -18,6 +18,8 @@ interface Participant {
 interface BracketMatchProps {
     home: Participant | null;
     away: Participant | null;
+    startTime?: string | null;
+    status?: number;
     className?: string;
     onPress?: () => void;
     currentUserId?: string;
@@ -27,7 +29,7 @@ interface BracketMatchProps {
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-export function BracketMatch({ home, away, className, onPress, currentUserId, currentUsername, isAdmin }: BracketMatchProps) {
+export function BracketMatch({ home, away, startTime, status, className, onPress, currentUserId, currentUsername, isAdmin }: BracketMatchProps) {
     const navigation = useNavigation<NavigationProp>();
 
     const handlePlayerClick = (userId: string) => {
@@ -83,11 +85,10 @@ export function BracketMatch({ home, away, className, onPress, currentUserId, cu
         (!!currName && !!pAwayName && pAwayName.toLowerCase() === currName.toLowerCase());
     const isParticipant = isHome || isAway;
 
-    // Robust score check
     const hasScore = (p: any) => p?.score !== null && p?.score !== undefined;
     const isAlreadyReported = hasScore(home) || hasScore(away);
 
-    const canReport = !!onPress && !isAlreadyReported && isParticipant;
+    const canReport = !!onPress && !isAlreadyReported && isParticipant && !!startTime;
 
     return (
         <Pressable

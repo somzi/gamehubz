@@ -37,7 +37,6 @@ export function TournamentCard({
         <Card
             onPress={onClick}
             className={cn(
-                "mb-4",
                 status === 'live' && "border-live/30",
                 className
             )}

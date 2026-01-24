@@ -120,7 +120,7 @@ export default function HubsScreen() {
                     </View>
                 ) : (
                     <ScrollView className="flex-1">
-                        <View className="pb-8">
+                        <View className="gap-3 pb-8">
                             {filteredHubs.length === 0 ? (
                                 <View className="items-center py-12 opacity-50">
                                     <Ionicons name="people-outline" size={48} color="#71717A" />
@@ -131,7 +131,7 @@ export default function HubsScreen() {
                                     <Card
                                         key={hub.id}
                                         onPress={() => navigation.navigate('HubProfile', { id: hub.id })}
-                                        className="mb-4 p-4"
+                                        className="p-4"
                                     >
                                         <View className="flex-row gap-3">
                                             <PlayerAvatar name={hub.name} size="md" className="w-12 h-12" />

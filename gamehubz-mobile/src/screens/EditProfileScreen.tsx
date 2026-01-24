@@ -12,6 +12,7 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { SelectInput } from '../components/ui/SelectInput';
+import { StatusModal } from '../components/modals/StatusModal';
 
 type EditProfileNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -20,10 +21,18 @@ export default function EditProfileScreen() {
     const { user, updateProfile, saveUserSocial, refreshUser, isLoading, logout } = useAuth();
 
     const [username, setUsername] = useState(user?.username || '');
+    const [nickName, setNickName] = useState(user?.nickName || '');
 
     // New social input state
     const [newSocialType, setNewSocialType] = useState<SocialType | undefined>(undefined);
     const [newSocialUsername, setNewSocialUsername] = useState('');
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [statusModalConfig, setStatusModalConfig] = useState<{
+        type: 'success' | 'error' | 'info';
+        title: string;
+        message: string;
+        onClose?: () => void;
+    }>({ type: 'success', title: '', message: '' });
 
     useEffect(() => {
         refreshUser();
@@ -32,6 +41,7 @@ export default function EditProfileScreen() {
     useEffect(() => {
         if (user) {
             setUsername(user.username);
+            setNickName(user.nickName || '');
         }
     }, [user]);
 
@@ -63,17 +73,32 @@ export default function EditProfileScreen() {
 
     const handleAddSocial = async () => {
         if (!newSocialType) {
-            Alert.alert('Error', 'Please select a social platform');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Missing Platform',
+                message: 'Please select a social platform'
+            });
+            setShowStatusModal(true);
             return;
         }
         if (!newSocialUsername.trim()) {
-            Alert.alert('Error', 'Please enter your username/handle');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Missing Username',
+                message: 'Please enter your username/handle'
+            });
+            setShowStatusModal(true);
             return;
         }
 
         // Check if already exists in context user socials
         if (user?.userSocials?.some(s => s.socialType === newSocialType)) {
-            Alert.alert('Error', 'You have already added this platform.');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Platform Exists',
+                message: 'You have already added this platform.'
+            });
+            setShowStatusModal(true);
             return;
         }
 
@@ -86,37 +111,57 @@ export default function EditProfileScreen() {
             setNewSocialType(undefined);
             setNewSocialUsername('');
         } else {
-            Alert.alert('Error', 'Failed to add social account');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Failed',
+                message: 'Failed to add social account'
+            });
+            setShowStatusModal(true);
         }
     };
 
     const handleRemoveSocial = (type: SocialType) => {
-        // Since user only provided a POST for add/update, I'll keep local removal 
-        // until a DELETE endpoint is provided. 
-        // For now, let's just warn or keep it as UI only if it's not synced.
-        // Actually, let's just keep it local for now or ask for delete endpoint.
-        // If I keep it local, it will reappear on next fetch.
-        Alert.alert('Note', 'Platform individual removal is not yet implemented on the server.');
+        setStatusModalConfig({
+            type: 'info',
+            title: 'Under Construction',
+            message: 'Platform individual removal is not yet implemented on the server.'
+        });
+        setShowStatusModal(true);
     };
 
     const handleSave = async () => {
         if (!username.trim()) {
-            Alert.alert('Error', 'Username cannot be empty');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Empty Username',
+                message: 'Username cannot be empty'
+            });
+            setShowStatusModal(true);
             return;
         }
 
         const success = await updateProfile({
             id: user?.id,
             username: username.trim(),
+            nickName: nickName.trim(),
             // No longer sending userSocials here as they are synced individually
         });
 
         if (success) {
-            Alert.alert('Success', 'Profile updated successfully', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Profile Updated',
+                message: 'Profile updated successfully',
+                onClose: () => navigation.goBack()
+            });
+            setShowStatusModal(true);
         } else {
-            Alert.alert('Error', 'Failed to update profile');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Update Failed',
+                message: 'Failed to update profile'
+            });
+            setShowStatusModal(true);
         }
     };
 
@@ -152,6 +197,13 @@ export default function EditProfileScreen() {
                             value={username}
                             onChangeText={setUsername}
                             placeholder="Enter username"
+                        />
+                        <View className="h-4" />
+                        <Input
+                            label="Nickname"
+                            value={nickName}
+                            onChangeText={setNickName}
+                            placeholder="In-game nick"
                         />
                     </View>
 
@@ -240,6 +292,17 @@ export default function EditProfileScreen() {
                     </Button>
                 </View>
             </KeyboardAvoidingView>
+
+            <StatusModal
+                visible={showStatusModal}
+                onClose={() => {
+                    setShowStatusModal(false);
+                    if (statusModalConfig.onClose) statusModalConfig.onClose();
+                }}
+                type={statusModalConfig.type}
+                title={statusModalConfig.title}
+                message={statusModalConfig.message}
+            />
         </SafeAreaView>
     );
 }

@@ -179,7 +179,7 @@ export default function HubProfileScreen() {
         }
 
         return (
-            <View className="space-y-3 pb-8">
+            <View className="gap-3 pb-8">
                 {tournaments.map((tournament: any) => (
                     <TournamentCard
                         key={tournament.id}

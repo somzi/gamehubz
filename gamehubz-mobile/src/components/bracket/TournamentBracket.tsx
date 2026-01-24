@@ -50,6 +50,8 @@ export function TournamentBracket({ rounds, onMatchPress, currentUserId, current
                                     <BracketMatch
                                         home={match.home}
                                         away={match.away}
+                                        startTime={match.startTime}
+                                        status={match.status}
                                         onPress={() => onMatchPress?.(match)}
                                         currentUserId={currentUserId}
                                         currentUsername={currentUsername}

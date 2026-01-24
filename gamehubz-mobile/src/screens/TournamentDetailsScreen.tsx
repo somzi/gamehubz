@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 import { ReportResultModal } from '../components/modals/ReportResultModal';
 import { TournamentRegion } from '../types/tournament';
+import { StatusModal } from '../components/modals/StatusModal';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
@@ -28,6 +29,8 @@ export default function TournamentDetailsScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [stages, setStages] = useState<any[]>([]);
+    const [selectedStageIndex, setSelectedStageIndex] = useState(0);
+    const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
     const [loadingBracket, setLoadingBracket] = useState(false);
     const [bracketError, setBracketError] = useState<string | null>(null);
 
@@ -41,6 +44,13 @@ export default function TournamentDetailsScreen() {
     const [isCreatingBracket, setIsCreatingBracket] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<any>(null);
+    const [isUserRegistered, setIsUserRegistered] = useState(false);
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [statusModalConfig, setStatusModalConfig] = useState<{
+        type: 'success' | 'error' | 'info';
+        title: string;
+        message: string;
+    }>({ type: 'success', title: '', message: '' });
 
     const handleJoin = async () => {
         if (!id || !user?.id) return;
@@ -63,13 +73,36 @@ export default function TournamentDetailsScreen() {
                 throw new Error(errorData.message || 'Failed to join tournament');
             }
 
-            alert('Successfully registred to the tournament!');
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Congratulations!',
+                message: 'Successfully registered to the tournament!'
+            });
+            setShowStatusModal(true);
             fetchTournamentDetails(); // Refresh details
         } catch (err: any) {
-            console.error('Join error:', err);
-            alert(err.message || 'An error occurred while joining');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Join Failed',
+                message: err.message || 'An error occurred while joining'
+            });
+            setShowStatusModal(true);
         } finally {
             setIsRegistering(false);
+        }
+    };
+
+    const checkRegistrationStatus = async () => {
+        if (!id || !user?.id) return;
+        try {
+            const url = ENDPOINTS.CHECK_REGISTRATION(id, user.id);
+            const response = await authenticatedFetch(url);
+            if (response.ok) {
+                const isRegistered = await response.json();
+                setIsUserRegistered(!!isRegistered);
+            }
+        } catch (err) {
+            console.error('Check registration error:', err);
         }
     };
 
@@ -84,8 +117,34 @@ export default function TournamentDetailsScreen() {
                 throw new Error(`Failed to fetch tournament: ${response.status}`);
             }
             const data = await response.json();
-            const tournamentData = data.result || data;
-            setTournament(tournamentData);
+            const rawData = data.result || data;
+
+            // Normalize tournament data to use camelCase consistently
+            const normalizedTournament = {
+                ...rawData,
+                id: rawData.id || rawData.Id,
+                name: rawData.name || rawData.Name,
+                status: rawData.status !== undefined ? rawData.status : rawData.Status,
+                maxPlayers: rawData.maxPlayers || rawData.MaxPlayers,
+                numberOfParticipants: rawData.numberOfParticipants || rawData.NumberOfParticipants,
+                format: rawData.format !== undefined ? rawData.format : rawData.Format,
+                createdBy: rawData.createdBy || rawData.CreatedBy || rawData.createdby,
+                groupsCount: rawData.groupsCount || rawData.GroupsCount,
+                qualifiersPerGroup: rawData.qualifiersPerGroup || rawData.QualifiersPerGroup,
+                prize: rawData.prize || rawData.Prize,
+                prizeCurrency: rawData.prizeCurrency || rawData.PrizeCurrency,
+                startDate: rawData.startDate || rawData.StartDate,
+                region: rawData.region !== undefined ? rawData.region : rawData.Region,
+                description: rawData.description || rawData.Description,
+                rules: rawData.rules || rawData.Rules,
+            };
+
+            setTournament(normalizedTournament);
+
+            // Check registration status if tournament is open for registration
+            if (normalizedTournament.status === 0 || normalizedTournament.status === 1) {
+                checkRegistrationStatus();
+            }
         } catch (err: any) {
             console.error('Tournament fetch error:', err);
             setError(err.message || 'Failed to load tournament details');
@@ -119,17 +178,17 @@ export default function TournamentDetailsScreen() {
         if (!id) return;
         setIsCreatingBracket(true);
         try {
-            const url = ENDPOINTS.CREATE_BRACKET(id);
+            const isGroupStage = tournament?.format === 5;
 
-            const payload: any = {};
-            if (tournament?.format === 5 || tournament?.Format === 5) {
-                payload.groupsCount = tournament.groupsCount || tournament.GroupsCount;
-                payload.qualifiersPerGroup = tournament.qualifiersPerGroup || tournament.QualifiersPerGroup;
-            }
+            const payload: any = {
+                TournamentId: id,
+                GroupsCount: isGroupStage ? (tournament.groupsCount || null) : null,
+                QualifiersPerGroup: isGroupStage ? (tournament.qualifiersPerGroup || null) : null
+            };
 
-            const response = await authenticatedFetch(url, {
+            const response = await authenticatedFetch(ENDPOINTS.CREATE_BRACKET, {
                 method: 'POST',
-                body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
@@ -137,12 +196,22 @@ export default function TournamentDetailsScreen() {
                 throw new Error(`Failed to create bracket: ${text}`);
             }
 
-            alert('Bracket created successfully!');
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Success',
+                message: 'Bracket created successfully!'
+            });
+            setShowStatusModal(true);
             fetchBracket(); // Refresh the bracket view
             fetchTournamentDetails(); // Refresh details to update status if needed
         } catch (err: any) {
             console.error('Create bracket error:', err);
-            alert(err.message || 'Failed to create bracket');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to create bracket'
+            });
+            setShowStatusModal(true);
         } finally {
             setIsCreatingBracket(false);
         }
@@ -162,11 +231,21 @@ export default function TournamentDetailsScreen() {
                 throw new Error(`Failed to close registration: ${text}`);
             }
 
-            alert('Registration closed successfully!');
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Success',
+                message: 'Registration closed successfully!'
+            });
+            setShowStatusModal(true);
             fetchTournamentDetails(); // Refresh details
         } catch (err: any) {
             console.error('Close registration error:', err);
-            alert(err.message || 'Failed to close registration');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to close registration'
+            });
+            setShowStatusModal(true);
         } finally {
             setIsLoading(false);
         }
@@ -220,13 +299,23 @@ export default function TournamentDetailsScreen() {
                 throw new Error(`Failed code ${response.status}: ${text}`);
             }
 
-            alert('Registration approved!');
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Approved',
+                message: 'Registration approved!'
+            });
+            setShowStatusModal(true);
             fetchPendingRegistrations();
             fetchParticipants(); // Refresh participants list
             fetchTournamentDetails();
         } catch (err: any) {
             console.error('[Approve] Error:', err);
-            alert(err.message || 'Failed to approve registration');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to approve registration'
+            });
+            setShowStatusModal(true);
         } finally {
             setProcessingId(null);
         }
@@ -247,11 +336,21 @@ export default function TournamentDetailsScreen() {
                 throw new Error(`Failed code ${response.status}: ${text}`);
             }
 
-            alert('Registration rejected.');
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Rejected',
+                message: 'Registration rejected.'
+            });
+            setShowStatusModal(true);
             fetchPendingRegistrations();
         } catch (err: any) {
             console.error('[Reject] Error:', err);
-            alert(err.message || 'Failed to reject registration');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to reject registration'
+            });
+            setShowStatusModal(true);
         } finally {
             setProcessingId(null);
         }
@@ -273,13 +372,23 @@ export default function TournamentDetailsScreen() {
                 throw new Error(`Failed to approve all: ${text}`);
             }
 
-            alert('All registrations approved!');
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Success',
+                message: 'All registrations approved!'
+            });
+            setShowStatusModal(true);
             fetchPendingRegistrations();
             fetchParticipants();
             fetchTournamentDetails();
         } catch (err: any) {
             console.error('[ApproveAll] Error:', err);
-            alert(err.message || 'Failed to approve all registrations');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to approve all registrations'
+            });
+            setShowStatusModal(true);
         } finally {
             setIsLoadingPending(false);
         }
@@ -315,7 +424,7 @@ export default function TournamentDetailsScreen() {
         { label: 'Overview', value: 'overview' },
         { label: 'Bracket / League', value: 'bracket' },
         { label: 'Players', value: 'players' },
-        ...((tournament?.createdBy || tournament?.createdby || tournament?.CreatedBy)?.toLowerCase() === user?.id?.toLowerCase() ? [{ label: 'Registrations', value: 'registrations' }] : []),
+        ...(tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() ? [{ label: 'Registrations', value: 'registrations' }] : []),
     ];
 
     const getStatusText = (status: number) => {
@@ -331,22 +440,22 @@ export default function TournamentDetailsScreen() {
 
     const renderStages = () => {
         if (stages.length === 0) {
-            const creatorId = tournament?.createdBy || tournament?.createdby || tournament?.CreatedBy;
+            const creatorId = tournament?.createdBy;
             const isCreator = creatorId && user?.id && creatorId.toLowerCase() === user.id.toLowerCase();
-            const isFull = participants.length > 0 && participants.length === tournament?.maxPlayers;
+            const isRegClosed = tournament?.status === 2;
 
             return (
                 <View className="py-20 items-center justify-center px-6">
                     <Ionicons name="trophy-outline" size={48} color="#71717A" />
                     <Text className="text-muted-foreground mt-4 text-center">
                         {isCreator
-                            ? (isFull
-                                ? "Tournament is full! You can now generate the bracket."
-                                : "Waiting for more participants to join before generating the bracket.")
+                            ? (isRegClosed
+                                ? "Registration is closed! You can now generate the bracket."
+                                : "The bracket can be generated once registration is closed.")
                             : "Bracket not available yet"}
                     </Text>
 
-                    {isCreator && isFull && (
+                    {isCreator && isRegClosed && (
                         <Button
                             className="mt-6 w-full"
                             onPress={handleCreateBracket}
@@ -359,54 +468,104 @@ export default function TournamentDetailsScreen() {
             );
         }
 
-        return stages.map((stage, index) => (
-            <View key={stage.stageId || index} className="mb-8">
+        const currentStage = stages[selectedStageIndex];
+        if (!currentStage) return null;
+
+        return (
+            <View key={currentStage.stageId || selectedStageIndex} className="mb-8">
                 {stages.length > 1 && (
-                    <View className="px-4 py-2 bg-muted/20 border-y border-border/10 mb-4">
-                        <Text className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                            Stage {index + 1}: {stage.name}
-                        </Text>
-                    </View>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        className="px-4 mb-6"
+                        contentContainerStyle={{ gap: 8 }}
+                    >
+                        {stages.map((stage, idx) => (
+                            <Pressable
+                                key={stage.stageId || idx}
+                                onPress={() => {
+                                    setSelectedStageIndex(idx);
+                                    setSelectedGroupIndex(0); // Reset group on stage change
+                                }}
+                                className={cn(
+                                    "px-4 py-2 rounded-full border",
+                                    selectedStageIndex === idx
+                                        ? "bg-primary border-primary"
+                                        : "bg-muted/10 border-border/10"
+                                )}
+                            >
+                                <Text className={cn(
+                                    "text-xs font-bold",
+                                    selectedStageIndex === idx ? "text-primary-foreground" : "text-muted-foreground"
+                                )}>
+                                    {stage.name || `Stage ${idx + 1}`}
+                                </Text>
+                            </Pressable>
+                        ))}
+                    </ScrollView>
                 )}
 
-                <View className="px-4 mb-2 flex-row items-center gap-2">
+                <View className="px-4 mb-4 flex-row items-center gap-2">
                     <Ionicons name="information-circle-outline" size={14} color="#71717A" />
                     <Text className="text-[12px] text-muted-foreground italic">
                         Tip: Tap on a match to report the result.
                     </Text>
                 </View>
 
-                {stage.rounds && stage.rounds.length > 0 ? (
+                {currentStage.rounds && currentStage.rounds.length > 0 ? (
                     <TournamentBracket
-                        rounds={stage.rounds}
+                        rounds={currentStage.rounds}
                         onMatchPress={handleMatchPress}
-                        currentUserId={user?.id || (user as any)?.Id}
+                        currentUserId={user?.id}
                         currentUsername={user?.username}
-                        isAdmin={(() => {
-                            const ownerId = tournament?.createdBy || tournament?.CreatedBy;
-                            const userId = user?.id || (user as any)?.Id;
-                            return !!ownerId && !!userId && ownerId === userId;
-                        })()}
+                        isAdmin={tournament?.createdBy === user?.id}
                     />
-                ) : stage.groups && stage.groups.length > 0 ? (
-                    <TournamentGroups
-                        groups={stage.groups}
-                        onMatchPress={handleMatchPress}
-                        currentUserId={user?.id || (user as any)?.Id}
-                        currentUsername={user?.username}
-                        isAdmin={(() => {
-                            const ownerId = tournament?.createdBy || tournament?.CreatedBy;
-                            const userId = user?.id || (user as any)?.Id;
-                            return !!ownerId && !!userId && ownerId === userId;
-                        })()}
-                    />
+                ) : currentStage.groups && currentStage.groups.length > 0 ? (
+                    <View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            className="px-4 mb-6"
+                            contentContainerStyle={{ gap: 8 }}
+                        >
+                            {currentStage.groups.map((group: any, idx: number) => (
+                                <Pressable
+                                    key={group.groupId || idx}
+                                    onPress={() => setSelectedGroupIndex(idx)}
+                                    className={cn(
+                                        "px-4 py-2 rounded-lg border",
+                                        selectedGroupIndex === idx
+                                            ? "bg-accent/20 border-accent/40"
+                                            : "bg-muted/5 border-border/5"
+                                    )}
+                                >
+                                    <Text className={cn(
+                                        "text-xs font-bold",
+                                        selectedGroupIndex === idx ? "text-accent" : "text-muted-foreground"
+                                    )}>
+                                        {group.name || `Group ${String.fromCharCode(65 + idx)}`}
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+
+                        {currentStage.groups[selectedGroupIndex] && (
+                            <TournamentGroups
+                                groups={[currentStage.groups[selectedGroupIndex]]}
+                                onMatchPress={handleMatchPress}
+                                currentUserId={user?.id}
+                                currentUsername={user?.username}
+                                isAdmin={tournament?.createdBy === user?.id}
+                            />
+                        )}
+                    </View>
                 ) : (
                     <View className="py-10 items-center justify-center">
                         <Text className="text-muted-foreground italic">No rounds or groups found for this stage</Text>
                     </View>
                 )}
             </View>
-        ));
+        );
     };
 
     if (isLoading) {
@@ -466,33 +625,36 @@ export default function TournamentDetailsScreen() {
                                 (p.username || p.Username)?.toLowerCase() === user?.username?.toLowerCase()
                             );
                             const isOpenOrUpcoming = tournament.status === 0 || tournament.status === 1;
+                            const isFull = tournament.maxPlayers > 0 && (tournament.numberOfParticipants || 0) >= tournament.maxPlayers;
 
-                            if (isCreator) {
-                                // Close Registration Button for Creator
-                                if (tournament.status === 1 && tournament.numberOfParticipants >= tournament.maxPlayers) {
-                                    return (
-                                        <Button
-                                            className="w-full bg-red-600"
-                                            onPress={handleCloseRegistration}
-                                        >
-                                            Close Registration
-                                        </Button>
-                                    );
-                                }
-                                return null;
+                            const buttons = [];
+
+                            if (isCreator && tournament.status === 1 && isFull) {
+                                buttons.push(
+                                    <Button
+                                        key="close"
+                                        className="w-full bg-red-600 mb-3"
+                                        onPress={handleCloseRegistration}
+                                    >
+                                        Close Registration
+                                    </Button>
+                                );
                             }
 
-                            if (isParticipant || !isOpenOrUpcoming) return null;
+                            if (!isParticipant && !isUserRegistered && isOpenOrUpcoming && !isFull) {
+                                buttons.push(
+                                    <Button
+                                        key="join"
+                                        className="w-full"
+                                        onPress={handleJoin}
+                                        loading={isRegistering}
+                                    >
+                                        Join Tournament
+                                    </Button>
+                                );
+                            }
 
-                            return (
-                                <Button
-                                    className="w-full"
-                                    onPress={handleJoin}
-                                    loading={isRegistering}
-                                >
-                                    Join Tournament
-                                </Button>
-                            );
+                            return buttons.length > 0 ? <View className="gap-3">{buttons}</View> : null;
                         })()}
                     </View>
 
@@ -728,8 +890,21 @@ export default function TournamentDetailsScreen() {
                 away={selectedMatch?.away}
                 onSuccess={() => {
                     fetchBracket(); // Refresh the bracket/league data
-                    alert('Result reported successfully!');
+                    setStatusModalConfig({
+                        type: 'success',
+                        title: 'Result Reported',
+                        message: 'Match result has been reported successfully!'
+                    });
+                    setShowStatusModal(true);
                 }}
+            />
+
+            <StatusModal
+                visible={showStatusModal}
+                onClose={() => setShowStatusModal(false)}
+                type={statusModalConfig.type}
+                title={statusModalConfig.title}
+                message={statusModalConfig.message}
             />
         </SafeAreaView>
     );

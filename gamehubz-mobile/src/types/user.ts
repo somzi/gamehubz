@@ -2,6 +2,8 @@ export interface PlayerStatsDto {
     totalMatches: number;
     wins: number;
     losses: number;
+    draws: number;
+    tournamentsWon: number;
     winRate: number; // Computed on backend
 }
 

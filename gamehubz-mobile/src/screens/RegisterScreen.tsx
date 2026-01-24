@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types/navigation';
 import { RegionType } from '../types/auth';
 import { SelectInput } from '../components/ui/SelectInput';
+import { StatusModal } from '../components/modals/StatusModal';
 
 export default function RegisterScreen() {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -28,6 +29,7 @@ export default function RegisterScreen() {
     // Form state
     const [formData, setFormData] = useState({
         username: '',
+        nickName: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -38,6 +40,13 @@ export default function RegisterScreen() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<Partial<typeof formData>>({});
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [statusModalConfig, setStatusModalConfig] = useState<{
+        type: 'success' | 'error' | 'info';
+        title: string;
+        message: string;
+        onClose?: () => void;
+    }>({ type: 'success', title: '', message: '' });
 
     const updateForm = (key: keyof typeof formData, value: string) => {
         setFormData(prev => ({ ...prev, [key]: value }));
@@ -50,6 +59,7 @@ export default function RegisterScreen() {
     const validate = () => {
         const newErrors: Partial<typeof formData> = {};
         if (!formData.username) newErrors.username = 'Username is required';
+        if (!formData.nickName) newErrors.nickName = 'Nickname is required' as any;
         if (!formData.email) newErrors.email = 'Email is required';
         if (!formData.password) newErrors.password = 'Password is required';
         if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
@@ -68,6 +78,7 @@ export default function RegisterScreen() {
         // Based on user object provided, we send what we have.
         const payload = {
             userName: formData.username,
+            nickName: formData.nickName,
             email: formData.email,
             password: formData.password,
             region: formData.region,
@@ -78,13 +89,20 @@ export default function RegisterScreen() {
 
         const success = await register(payload);
         if (success) {
-            Alert.alert(
-                'Account Created',
-                'Your account has been successfully created. Please log in.',
-                [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-            );
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Account Created',
+                message: 'Your account has been successfully created. Please log in.',
+                onClose: () => navigation.navigate('Login')
+            });
+            setShowStatusModal(true);
         } else {
-            Alert.alert('Registration Failed', 'Unable to create account. Please try again.');
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Registration Failed',
+                message: 'Unable to create account. Please try again.'
+            });
+            setShowStatusModal(true);
         }
     };
 
@@ -119,6 +137,15 @@ export default function RegisterScreen() {
                             onChangeText={(text) => updateForm('username', text)}
                             leftIcon="person-outline"
                             error={errors.username}
+                        />
+
+                        <Input
+                            label="Nickname"
+                            placeholder="In-game nick"
+                            value={formData.nickName}
+                            onChangeText={(text) => updateForm('nickName', text)}
+                            leftIcon="id-card-outline"
+                            error={errors.nickName as string | undefined}
                         />
 
                         <Input
@@ -202,6 +229,17 @@ export default function RegisterScreen() {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            <StatusModal
+                visible={showStatusModal}
+                onClose={() => {
+                    setShowStatusModal(false);
+                    if (statusModalConfig.onClose) statusModalConfig.onClose();
+                }}
+                type={statusModalConfig.type}
+                title={statusModalConfig.title}
+                message={statusModalConfig.message}
+            />
         </SafeAreaView>
     );
 }

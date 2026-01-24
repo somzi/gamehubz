@@ -41,6 +41,7 @@ const feedData = [
 interface MatchOverviewDto {
     id?: string;
     matchId?: string;
+    tournamentId?: string;
     tournamentName: string;
     hubName: string;
     scheduledTime: string | null;
@@ -73,9 +74,22 @@ export default function HomeScreen() {
         try {
             const response = await authenticatedFetch(ENDPOINTS.GET_USER_HOME_MATCHES(user.id));
             if (response.ok) {
-                const data: MatchOverviewDto[] = await response.json();
-                setActionRequiredMatches(data.filter(m => !m.scheduledTime));
-                setMyMatches(data.filter(m => m.scheduledTime));
+                const data: any[] = await response.json();
+
+                // Normalize data to handle PascalCase vs camelCase
+                const normalizedData: MatchOverviewDto[] = data.map(m => ({
+                    id: m.id || m.Id,
+                    matchId: m.matchId || m.MatchId,
+                    tournamentId: m.tournamentId || m.TournamentId,
+                    tournamentName: m.tournamentName || m.TournamentName,
+                    hubName: m.hubName || m.HubName,
+                    scheduledTime: m.scheduledTime || m.ScheduledTime || null,
+                    opponentName: m.opponentName || m.OpponentName,
+                    status: m.status !== undefined ? m.status : m.Status
+                }));
+
+                setActionRequiredMatches(normalizedData.filter(m => !m.scheduledTime));
+                setMyMatches(normalizedData.filter(m => m.scheduledTime));
             }
         } catch (error) {
             console.error('Error fetching home matches:', error);
@@ -137,6 +151,7 @@ export default function HomeScreen() {
                                         <MatchScheduleCard
                                             key={match.matchId || `pending-${index}`}
                                             matchId={match.id || match.matchId || ''}
+                                            tournamentId={match.tournamentId || ''}
                                             tournamentName={match.tournamentName}
                                             roundName={match.hubName}
                                             opponentName={match.opponentName}
@@ -180,7 +195,8 @@ export default function HomeScreen() {
                                     myMatches.map((match, index) => (
                                         <MatchScheduleCard
                                             key={match.matchId || `scheduled-${index}`}
-                                            matchId={match.matchId || ''}
+                                            matchId={match.id || ''}
+                                            tournamentId={match.tournamentId || ''}
                                             tournamentName={match.tournamentName}
                                             roundName={match.hubName}
                                             opponentName={match.opponentName}

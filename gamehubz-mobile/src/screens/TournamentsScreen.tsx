@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
@@ -43,6 +43,7 @@ const TAB_TO_STATUS: Record<string, number> = {
 export default function TournamentsScreen() {
     const navigation = useNavigation<TournamentsScreenNavigationProp>();
     const { user } = useAuth();
+    const insets = useSafeAreaInsets();
 
     const [activeTab, setActiveTab] = useState('live');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -198,7 +199,7 @@ export default function TournamentsScreen() {
         }
 
         return (
-            <View className="space-y-3 pb-24">
+            <View className="gap-3 pb-24">
                 {tournaments.map((tournament: any, index: number) => (
                     <TournamentCard
                         key={tournament.Id || tournament.id || `t-${index}`}
@@ -245,7 +246,7 @@ export default function TournamentsScreen() {
                     <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#10B981" />
                 }
             >
-                <View className="px-4 py-6 space-y-6">
+                <View className="px-4 py-4 space-y-4">
                     <Tabs
                         tabs={tabs}
                         activeTab={activeTab}
@@ -259,7 +260,7 @@ export default function TournamentsScreen() {
             <TouchableOpacity
                 onPress={() => setIsModalOpen(true)}
                 className="absolute right-4 bg-primary flex-row items-center px-5 py-3 rounded-full shadow-lg z-50"
-                style={{ bottom: 20 }}
+                style={{ bottom: Math.max(insets.bottom, 16) + 120 }}
             >
                 <Ionicons name="add" size={24} color="#FFF" style={{ marginRight: 8 }} />
                 <Text className="text-white font-bold text-base">Create Tournament</Text>

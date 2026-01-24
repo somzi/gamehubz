@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
@@ -7,7 +7,7 @@ import { CircularProgress } from '../components/ui/CircularProgress';
 import { SocialLinks } from '../components/profile/SocialLinks';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
@@ -32,37 +32,64 @@ export default function ProfileScreen() {
     const [isLoadingData, setIsLoadingData] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!user?.id) return;
-            setIsLoadingData(true);
-            setError(null);
-            try {
-                const [statsRes, tournamentsRes] = await Promise.all([
-                    authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(user.id)),
-                    authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(user.id)),
-                    refreshUser()
-                ]);
+    const fetchDetailedData = useCallback(async () => {
+        if (!user?.id) return;
+        setIsLoadingData(true);
+        setError(null);
+        try {
+            const [statsRes, tournamentsRes] = await Promise.all([
+                authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(user.id)),
+                authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(user.id))
+            ]);
 
-                if (statsRes.ok) {
-                    const statsData = await statsRes.json();
-                    setPlayerMatches(statsData.result || statsData);
-                }
-
-                if (tournamentsRes.ok) {
-                    const tournamentsData = await tournamentsRes.json();
-                    setUserTournaments(tournamentsData.result || tournamentsData);
-                }
-            } catch (error: any) {
-                console.error('Error fetching profile data:', error);
-                setError('Failed to refresh data');
-            } finally {
-                setIsLoadingData(false);
+            if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                const s = statsData.result || statsData;
+                const normalizedStats: PlayerMatchesDto = {
+                    stats: {
+                        totalMatches: s.stats?.TotalMatches || s.stats?.totalMatches || 0,
+                        wins: s.stats?.Wins || s.stats?.wins || 0,
+                        losses: s.stats?.Losses || s.stats?.losses || 0,
+                        draws: s.stats?.Draws || s.stats?.draws || 0,
+                        tournamentsWon: s.stats?.tournamentsWon || s.stats?.tournamentsWon || 0,
+                        winRate: s.stats?.WinRate || s.stats?.winRate || 0,
+                    },
+                    lastMatches: (s.lastMatches || []).map((m: any) => ({
+                        tournamentName: m.TournamentName || m.tournamentName,
+                        opponentName: m.OpponentName || m.opponentName,
+                        isWin: m.IsWin !== undefined ? m.IsWin : m.isWin,
+                        userScore: m.UserScore !== undefined ? m.UserScore : m.userScore,
+                        opponentScore: m.OpponentScore !== undefined ? m.OpponentScore : m.opponentScore,
+                        scheduledTime: m.ScheduledTime || m.scheduledTime
+                    }))
+                };
+                setPlayerMatches(normalizedStats);
             }
-        };
 
-        fetchData();
+            if (tournamentsRes.ok) {
+                const tournamentsData = await tournamentsRes.json();
+                const items = tournamentsData.result || tournamentsData;
+                setUserTournaments(Array.isArray(items) ? items : []);
+            }
+        } catch (error: any) {
+            console.error('Error fetching profile detailed data:', error);
+            setError('Failed to refresh stats/tournaments');
+        } finally {
+            setIsLoadingData(false);
+        }
     }, [user?.id]);
+
+    useEffect(() => {
+        fetchDetailedData();
+    }, [fetchDetailedData]);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (user?.id) {
+                refreshUser();
+            }
+        }, [user?.id, refreshUser])
+    );
 
     const getRegionName = (region?: number) => {
         switch (region) {
@@ -78,13 +105,14 @@ export default function ProfileScreen() {
 
     const displayData = {
         username: user?.username || 'Guest',
+        nickName: user?.nickName || 'No Nickname',
         region: getRegionName(user?.region),
         totalMatches: playerMatches?.stats?.totalMatches || 0,
         winPercentage: playerMatches?.stats?.winRate || 0,
         wins: playerMatches?.stats?.wins || 0,
         losses: playerMatches?.stats?.losses || 0,
-        draws: 20, // Mocked as per design
-        trophies: 48, // Mocked as per design
+        draws: playerMatches?.stats?.draws || 0,
+        tournamentsWon: playerMatches?.stats?.tournamentsWon || 0,
         socials: user?.userSocials || []
     };
 
@@ -139,11 +167,12 @@ export default function ProfileScreen() {
                         <View className="p-1 rounded-full border-2 border-primary">
                             <PlayerAvatar src={undefined} name={displayData.username} size="xl" className="border-0" />
                         </View>
-                        <View className="absolute bottom-1 right-1 bg-primary px-2 py-0.5 rounded-full border-2 border-background">
-                            <Text className="text-[10px] font-bold text-white">118</Text>
-                        </View>
                     </View>
                     <Text className="text-2xl font-bold mt-4 text-white">{displayData.username}</Text>
+                    <View className="flex-row items-center mt-1">
+                        <Ionicons name="game-controller-outline" size={14} color="#10B981" />
+                        <Text className="text-primary font-bold text-sm ml-1">{displayData.nickName}</Text>
+                    </View>
                     <View className="flex-row items-center mt-1">
                         <Ionicons name="globe-outline" size={14} color="#94A3B8" />
                         <Text className="text-gray-400 text-sm ml-1">{displayData.region}</Text>
@@ -157,7 +186,7 @@ export default function ProfileScreen() {
 
                 {/* Tabs Section */}
                 <View className="mt-8 bg-card rounded-t-[40px] flex-1 min-h-[500px] border-t border-white/5">
-                    <View className="flex-row px-4 py-6 justify-around">
+                    <View className="flex-row px-4 py-4 justify-around">
                         {tabs.map((tab) => (
                             <Pressable
                                 key={tab.value}
@@ -222,7 +251,7 @@ export default function ProfileScreen() {
                                     )}
                                 </View>
 
-                                <Text className="text-lg font-bold text-white mt-8 mb-4">Statistics</Text>
+                                <Text className="text-lg font-bold text-white mt-6 mb-4">Statistics</Text>
                                 <View className="bg-card-elevated rounded-3xl p-6 flex-row items-center border border-white/5">
                                     <View className="mr-8">
                                         <CircularProgress percentage={Math.round(displayData.winPercentage)} size={90} strokeWidth={10} color="#10B981" />
@@ -235,13 +264,17 @@ export default function ProfileScreen() {
                                             </View>
                                             <View>
                                                 <Text className="text-gray-400 text-xs mb-1">Tournaments Won</Text>
-                                                <Text className="text-yellow-500 text-2xl font-bold">12</Text>
+                                                <Text className="text-yellow-500 text-2xl font-bold">{displayData.tournamentsWon}</Text>
                                             </View>
                                         </View>
                                         <View className="flex-1 ml-4">
                                             <View className="mb-5">
                                                 <Text className="text-gray-400 text-xs mb-1">Wins</Text>
                                                 <Text className="text-emerald-500 text-2xl font-bold">{displayData.wins}</Text>
+                                            </View>
+                                            <View className="mb-5">
+                                                <Text className="text-gray-400 text-xs mb-1">Draws</Text>
+                                                <Text className="text-blue-400 text-2xl font-bold">{displayData.draws}</Text>
                                             </View>
                                             <View>
                                                 <Text className="text-gray-400 text-xs mb-1">Losses</Text>
@@ -254,7 +287,7 @@ export default function ProfileScreen() {
                         )}
 
                         {activeTab === 'tournaments' && (
-                            <View className="gap-4">
+                            <View className="gap-3">
                                 <Text className="text-lg font-bold text-white">Tournaments</Text>
                                 {userTournaments.length > 0 ? (
                                     userTournaments.map((t) => (
@@ -279,7 +312,7 @@ export default function ProfileScreen() {
                         )}
 
                         {activeTab === 'matches' && (
-                            <View className="gap-4">
+                            <View className="gap-3">
                                 <Text className="text-lg font-bold text-white">Match History</Text>
                                 {matches.length > 0 ? (
                                     matches.map((match, idx) => (

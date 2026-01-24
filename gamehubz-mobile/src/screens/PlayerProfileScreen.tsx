@@ -184,9 +184,6 @@ export default function PlayerProfileScreen() {
                         <View className="p-1 rounded-full border-2 border-primary">
                             <PlayerAvatar name={displayData.username} size="xl" className="border-0" />
                         </View>
-                        <View className="absolute bottom-1 right-1 bg-primary px-2 py-0.5 rounded-full border-2 border-background">
-                            <Text className="text-[10px] font-bold text-white">118</Text>
-                        </View>
                     </View>
                     <Text className="text-2xl font-bold mt-4 text-white">{displayData.username}</Text>
                     <View className="flex-row items-center mt-1">
@@ -203,7 +200,7 @@ export default function PlayerProfileScreen() {
 
                 {/* Tabs Section */}
                 <View className="mt-8 bg-card rounded-t-[40px] flex-1 min-h-[500px] border-t border-white/5">
-                    <View className="flex-row px-4 py-6 justify-around">
+                    <View className="flex-row px-4 py-4 justify-around">
                         {tabs.map((tab) => (
                             <Pressable
                                 key={tab.value}
@@ -268,7 +265,7 @@ export default function PlayerProfileScreen() {
                                     )}
                                 </View>
 
-                                <Text className="text-lg font-bold text-white mt-8 mb-4">Statistics</Text>
+                                <Text className="text-lg font-bold text-white mt-6 mb-4">Statistics</Text>
                                 <View className="bg-card-elevated rounded-3xl p-6 flex-row items-center border border-white/5">
                                     <View className="mr-8">
                                         <CircularProgress percentage={Math.round(displayData.winPercentage)} size={90} strokeWidth={10} color="#10B981" />
@@ -300,7 +297,7 @@ export default function PlayerProfileScreen() {
                         )}
 
                         {activeTab === 'tournaments' && (
-                            <View className="gap-4">
+                            <View className="gap-3">
                                 <Text className="text-lg font-bold text-white">Tournaments</Text>
                                 {userTournaments.length > 0 ? (
                                     userTournaments.map((t) => (
@@ -325,7 +322,7 @@ export default function PlayerProfileScreen() {
                         )}
 
                         {activeTab === 'matches' && (
-                            <View className="gap-4">
+                            <View className="gap-3">
                                 <Text className="text-lg font-bold text-white">Match History</Text>
                                 {matches.length > 0 ? (
                                     matches.map((match, idx) => (
