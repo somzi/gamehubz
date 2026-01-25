@@ -7,11 +7,12 @@ const getApiHost = () => {
     if (Platform.OS === 'android') {
         return '10.0.2.2';
     }
-    return 'localhost';
+    // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
+    return '192.168.0.6';
 };
 
 export const API_HOST = getApiHost();
-export const API_PORT = '7057';
+export const API_PORT = '5057';
 export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
 
 export const ENDPOINTS = {
@@ -47,6 +48,7 @@ export const ENDPOINTS = {
     GET_MATCH_AVAILABILITY: (matchId: string, userId: string) => `${API_BASE_URL}/api/match/${matchId}/availability/user/${userId}`,
     GET_USER_HOME_MATCHES: (userId: string) => `${API_BASE_URL}/api/match/home/${userId}`,
     CHECK_REGISTRATION: (id: string, userId: string) => `${API_BASE_URL}/api/tournament/${id}/user/${userId}/registred`,
+    GET_HUB_ACTIVITY_HOME: `${API_BASE_URL}/api/hubActivity/home`,
 };
 
 let authToken: string | null = null;

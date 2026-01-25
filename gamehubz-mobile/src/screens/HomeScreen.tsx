@@ -11,32 +11,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
+import { DashboardActivityDto } from '../types/dashboard';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
-const feedData = [
-    {
-        id: '1',
-        hubName: 'Esports Hub',
-        message: 'announced a new tournament',
-        tournamentName: 'Winter Championship 2024',
-        timestamp: '2h ago',
-    },
-    {
-        id: '2',
-        hubName: 'Gaming League',
-        message: 'started a live tournament',
-        tournamentName: 'Pro Series Finals',
-        timestamp: '4h ago',
-    },
-    {
-        id: '3',
-        hubName: 'Community Arena',
-        message: 'registration is now open',
-        tournamentName: 'Spring Showdown',
-        timestamp: '6h ago',
-    },
-];
+
 
 interface MatchOverviewDto {
     id?: string;
@@ -54,6 +33,7 @@ export default function HomeScreen() {
     const { user } = useAuth();
     const [actionRequiredMatches, setActionRequiredMatches] = useState<MatchOverviewDto[]>([]);
     const [myMatches, setMyMatches] = useState<MatchOverviewDto[]>([]);
+    const [hubActivities, setHubActivities] = useState<DashboardActivityDto[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [expandedSections, setExpandedSections] = useState({
@@ -93,14 +73,40 @@ export default function HomeScreen() {
             }
         } catch (error) {
             console.error('Error fetching home matches:', error);
-        } finally {
-            setLoading(false);
         }
+    };
+
+    const fetchHubActivities = async () => {
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_HUB_ACTIVITY_HOME);
+            if (response.ok) {
+                const data: any[] = await response.json();
+                // Normalize data if necessary, though DTO should match
+                const activities: DashboardActivityDto[] = data.map(a => ({
+                    hubName: a.hubName || a.HubName,
+                    message: a.message || a.Message,
+                    tournamentName: a.tournamentName || a.TournamentName,
+                    timeAgo: a.timeAgo || a.TimeAgo,
+                    createdOn: a.createdOn || a.CreatedOn,
+                    type: a.type || a.Type,
+                    hubAvatar: a.hubAvatar || a.HubAvatar
+                }));
+                setHubActivities(activities);
+            }
+        } catch (error) {
+            console.error('Error fetching hub activities:', error);
+        }
+    };
+
+    const loadData = async () => {
+        setLoading(true);
+        await Promise.all([fetchMatches(), fetchHubActivities()]);
+        setLoading(false);
     };
 
     useFocusEffect(
         React.useCallback(() => {
-            fetchMatches();
+            loadData();
         }, [user?.id])
     );
 
@@ -134,7 +140,7 @@ export default function HomeScreen() {
 
             <ScrollView
                 className="flex-1"
-                refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchMatches} tintColor="#10B981" />}
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} tintColor="#10B981" />}
                 contentContainerStyle={{ paddingBottom: 100 }}
             >
                 <View className="px-4 py-4 space-y-32">
@@ -171,16 +177,24 @@ export default function HomeScreen() {
 
                         {expandedSections.communityFeed && (
                             <View className="gap-3 mt-1">
-                                {feedData.map((item) => (
-                                    <FeedCard
-                                        key={item.id}
-                                        hubName={item.hubName}
-                                        message={item.message}
-                                        tournamentName={item.tournamentName}
-                                        timestamp={item.timestamp}
-                                        onClick={() => navigation.navigate('TournamentDetails', { id: '86F0D7B3-2BCC-4D30-E0FC-08DE55C5AA4E' })}
-                                    />
-                                ))}
+                                {hubActivities.length > 0 ? (
+                                    hubActivities.map((item, index) => (
+                                        <FeedCard
+                                            key={index}
+                                            hubName={item.hubName}
+                                            hubAvatar={item.hubAvatar}
+                                            message={item.message}
+                                            tournamentName={item.tournamentName}
+                                            timestamp={item.timeAgo}
+                                            // TODO: Add navigation to specific activity if needed
+                                            onClick={() => { }}
+                                        />
+                                    ))
+                                ) : (
+                                    <View className="py-8 items-center justify-center border border-dashed border-white/5 rounded-3xl">
+                                        <Text className="text-slate-500 text-xs font-medium">No recent activity</Text>
+                                    </View>
+                                )}
                             </View>
                         )}
                     </View>
