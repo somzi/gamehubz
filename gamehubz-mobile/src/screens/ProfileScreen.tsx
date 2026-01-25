@@ -220,7 +220,7 @@ export default function ProfileScreen() {
                                     {matches.length > 0 ? (
                                         <>
                                             <View className="flex-row items-center justify-between mb-4 px-2">
-                                                {matches.slice(0, 10).map((match, i) => (
+                                                {matches.slice(0, 10).reverse().map((match, i) => (
                                                     <View key={i} className="items-center">
                                                         <View
                                                             className={cn(
