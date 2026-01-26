@@ -19,6 +19,7 @@ import { TournamentFormat, TournamentRegion } from '../../types/tournament';
 interface CreateTournamentModalProps {
     visible: boolean;
     onClose: () => void;
+    hubId?: string;
 }
 
 const regions = [
@@ -57,7 +58,7 @@ const regionMapping: Record<string, number> = {
     'oceania': TournamentRegion.Oceania,
 };
 
-export function CreateTournamentModal({ visible, onClose }: CreateTournamentModalProps) {
+export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournamentModalProps) {
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
 
@@ -111,7 +112,9 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                             }));
 
                         setHubs(formattedHubs);
-                        if (formattedHubs.length > 0) {
+                        if (hubId) {
+                            setSelectedHubId(hubId);
+                        } else if (formattedHubs.length > 0) {
                             setSelectedHubId(formattedHubs[0].id);
                         }
                     }
@@ -123,7 +126,7 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
             };
             fetchHubs();
         }
-    }, [visible, user?.id]);
+    }, [visible, user?.id, hubId]);
 
     const handleRegionSelect = (regionValue: string) => {
         if (regionValue === 'global') {
@@ -166,6 +169,25 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
     const handleSubmit = async () => {
         if (!name || !selectedHubId) {
             setError('Tournament name and Hub are required');
+            return;
+        }
+
+        if (!startDate || !registrationDeadline) {
+            setError('Please set both Registration Deadline and Start Date');
+            return;
+        }
+
+        const now = new Date();
+        const start = new Date(startDate.replace(' ', 'T'));
+        const deadline = new Date(registrationDeadline.replace(' ', 'T'));
+
+        if (deadline < now) {
+            setError('Registration deadline cannot be in the past');
+            return;
+        }
+
+        if (start < deadline) {
+            setError('Start date cannot be earlier than the registration deadline');
             return;
         }
 
@@ -245,7 +267,7 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                 ) : (
                     <Text className="text-white text-sm" numberOfLines={1}>{value}</Text>
                 )}
-                <Ionicons name="chevron-down" size={16} color="#94A3B8" />
+                {!isLoading && !hubId && <Ionicons name="chevron-down" size={16} color="#94A3B8" />}
             </TouchableOpacity>
         </View>
     );
@@ -320,10 +342,10 @@ export function CreateTournamentModal({ visible, onClose }: CreateTournamentModa
                         <View className="flex flex-col gap-y-6">
                             {/* Hub Selection */}
                             {renderSelectField(
-                                'Select Hub',
+                                'Hub',
                                 getHubLabel(),
                                 'business-outline',
-                                () => setShowHubPicker(true),
+                                () => hubId ? null : setShowHubPicker(true),
                                 isLoadingHubs
                             )}
 

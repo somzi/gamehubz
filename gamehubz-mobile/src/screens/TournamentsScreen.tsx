@@ -12,7 +12,6 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Tabs } from '../components/ui/Tabs';
 import { Button } from '../components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
-import { CreateTournamentModal } from '../components/modals/CreateTournamentModal';
 import { useAuth } from '../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 
@@ -46,7 +45,6 @@ export default function TournamentsScreen() {
     const insets = useSafeAreaInsets();
 
     const [activeTab, setActiveTab] = useState('live');
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [page, setPage] = useState(0);
@@ -257,19 +255,6 @@ export default function TournamentsScreen() {
                 </View>
             </ScrollView>
 
-            <TouchableOpacity
-                onPress={() => setIsModalOpen(true)}
-                className="absolute right-4 bg-primary flex-row items-center px-5 py-3 rounded-full shadow-lg z-50"
-                style={{ bottom: Math.max(insets.bottom, 16) + 120 }}
-            >
-                <Ionicons name="add" size={24} color="#FFF" style={{ marginRight: 8 }} />
-                <Text className="text-white font-bold text-base">Create Tournament</Text>
-            </TouchableOpacity>
-
-            <CreateTournamentModal
-                visible={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-            />
         </SafeAreaView>
     );
 }

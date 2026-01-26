@@ -12,6 +12,7 @@ interface AuthContextType {
     logout: () => void;
     updateProfile: (data: any) => Promise<boolean>;
     saveUserSocial: (social: UserSocial) => Promise<boolean>;
+    deleteUserSocial: (id: string) => Promise<boolean>;
     refreshUser: () => Promise<void>;
 }
 
@@ -229,6 +230,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.id]);
 
+    const deleteUserSocial = useCallback(async (id: string): Promise<boolean> => {
+        setIsLoading(true);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.DELETE_USER_SOCIAL(id), {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                setUser(prev => {
+                    if (!prev) return null;
+                    const newSocials = (prev.userSocials || []).filter(s => s.id !== id);
+                    return { ...prev, userSocials: newSocials };
+                });
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Delete user social error:', error);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     const logout = useCallback(async () => {
         if (refreshToken) {
             try {
@@ -264,6 +289,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateProfile,
         saveUserSocial,
+        deleteUserSocial,
         refreshUser,
     }), [user, token, isLoading, login, register, logout, updateProfile, saveUserSocial, refreshUser]);
 

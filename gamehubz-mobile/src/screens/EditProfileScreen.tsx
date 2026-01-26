@@ -18,7 +18,7 @@ type EditProfileNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export default function EditProfileScreen() {
     const navigation = useNavigation<EditProfileNavigationProp>();
-    const { user, updateProfile, saveUserSocial, refreshUser, isLoading, logout } = useAuth();
+    const { user, updateProfile, saveUserSocial, deleteUserSocial, refreshUser, isLoading, logout } = useAuth();
 
     const [username, setUsername] = useState(user?.username || '');
     const [nickName, setNickName] = useState(user?.nickName || '');
@@ -120,13 +120,31 @@ export default function EditProfileScreen() {
         }
     };
 
-    const handleRemoveSocial = (type: SocialType) => {
-        setStatusModalConfig({
-            type: 'info',
-            title: 'Under Construction',
-            message: 'Platform individual removal is not yet implemented on the server.'
-        });
-        setShowStatusModal(true);
+    const handleRemoveSocial = (social: UserSocial) => {
+        if (!social.id) return;
+
+        Alert.alert(
+            'Remove Social Account',
+            `Are you sure you want to remove your ${getSocialLabel(social.socialType!)} account?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const success = await deleteUserSocial(social.id!);
+                        if (!success) {
+                            setStatusModalConfig({
+                                type: 'error',
+                                title: 'Failed',
+                                message: 'Failed to remove social account'
+                            });
+                            setShowStatusModal(true);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleSave = async () => {
@@ -228,7 +246,7 @@ export default function EditProfileScreen() {
                                             </View>
                                         </View>
                                         <TouchableOpacity
-                                            onPress={() => handleRemoveSocial(social.socialType!)}
+                                            onPress={() => handleRemoveSocial(social)}
                                             className="p-2"
                                         >
                                             <Ionicons name="trash-outline" size={18} color="#EF4444" />

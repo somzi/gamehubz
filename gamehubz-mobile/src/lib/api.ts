@@ -50,6 +50,7 @@ export const ENDPOINTS = {
     CHECK_REGISTRATION: (id: string, userId: string) => `${API_BASE_URL}/api/tournament/${id}/user/${userId}/registred`,
     GET_HUB_ACTIVITY_HOME: `${API_BASE_URL}/api/hubActivity/home`,
     CREATE_HUB: `${API_BASE_URL}/api/hub/create`,
+    DELETE_USER_SOCIAL: (id: string) => `${API_BASE_URL}/api/UserSocial/${id}`,
 };
 
 let authToken: string | null = null;

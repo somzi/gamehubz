@@ -14,6 +14,7 @@ import { cn } from '../lib/utils';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { EditHubModal } from '../components/modals/EditHubModal';
+import { CreateTournamentModal } from '../components/modals/CreateTournamentModal';
 
 type HubProfileRouteProp = RouteProp<RootStackParamList, 'HubProfile'>;
 
@@ -26,6 +27,7 @@ export default function HubProfileScreen() {
     const [isFollowing, setIsFollowing] = useState(false);
     const [isOwner, setIsOwner] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showCreateTournamentModal, setShowCreateTournamentModal] = useState(false);
     const [activeTab, setActiveTab] = useState('live');
     const [hubData, setHubData] = useState<any>(null);
     const [tournaments, setTournaments] = useState<any[]>([]);
@@ -239,13 +241,22 @@ export default function HubProfileScreen() {
                         </View>
 
                         {isOwner ? (
-                            <Button
-                                onPress={() => setShowEditModal(true)}
-                                variant="default"
-                                className="w-full"
-                            >
-                                <Text className="font-bold text-white">Edit Hub</Text>
-                            </Button>
+                            <>
+                                <Button
+                                    onPress={() => setShowEditModal(true)}
+                                    variant="default"
+                                    className="w-full"
+                                >
+                                    <Text className="font-bold text-white">Edit Hub</Text>
+                                </Button>
+                                <Button
+                                    onPress={() => setShowCreateTournamentModal(true)}
+                                    variant="outline"
+                                    className="w-full mt-3"
+                                >
+                                    <Text className="font-bold text-white">Create Tournament</Text>
+                                </Button>
+                            </>
                         ) : (
                             <Button
                                 onPress={handleFollowToggle}
@@ -290,6 +301,11 @@ export default function HubProfileScreen() {
                 initialDescription={hubData?.description || ''}
                 onClose={() => setShowEditModal(false)}
                 onSave={handleUpdateHub}
+            />
+            <CreateTournamentModal
+                visible={showCreateTournamentModal}
+                onClose={() => setShowCreateTournamentModal(false)}
+                hubId={id} // Ensure modal accepts hubId if needed, or pass it via context/pre-selection
             />
         </SafeAreaView>
     );
