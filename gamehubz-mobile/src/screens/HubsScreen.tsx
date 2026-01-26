@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -33,6 +33,12 @@ export default function HubsScreen() {
     const navigation = useNavigation<HubsScreenNavigationProp>();
     const [searchQuery, setSearchQuery] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Create Hub State
+    const [hubName, setHubName] = useState("");
+    const [hubDescription, setHubDescription] = useState("");
+    const [isCreating, setIsCreating] = useState(false);
+
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -80,6 +86,42 @@ export default function HubsScreen() {
             setError('Failed to load hubs. Please check your connection.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCreateHub = async () => {
+        if (!hubName.trim()) {
+            setError('Hub name is required');
+            return;
+        }
+
+        setIsCreating(true);
+        setError(null);
+
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.CREATE_HUB, {
+                method: 'POST',
+                body: JSON.stringify({
+                    Name: hubName.trim(),
+                    Description: hubDescription.trim() || undefined
+                })
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || 'Failed to create hub');
+            }
+
+            // Success
+            setIsModalOpen(false);
+            setHubName("");
+            setHubDescription("");
+            fetchHubs(); // Refresh list
+        } catch (err: any) {
+            console.error('Create hub error:', err);
+            setError(err.message || 'Failed to create hub');
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -170,8 +212,11 @@ export default function HubsScreen() {
                 transparent={true}
                 onRequestClose={() => setIsModalOpen(false)}
             >
-                <View className="flex-1 justify-end bg-black/50">
-                    <View className="bg-card p-6 rounded-t-3xl border-t border-border space-y-4">
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    className="flex-1 justify-end bg-black/50"
+                >
+                    <View className="bg-card p-6 rounded-t-3xl border-t border-border space-y-4 pb-10">
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-xl font-bold text-foreground">Create New Hub</Text>
                             <Pressable onPress={() => setIsModalOpen(false)}>
@@ -180,12 +225,15 @@ export default function HubsScreen() {
                         </View>
 
                         <View className="space-y-4">
+                            {error && <Text className="text-destructive text-sm">{error}</Text>}
                             <View>
                                 <Text className="text-sm font-medium text-muted-foreground mb-1">Hub Name</Text>
                                 <TextInput
                                     className="bg-secondary p-3 rounded-lg text-foreground border border-border/30"
                                     placeholder="e.g. Pro Players Guild"
                                     placeholderTextColor="#71717A"
+                                    value={hubName}
+                                    onChangeText={setHubName}
                                 />
                             </View>
                             <View>
@@ -195,14 +243,21 @@ export default function HubsScreen() {
                                     placeholder="Describe your community..."
                                     placeholderTextColor="#71717A"
                                     multiline
+                                    value={hubDescription}
+                                    onChangeText={setHubDescription}
                                 />
                             </View>
-                            <Button onPress={() => setIsModalOpen(false)} className="mt-4">
-                                Create Hub
+                            <Button
+                                onPress={handleCreateHub}
+                                className="mt-4"
+                                loading={isCreating}
+                                disabled={!hubName.trim()}
+                            >
+                                <Text className="text-white font-bold">Create Hub</Text>
                             </Button>
                         </View>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>
     );

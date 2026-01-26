@@ -49,6 +49,7 @@ export const ENDPOINTS = {
     GET_USER_HOME_MATCHES: (userId: string) => `${API_BASE_URL}/api/match/home/${userId}`,
     CHECK_REGISTRATION: (id: string, userId: string) => `${API_BASE_URL}/api/tournament/${id}/user/${userId}/registred`,
     GET_HUB_ACTIVITY_HOME: `${API_BASE_URL}/api/hubActivity/home`,
+    CREATE_HUB: `${API_BASE_URL}/api/hub/create`,
 };
 
 let authToken: string | null = null;
