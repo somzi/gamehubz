@@ -45,21 +45,25 @@ export function Button({
             {loading ? (
                 <ActivityIndicator color={variant === 'outline' ? '#8B5CF6' : '#FAFAFA'} />
             ) : (
-                <Text
-                    className={cn(
-                        "font-medium",
-                        size === 'default' && "text-base",
-                        size === 'sm' && "text-sm",
-                        size === 'lg' && "text-lg",
-                        variant === 'default' && "text-primary-foreground",
-                        variant === 'secondary' && "text-secondary-foreground",
-                        variant === 'outline' && "text-foreground",
-                        variant === 'ghost' && "text-foreground",
-                        variant === 'destructive' && "text-destructive-foreground"
-                    )}
-                >
-                    {children}
-                </Text>
+                typeof children === 'string' || typeof children === 'number' ? (
+                    <Text
+                        className={cn(
+                            "font-medium",
+                            size === 'default' && "text-base",
+                            size === 'sm' && "text-sm",
+                            size === 'lg' && "text-lg",
+                            variant === 'default' && "text-primary-foreground",
+                            variant === 'secondary' && "text-secondary-foreground",
+                            variant === 'outline' && "text-foreground",
+                            variant === 'ghost' && "text-foreground",
+                            variant === 'destructive' && "text-destructive-foreground"
+                        )}
+                    >
+                        {children}
+                    </Text>
+                ) : (
+                    children
+                )
             )}
         </Pressable>
     );

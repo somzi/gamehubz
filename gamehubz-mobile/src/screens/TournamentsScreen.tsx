@@ -209,7 +209,7 @@ export default function TournamentsScreen() {
                         date={new Date(tournament.StartDate || tournament.startDate).toLocaleDateString()}
                         region={getRegionName(tournament.Region ?? tournament.region)}
                         prizePool={`${getCurrencySymbol(tournament.PrizeCurrency ?? tournament.prizeCurrency)}${tournament.Prize ?? tournament.prize}`}
-                        players={new Array(tournament.NumberOfParticipants ?? tournament.participantsCount ?? tournament.tournamentParticipants?.length ?? 0).fill({})}
+                        players={new Array(tournament.NumberOfParticipants ?? tournament.numberOfParticipants ?? tournament.participantsCount ?? tournament.tournamentParticipants?.length ?? 0).fill({})}
                         onClick={() => {
                             const tId = tournament.Id || tournament.id || tournament.tournamentId;
                             navigation.navigate('TournamentDetails', { id: tId });
