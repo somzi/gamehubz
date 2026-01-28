@@ -17,6 +17,7 @@ import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 import { ReportResultModal } from '../components/modals/ReportResultModal';
 import { TournamentRegion } from '../types/tournament';
 import { StatusModal } from '../components/modals/StatusModal';
+import { EditTournamentModal } from '../components/modals/EditTournamentModal';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
@@ -45,6 +46,7 @@ export default function TournamentDetailsScreen() {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<any>(null);
     const [isUserRegistered, setIsUserRegistered] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [statusModalConfig, setStatusModalConfig] = useState<{
         type: 'success' | 'error' | 'info';
@@ -137,6 +139,8 @@ export default function TournamentDetailsScreen() {
                 region: rawData.region !== undefined ? rawData.region : rawData.Region,
                 description: rawData.description || rawData.Description,
                 rules: rawData.rules || rawData.Rules,
+                registrationDeadline: rawData.registrationDeadline || rawData.RegistrationDeadLine || rawData.registrationDeadLine,
+                hubId: rawData.hubId || rawData.HubId,
             };
 
             setTournament(normalizedTournament);
@@ -422,7 +426,7 @@ export default function TournamentDetailsScreen() {
 
     const tabs = [
         { label: 'Overview', value: 'overview' },
-        { label: 'Bracket / League', value: 'bracket' },
+        { label: 'Bracket', value: 'bracket' },
         { label: 'Players', value: 'players' },
         ...(tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() ? [{ label: 'Registrations', value: 'registrations' }] : []),
     ];
@@ -505,12 +509,6 @@ export default function TournamentDetailsScreen() {
                     </ScrollView>
                 )}
 
-                <View className="px-4 mb-4 flex-row items-center gap-2">
-                    <Ionicons name="information-circle-outline" size={14} color="#71717A" />
-                    <Text className="text-[12px] text-muted-foreground italic">
-                        Tip: Tap on a match to report the result.
-                    </Text>
-                </View>
 
                 {currentStage.rounds && currentStage.rounds.length > 0 ? (
                     <TournamentBracket
@@ -595,7 +593,20 @@ export default function TournamentDetailsScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <PageHeader title="Tournament" showBack />
+            <PageHeader
+                title="Tournament"
+                showBack
+                rightElement={
+                    tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() ? (
+                        <Pressable
+                            onPress={() => setShowEditModal(true)}
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                        >
+                            <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
+                        </Pressable>
+                    ) : null
+                }
+            />
             <ScrollView className="flex-1">
                 <View className="animate-slide-up">
                     {/* Hero Section */}
@@ -719,6 +730,20 @@ export default function TournamentDetailsScreen() {
                                                                 : 'Global'}
                                     </Text>
                                 </View>
+
+                                {tournament.registrationDeadline && (
+                                    <View className="flex-1 min-w-[150px] bg-card p-4 rounded-2xl border border-border/30">
+                                        <View className="flex-row items-center gap-2 mb-2">
+                                            <View className="w-8 h-8 rounded-full bg-red-500/10 items-center justify-center">
+                                                <Ionicons name="time-outline" size={16} color="#EF4444" />
+                                            </View>
+                                            <Text className="text-xs text-muted-foreground font-medium">Reg. Deadline</Text>
+                                        </View>
+                                        <Text className="text-sm font-bold text-foreground">
+                                            {new Date(tournament.registrationDeadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
 
                             {/* Description Section */}
@@ -906,6 +931,23 @@ export default function TournamentDetailsScreen() {
                 title={statusModalConfig.title}
                 message={statusModalConfig.message}
             />
+
+            {tournament && (
+                <EditTournamentModal
+                    visible={showEditModal}
+                    tournament={tournament}
+                    onClose={() => setShowEditModal(false)}
+                    onSaveSuccess={() => {
+                        fetchTournamentDetails();
+                        setStatusModalConfig({
+                            type: 'success',
+                            title: 'Updated',
+                            message: 'Tournament details updated successfully!'
+                        });
+                        setShowStatusModal(true);
+                    }}
+                />
+            )}
         </SafeAreaView>
     );
 }

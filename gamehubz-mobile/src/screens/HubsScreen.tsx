@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,10 +11,11 @@ import { Button } from '../components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../lib/utils';
 import { Card } from '../components/ui/Card';
+import { Tabs } from '../components/ui/Tabs';
+import { useAuth } from '../context/AuthContext';
 
 import { API_BASE_URL, ENDPOINTS, authenticatedFetch } from '../lib/api';
 
-// v2 - forcing refresh
 type HubsScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 interface Hub {
@@ -31,7 +32,9 @@ interface Hub {
 
 export default function HubsScreen() {
     const navigation = useNavigation<HubsScreenNavigationProp>();
+    const { user } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState('joined');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Create Hub State
@@ -42,51 +45,60 @@ export default function HubsScreen() {
     const [hubs, setHubs] = useState<Hub[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    useFocusEffect(
-        useCallback(() => {
-            console.log('HubsScreen focused, fetching hubs...');
-            fetchHubs();
-        }, [])
-    );
-
-    const fetchHubs = async () => {
+    const fetchHubs = async (showLoading = true) => {
+        if (showLoading) setLoading(true);
+        setError(null);
         try {
-            const apiUrl = ENDPOINTS.HUBS;
+            let apiUrl = ENDPOINTS.HUBS;
 
-            console.log('Fetching hubs from:', apiUrl);
+            if (user?.id) {
+                if (activeTab === 'joined') {
+                    apiUrl = ENDPOINTS.GET_USER_HUBS(user.id);
+                } else if (activeTab === 'discovery') {
+                    apiUrl = ENDPOINTS.GET_DISCOVERY_HUBS(user.id);
+                }
+            }
+
+            console.log(`Fetching hubs (${activeTab}) from:`, apiUrl);
 
             const response = await authenticatedFetch(apiUrl);
 
             if (!response.ok) {
                 const text = await response.text();
-                // Check if the response is HTML (often 404/500 from proxy/server)
-                const isHtml = text.trim().startsWith('<');
-                console.error('API Error Response:', isHtml ? 'HTML Error Page' : text);
+                console.error('API Error Response:', text);
                 throw new Error(`Failed to fetch hubs: ${response.status}`);
             }
 
             const data = await response.json();
-
-            // Handle response format: { items: Hub[], count: number }
-            // If data is array use it, otherwise check for .items
             const resultData = data.result || data;
             const hubsList = Array.isArray(resultData) ? resultData : (resultData.items || []);
 
-            // Validate data is an array to prevent crash
             if (!Array.isArray(hubsList)) {
                 console.error('Invalid data format received:', data);
                 throw new Error('Invalid items format received from server');
             }
 
             setHubs(hubsList);
-            setError(null);
         } catch (err) {
             console.error('Fetch error:', err);
             setError('Failed to load hubs. Please check your connection.');
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchHubs();
+        }, [activeTab, user?.id])
+    );
+
+    const onRefresh = () => {
+        setIsRefreshing(true);
+        fetchHubs(false);
     };
 
     const handleCreateHub = async () => {
@@ -130,6 +142,11 @@ export default function HubsScreen() {
         (hub.description && hub.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
+    const tabs = [
+        { label: 'Joined', value: 'joined' },
+        { label: 'Discovery', value: 'discovery' },
+    ];
+
     return (
         <SafeAreaView className="flex-1 bg-background">
             <PageHeader
@@ -144,29 +161,55 @@ export default function HubsScreen() {
                 }
             />
             <View className="px-4 py-4 flex-1">
-                <SearchInput
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    placeholder="Search hubs..."
-                    className="mb-4"
-                />
+                <View className="space-y-4 mb-4">
+                    <SearchInput
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        placeholder="Search hubs..."
+                    />
 
-                {loading ? (
+                    <Tabs
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                    />
+                </View>
+
+                {loading && !isRefreshing ? (
                     <View className="flex-1 items-center justify-center">
                         <ActivityIndicator size="large" color="#8B5CF6" />
                     </View>
                 ) : error ? (
                     <View className="flex-1 items-center justify-center">
                         <Text className="text-destructive mb-4">{error}</Text>
-                        <Button onPress={fetchHubs} size="sm">Retry</Button>
+                        <Button onPress={() => fetchHubs()} size="sm">Retry</Button>
                     </View>
                 ) : (
-                    <ScrollView className="flex-1">
+                    <ScrollView
+                        className="flex-1"
+                        refreshControl={
+                            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
+                        }
+                    >
                         <View className="gap-3 pb-8">
                             {filteredHubs.length === 0 ? (
                                 <View className="items-center py-12 opacity-50">
                                     <Ionicons name="people-outline" size={48} color="#71717A" />
-                                    <Text className="text-muted-foreground mt-4 font-medium">No hubs found</Text>
+                                    <Text className="text-muted-foreground mt-4 font-medium text-center">
+                                        {activeTab === 'joined'
+                                            ? "You haven't joined any hubs yet"
+                                            : "No hubs found"}
+                                    </Text>
+                                    {activeTab === 'joined' && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="mt-4"
+                                            onPress={() => setActiveTab('discovery')}
+                                        >
+                                            Browse Hubs
+                                        </Button>
+                                    )}
                                 </View>
                             ) : (
                                 filteredHubs.map((hub) => (

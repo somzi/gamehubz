@@ -8,7 +8,7 @@ const getApiHost = () => {
         return '10.0.2.2';
     }
     // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
-    return '192.168.0.6';
+    return '192.168.0.10';
 };
 
 export const API_HOST = getApiHost();
@@ -23,7 +23,8 @@ export const ENDPOINTS = {
     GET_PLAYER_STATS: (id: string) => `${API_BASE_URL}/api/userProfile/${id}/stats`,
     USER_SOCIAL: `${API_BASE_URL}/api/UserSocial`,
     GET_USER_INFO: (id: string) => `${API_BASE_URL}/api/UserProfile/${id}/info`,
-    GET_USER_HUBS: (userId: string) => `${API_BASE_URL}/api/Hub/user/${userId}`,
+    GET_USER_HUBS: (userId: string) => `${API_BASE_URL}/api/Hub/user/${userId}/joined`,
+    GET_DISCOVERY_HUBS: (userId: string) => `${API_BASE_URL}/api/Hub/user/${userId}/discovery`,
     GET_PROFILE_TOURNAMENTS: (userId: string) => `${API_BASE_URL}/api/UserProfile/${userId}/tournaments`,
     CREATE_TOURNAMENT: `${API_BASE_URL}/api/tournament`,
     GET_USER_TOURNAMENTS: (userId: string, status: number, page: number, pageSize: number = 10) =>
@@ -51,6 +52,7 @@ export const ENDPOINTS = {
     GET_HUB_ACTIVITY_HOME: `${API_BASE_URL}/api/hubActivity/home`,
     CREATE_HUB: `${API_BASE_URL}/api/hub/create`,
     DELETE_USER_SOCIAL: (id: string) => `${API_BASE_URL}/api/UserSocial/${id}`,
+    UPDATE_TOURNAMENT: `${API_BASE_URL}/api/tournament/update`,
 };
 
 let authToken: string | null = null;
