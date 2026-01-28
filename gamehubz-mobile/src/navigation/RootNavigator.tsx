@@ -15,6 +15,8 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
+import ManageHubScreen from '../screens/ManageHubScreen';
+import HubMembersScreen from '../screens/HubMembersScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import { HelpCenterScreen, AboutUsScreen, ContactUsScreen } from '../screens/SupportScreens';
 import { View, ActivityIndicator } from 'react-native';
@@ -89,6 +91,14 @@ export function RootNavigator() {
                     <Stack.Screen
                         name="UpdateProfile"
                         component={UpdateProfileScreen}
+                    />
+                    <Stack.Screen
+                        name="ManageHub"
+                        component={ManageHubScreen}
+                    />
+                    <Stack.Screen
+                        name="HubMembers"
+                        component={HubMembersScreen}
                     />
                 </>
             )}

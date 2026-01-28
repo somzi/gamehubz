@@ -13,8 +13,6 @@ import { Tabs } from '../components/ui/Tabs';
 import { cn } from '../lib/utils';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { EditHubModal } from '../components/modals/EditHubModal';
-import { CreateTournamentModal } from '../components/modals/CreateTournamentModal';
 
 type HubProfileRouteProp = RouteProp<RootStackParamList, 'HubProfile'>;
 
@@ -26,8 +24,6 @@ export default function HubProfileScreen() {
     const { user } = useAuth();
     const [isFollowing, setIsFollowing] = useState(false);
     const [isOwner, setIsOwner] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [showCreateTournamentModal, setShowCreateTournamentModal] = useState(false);
     const [activeTab, setActiveTab] = useState('live');
     const [hubData, setHubData] = useState<any>(null);
     const [tournaments, setTournaments] = useState<any[]>([]);
@@ -225,7 +221,18 @@ export default function HubProfileScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <PageHeader title="Hub Profile" showBack />
+            <PageHeader
+                title="Hub Profile"
+                showBack
+                rightElement={isOwner ? (
+                    <Pressable
+                        onPress={() => navigation.navigate('ManageHub', { hubId: id })}
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                    >
+                        <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
+                    </Pressable>
+                ) : null}
+            />
             <ScrollView className="flex-1">
                 <View className="animate-slide-up">
                     {/* Profile Header */}
@@ -240,24 +247,7 @@ export default function HubProfileScreen() {
                             </View>
                         </View>
 
-                        {isOwner ? (
-                            <>
-                                <Button
-                                    onPress={() => setShowEditModal(true)}
-                                    variant="default"
-                                    className="w-full"
-                                >
-                                    <Text className="font-bold text-white">Edit Hub</Text>
-                                </Button>
-                                <Button
-                                    onPress={() => setShowCreateTournamentModal(true)}
-                                    variant="outline"
-                                    className="w-full mt-3"
-                                >
-                                    <Text className="font-bold text-white">Create Tournament</Text>
-                                </Button>
-                            </>
-                        ) : (
+                        {!isOwner && (
                             <Button
                                 onPress={handleFollowToggle}
                                 variant={isFollowing ? "secondary" : "default"}
@@ -294,19 +284,6 @@ export default function HubProfileScreen() {
                 </View>
             </ScrollView>
 
-            <EditHubModal
-                visible={showEditModal}
-                hubId={id}
-                initialName={hubData?.name || ''}
-                initialDescription={hubData?.description || ''}
-                onClose={() => setShowEditModal(false)}
-                onSave={handleUpdateHub}
-            />
-            <CreateTournamentModal
-                visible={showCreateTournamentModal}
-                onClose={() => setShowCreateTournamentModal(false)}
-                hubId={id} // Ensure modal accepts hubId if needed, or pass it via context/pre-selection
-            />
         </SafeAreaView>
     );
 }

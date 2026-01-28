@@ -13,6 +13,8 @@ export type RootStackParamList = {
     AboutUs: undefined;
     ContactUs: undefined;
     UpdateProfile: undefined;
+    ManageHub: { hubId: string };
+    HubMembers: { hubId: string };
 };
 
 export type MainTabParamList = {
