@@ -16,6 +16,7 @@ export const API_PORT = '5057';
 export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
 
 export const ENDPOINTS = {
+    SET_PASSWORD: `${API_BASE_URL}/api/Auth/setPassword`,
     HUBS: `${API_BASE_URL}/api/Hub/getAll`,
     GET_HUB: (id: string) => `${API_BASE_URL}/api/Hub/${id}`,
     GET_TOURNAMENT_STRUCTURE: (id: string) => `${API_BASE_URL}/api/tournament/${id}/structure`,
@@ -76,8 +77,11 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
 
     console.log(`[API] ${options.method || 'GET'} -> ${url} (Auth: ${!!authToken})`);
 
-    return fetch(url, {
+    const response = await fetch(url, {
         ...options,
         headers,
     });
+
+    console.log(`[API] ${options.method || 'GET'} <- ${url} (${response.status} ${response.statusText})`);
+    return response;
 };

@@ -8,12 +8,15 @@ import { StatusModal } from '../components/modals/StatusModal';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
+import { authenticatedFetch, ENDPOINTS } from '../lib/api';
+
 export default function ChangePasswordScreen() {
     const navigation = useNavigation();
-    const { isLoading } = useAuth();
+    const { user } = useAuth();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [statusModalConfig, setStatusModalConfig] = useState<{
@@ -54,15 +57,57 @@ export default function ChangePasswordScreen() {
             return;
         }
 
-        // TODO: Implement actual API call once endpoint is available
-        // For now, simulate success
-        setStatusModalConfig({
-            type: 'success',
-            title: 'Password Changed',
-            message: 'Your password has been updated successfully.',
-            onClose: () => navigation.goBack()
-        });
-        setShowStatusModal(true);
+        setIsProcessing(true);
+        try {
+            const body = {
+                newPassword: newPassword,
+                oldPassword: currentPassword
+            };
+
+            const response = await authenticatedFetch(ENDPOINTS.SET_PASSWORD, {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+
+            if (response.ok) {
+                setStatusModalConfig({
+                    type: 'success',
+                    title: 'Password Changed',
+                    message: 'Your password has been updated successfully.',
+                    onClose: () => navigation.goBack()
+                });
+                setShowStatusModal(true);
+            } else {
+                const responseText = await response.text();
+                console.log(`[DEBUG] Error Response: ${response.status} - ${responseText}`);
+
+                let errorMsg = `Please check your current password.`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    if (errorData.message) errorMsg = errorData.message;
+                    else if (typeof errorData === 'string') errorMsg = errorData;
+                } catch (e) {
+                    if (responseText) errorMsg = responseText;
+                }
+
+                setStatusModalConfig({
+                    type: 'error',
+                    title: 'Update Failed',
+                    message: errorMsg
+                });
+                setShowStatusModal(true);
+            }
+        } catch (error) {
+            console.error('Password change error:', error);
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Network Error',
+                message: 'Unable to connect to the server. Please try again later.'
+            });
+            setShowStatusModal(true);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -111,7 +156,7 @@ export default function ChangePasswordScreen() {
                 <View className="p-6 border-t border-white/5">
                     <Button
                         onPress={handleChangePassword}
-                        loading={isLoading}
+                        loading={isProcessing}
                         size="lg"
                     >
                         Update Password
