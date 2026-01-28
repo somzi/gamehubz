@@ -8,6 +8,11 @@ export type RootStackParamList = {
     Notifications: undefined;
     NotFound: undefined;
     EditProfile: undefined;
+    ChangePassword: undefined;
+    HelpCenter: undefined;
+    AboutUs: undefined;
+    ContactUs: undefined;
+    UpdateProfile: undefined;
 };
 
 export type MainTabParamList = {

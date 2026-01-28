@@ -14,6 +14,9 @@ import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import UpdateProfileScreen from '../screens/UpdateProfileScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import { HelpCenterScreen, AboutUsScreen, ContactUsScreen } from '../screens/SupportScreens';
 import { View, ActivityIndicator } from 'react-native';
 
 export function RootNavigator() {
@@ -66,6 +69,26 @@ export function RootNavigator() {
                     <Stack.Screen
                         name="NotFound"
                         component={NotFoundScreen}
+                    />
+                    <Stack.Screen
+                        name="ChangePassword"
+                        component={ChangePasswordScreen}
+                    />
+                    <Stack.Screen
+                        name="HelpCenter"
+                        component={HelpCenterScreen}
+                    />
+                    <Stack.Screen
+                        name="AboutUs"
+                        component={AboutUsScreen}
+                    />
+                    <Stack.Screen
+                        name="ContactUs"
+                        component={ContactUsScreen}
+                    />
+                    <Stack.Screen
+                        name="UpdateProfile"
+                        component={UpdateProfileScreen}
                     />
                 </>
             )}
