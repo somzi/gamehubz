@@ -266,33 +266,67 @@ export default function PlayerProfileScreen() {
                                 </View>
 
                                 <Text className="text-lg font-bold text-white mt-6 mb-4">Statistics</Text>
-                                <View className="bg-card-elevated rounded-3xl p-6 flex-row items-center border border-white/5">
-                                    <View className="mr-8">
-                                        <CircularProgress percentage={Math.round(displayData.winPercentage)} size={90} strokeWidth={10} color="#10B981" />
-                                    </View>
-                                    <View className="flex-1 flex-row">
+
+                                {/* New Modern Stats Grid */}
+                                <View className="flex-row flex-wrap justify-between gap-y-4">
+                                    {/* Win Rate Card - Featured */}
+                                    <View className="w-full bg-card-elevated rounded-3xl p-6 flex-row items-center border border-white/5">
+                                        <View className="mr-8 relative">
+                                            <CircularProgress
+                                                percentage={Math.round(displayData.winPercentage)}
+                                                size={100}
+                                                strokeWidth={12}
+                                                color="#10B981"
+                                                showText={false}
+                                            />
+                                            <View className="absolute inset-0 items-center justify-center">
+                                                <Text className="text-white text-xl font-black">{Math.round(displayData.winPercentage)}%</Text>
+                                                <Text className="text-gray-500 text-[10px] uppercase font-bold">Win Rate</Text>
+                                            </View>
+                                        </View>
                                         <View className="flex-1">
-                                            <View className="mb-5">
-                                                <Text className="text-gray-400 text-xs mb-1">Total Matches</Text>
-                                                <Text className="text-white text-2xl font-bold">{displayData.totalMatches}</Text>
-                                            </View>
-                                            <View>
-                                                <Text className="text-gray-400 text-xs mb-1">Tournaments Won</Text>
-                                                <Text className="text-yellow-500 text-2xl font-bold">12</Text>
+                                            <Text className="text-white text-lg font-bold mb-1">Performance</Text>
+                                            <Text className="text-gray-400 text-xs leading-4">Overall winning consistency across all tournaments.</Text>
+                                            <View className="flex-row items-center mt-3">
+                                                <View className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
                                             </View>
                                         </View>
-                                        <View className="flex-1 ml-4">
-                                            <View className="mb-5">
-                                                <Text className="text-gray-400 text-xs mb-1">Wins</Text>
-                                                <Text className="text-emerald-500 text-2xl font-bold">{displayData.wins}</Text>
-                                            </View>
-                                            <View>
-                                                <Text className="text-gray-400 text-xs mb-1">Losses</Text>
-                                                <Text className="text-rose-500 text-2xl font-bold">{displayData.losses}</Text>
-                                            </View>
+                                    </View>
+
+                                    {/* Stats Grid 2x1 for main stats */}
+                                    <View className="w-[48%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
+                                        <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center mb-2">
+                                            <Ionicons name="game-controller" size={20} color="#10B981" />
                                         </View>
+                                        <Text className="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Total Matches</Text>
+                                        <Text className="text-white text-xl font-black">{displayData.totalMatches}</Text>
+                                    </View>
+
+                                    <View className="w-[48%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
+                                        <View className="w-10 h-10 rounded-full bg-yellow-500/10 items-center justify-center mb-2">
+                                            <Ionicons name="trophy" size={20} color="#EAB308" />
+                                        </View>
+                                        <Text className="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Tournaments</Text>
+                                        <Text className="text-yellow-500 text-xl font-black">{displayData.trophies || 0}</Text>
+                                    </View>
+
+                                    {/* Detailed Stats Row */}
+                                    <View className="w-[31%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
+                                        <Text className="text-emerald-500 text-lg font-black">{displayData.wins}</Text>
+                                        <Text className="text-gray-500 text-[9px] uppercase font-bold mt-1">Wins</Text>
+                                    </View>
+
+                                    <View className="w-[31%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
+                                        <Text className="text-blue-400 text-lg font-black">{displayData.draws}</Text>
+                                        <Text className="text-gray-500 text-[9px] uppercase font-bold mt-1">Draws</Text>
+                                    </View>
+
+                                    <View className="w-[31%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
+                                        <Text className="text-rose-500 text-lg font-black">{displayData.losses}</Text>
+                                        <Text className="text-gray-500 text-[9px] uppercase font-bold mt-1">Losses</Text>
                                     </View>
                                 </View>
+
                             </View>
                         )}
 

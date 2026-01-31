@@ -44,7 +44,7 @@ export function AboutUsScreen() {
                 </Text>
                 <View className="mt-12 items-center">
                     <Text className="text-gray-500 text-sm">Version 1.0.0</Text>
-                    <Text className="text-gray-500 text-sm mt-2">© 2026 GameHubz Inc.</Text>
+                    <Text className="text-gray-500 text-sm mt-2">© 2026 CodeSphere Solutions</Text>
                 </View>
             </ScrollView>
         </SafeAreaView>
