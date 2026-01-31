@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch } from '../lib/api';
-import { ReportResultModal } from '../components/modals/ReportResultModal';
+import { MatchDetailsModal } from '../components/modals/MatchDetailsModal';
 import { TournamentRegion } from '../types/tournament';
 import { StatusModal } from '../components/modals/StatusModal';
 import { EditTournamentModal } from '../components/modals/EditTournamentModal';
@@ -404,11 +404,11 @@ export default function TournamentDetailsScreen() {
     }, [id]);
 
     const handleMatchPress = (match: any) => {
-        // Only allow reporting if match has participants and is not TBD
+        // Only allow if match has participants
         if (!match.home || !match.away) return;
 
-        // Only allow reporting if match status is 2 (In Progress/Live)
-        if (match.status !== 2) return;
+        // Allow Pending (1), Live (2) and Completed (3, 4) matches
+        if (match.status !== 1 && match.status !== 2 && match.status !== 3 && match.status !== 4) return;
 
         setSelectedMatch(match);
         setShowReportModal(true);
@@ -906,21 +906,25 @@ export default function TournamentDetailsScreen() {
                 </View>
             </ScrollView>
 
-            <ReportResultModal
+            <MatchDetailsModal
                 visible={showReportModal}
                 onClose={() => setShowReportModal(false)}
                 matchId={selectedMatch?.id}
                 tournamentId={id}
+                tournamentName={tournament?.name}
+                roundName={selectedMatch?.roundName || 'Match Details'}
+                opponentName={selectedMatch?.away?.username}
+                status={
+                    selectedMatch?.status === 3 || selectedMatch?.status === 4 ? 'completed' :
+                        selectedMatch?.status === 2 ? 'ready_phase' :
+                            selectedMatch?.status === 1 ? 'scheduled' : 'ready_phase'
+                }
                 home={selectedMatch?.home}
                 away={selectedMatch?.away}
-                onSuccess={() => {
+                evidences={selectedMatch?.evidences}
+                onMatchUpdate={() => {
                     fetchBracket(); // Refresh the bracket/league data
-                    setStatusModalConfig({
-                        type: 'success',
-                        title: 'Result Reported',
-                        message: 'Match result has been reported successfully!'
-                    });
-                    setShowStatusModal(true);
+                    // Refresh details if needed
                 }}
             />
 

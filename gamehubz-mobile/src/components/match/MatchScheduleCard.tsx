@@ -8,6 +8,8 @@ import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { cn } from '../../lib/utils';
 import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 
 type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
 
@@ -53,6 +55,7 @@ export function MatchScheduleCard({
     const [homeScore, setHomeScore] = useState('');
     const [awayScore, setAwayScore] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [selectedImages, setSelectedImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
 
     const fetchAvailability = async () => {
         if (!user?.id || !matchId) return;
@@ -120,6 +123,33 @@ export function MatchScheduleCard({
         }
     };
 
+    const pickImages = async () => {
+        try {
+            const { status: pStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (pStatus !== 'granted') {
+                setError('Sorry, we need camera roll permissions to make this work!');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsMultipleSelection: true,
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                setSelectedImages(prev => [...prev, ...result.assets]);
+            }
+        } catch (err) {
+            console.error('Error picking images:', err);
+            setError('Failed to pick images');
+        }
+    };
+
+    const removeImage = (uri: string) => {
+        setSelectedImages(prev => prev.filter(img => img.uri !== uri));
+    };
+
     const handleSubmitResult = async () => {
         console.log('[MatchScheduleCard] handleSubmitResult called');
         console.log('[MatchScheduleCard] matchId:', matchId);
@@ -158,13 +188,25 @@ export function MatchScheduleCard({
 
             console.log('[MatchScheduleCard] Response status:', response.status);
 
-            if (!response.ok) {
-                const text = await response.text().catch(() => 'No body');
-                console.log('[MatchScheduleCard] Error response:', text);
-                throw new Error(`Failed to report result: ${text}`);
+            console.log('[MatchScheduleCard] Success! Checking for images to upload');
+
+            if (selectedImages.length > 0) {
+                const formData = new FormData();
+                selectedImages.forEach((img, index) => {
+                    const filename = img.uri.split('/').pop() || `evidence-${index}.jpg`;
+                    const match = /\.(\w+)$/.exec(filename);
+                    const type = match ? `image/${match[1]}` : `image/jpeg`;
+                    // @ts-ignore
+                    formData.append('files', { uri: img.uri, name: filename, type });
+                });
+
+                await authenticatedFetch(ENDPOINTS.UPLOAD_MATCH_EVIDENCE(matchId), {
+                    method: 'POST',
+                    body: formData,
+                });
             }
 
-            console.log('[MatchScheduleCard] Success! Closing modal and refreshing');
+            console.log('[MatchScheduleCard] Complete! Closing modal and refreshing');
             // Success - close modal and refresh
             setModalVisible(false);
             if (onMatchUpdate) {
@@ -331,6 +373,37 @@ export function MatchScheduleCard({
                                         </View>
                                     </View>
 
+                                    {/* Evidence Section */}
+                                    <View className="mt-6 border-t border-border/10 pt-6">
+                                        <View className="flex-row items-center justify-between mb-3">
+                                            <View>
+                                                <Text className="text-sm font-bold text-foreground">Evidence</Text>
+                                                <Text className="text-[11px] text-muted-foreground">Add match result screenshots</Text>
+                                            </View>
+                                            <Pressable onPress={pickImages} className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20">
+                                                <Ionicons name="add" size={16} color="#10B981" />
+                                                <Text className="text-xs font-bold text-primary ml-1">Add Photos</Text>
+                                            </Pressable>
+                                        </View>
+                                        {selectedImages.length > 0 ? (
+                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                                                {selectedImages.map((img, index) => (
+                                                    <View key={img.uri + index} className="mr-3 mb-2">
+                                                        <Image source={{ uri: img.uri }} className="w-20 h-20 rounded-xl" />
+                                                        <Pressable onPress={() => removeImage(img.uri)} className="absolute -top-1.5 -right-1.5 bg-destructive w-5 h-5 rounded-full items-center justify-center border border-background shadow-sm">
+                                                            <Ionicons name="close" size={12} color="white" />
+                                                        </Pressable>
+                                                    </View>
+                                                ))}
+                                            </ScrollView>
+                                        ) : (
+                                            <Pressable onPress={pickImages} className="h-20 border border-dashed border-border/30 rounded-2xl items-center justify-center bg-muted/5">
+                                                <Ionicons name="images-outline" size={24} color="#71717A" />
+                                                <Text className="text-[11px] text-muted-foreground mt-1">No photos selected</Text>
+                                            </Pressable>
+                                        )}
+                                    </View>
+
                                     {/* Action Buttons */}
                                     <View className="mt-6 flex-row gap-3">
                                         <Button
@@ -340,6 +413,7 @@ export function MatchScheduleCard({
                                                 setHomeScore('');
                                                 setAwayScore('');
                                                 setError(null);
+                                                setSelectedImages([]);
                                             }}
                                         >
                                             Clear

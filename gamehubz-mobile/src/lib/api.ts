@@ -54,8 +54,9 @@ export const ENDPOINTS = {
     CREATE_HUB: `${API_BASE_URL}/api/hub/create`,
     DELETE_USER_SOCIAL: (id: string) => `${API_BASE_URL}/api/UserSocial/${id}`,
     UPDATE_TOURNAMENT: `${API_BASE_URL}/api/tournament/update`,
-    GET_HUB_MEMBERS: (id: string) => `${API_BASE_URL}/api/Hub/${id}/members`,
     KICK_HUB_MEMBER: (hubId: string, userId: string) => `${API_BASE_URL}/api/Hub/${hubId}/user/${userId}/kick`,
+    UPLOAD_MATCH_EVIDENCE: (id: string) => `${API_BASE_URL}/api/match/${id}/evidence`,
+    GET_MATCH_DETAILS: (id: string) => `${API_BASE_URL}/api/match/${id}/details`,
 };
 
 let authToken: string | null = null;
@@ -72,8 +73,8 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
         console.warn(`[API] authenticatedFetch called without token for: ${url}`);
     }
 
-    // Default to json content type if not set (for POST/PUT)
-    if (!headers.has('Content-Type') && (options.method === 'POST' || options.method === 'PUT')) {
+    // Default to json content type if not set (for POST/PUT) and not FormData
+    if (!headers.has('Content-Type') && (options.method === 'POST' || options.method === 'PUT') && !(options.body instanceof FormData)) {
         headers.set('Content-Type', 'application/json');
     }
 

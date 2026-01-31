@@ -33,7 +33,12 @@ export function BracketMatch({ home, away, startTime, status, className, onPress
     const navigation = useNavigation<NavigationProp>();
 
     const handlePlayerClick = (userId: string) => {
-        navigation.navigate('PlayerProfile', { id: userId });
+        // Only navigate if we're not using the match detail modal
+        if (onPress) {
+            onPress();
+        } else if (userId) {
+            navigation.navigate('PlayerProfile', { id: userId });
+        }
     };
 
     const renderParticipant = (participant: Participant | null) => {
@@ -88,20 +93,23 @@ export function BracketMatch({ home, away, startTime, status, className, onPress
     const hasScore = (p: any) => p?.score !== null && p?.score !== undefined;
     const isAlreadyReported = hasScore(home) || hasScore(away);
 
-    const canReport = !!onPress && !isAlreadyReported && isParticipant && !!startTime;
+    // Can show details if match has participants and is either Live (2) or Completed (3, 4)
+    // We relax the "isParticipant" requirement for viewing, but keep it for reporting
+    const canShowDetails = !!onPress && !!home && !!away && (status === 2 || status === 3 || status === 4);
+    const canReport = canShowDetails && !isAlreadyReported && isParticipant && status === 2;
 
     return (
         <Pressable
-            onPress={canReport ? onPress : undefined}
-            disabled={!canReport}
+            onPress={canShowDetails ? onPress : undefined}
+            disabled={!canShowDetails}
             className={cn(
                 "flex-col gap-1 w-52 p-2 rounded-2xl bg-card border border-border/30",
                 canReport && "border-primary/30",
                 className
             )}
             style={({ pressed }) => ({
-                opacity: pressed && canReport ? 0.7 : 1,
-                transform: [{ scale: pressed && canReport ? 0.98 : 1 }]
+                opacity: pressed && canShowDetails ? 0.7 : 1,
+                transform: [{ scale: pressed && canShowDetails ? 0.98 : 1 }]
             })}
         >
             {canReport && (

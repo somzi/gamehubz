@@ -1,0 +1,443 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, Modal, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { Button } from '../ui/Button';
+import { PlayerAvatar } from '../ui/PlayerAvatar';
+import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
+import { useAuth } from '../../context/AuthContext';
+import { getOptimizedCloudinaryUrl } from '../../lib/image';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../types/navigation';
+
+export type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
+
+export interface MatchResultDetailDto {
+    homeUser: string;
+    homeUserId: string;
+    awayUser: string;
+    awayUserId: string;
+    homeUserScore: number;
+    awayUserScore: number;
+    evidences: string[];
+}
+
+interface MatchDetailsModalProps {
+    visible: boolean;
+    onClose: () => void;
+    matchId: string;
+    tournamentId: string;
+    tournamentName: string;
+    roundName: string;
+    opponentName: string;
+    status: MatchStatus;
+    deadline?: string;
+    scheduledTime?: string;
+    opponentAvailability?: string[];
+    myAvailability?: string[];
+    onMatchUpdate?: () => void;
+    home?: { userId: string; username: string; score: number | null };
+    away?: { userId: string; username: string; score: number | null };
+    evidences?: string[];
+}
+
+export function MatchDetailsModal({
+    visible,
+    onClose,
+    matchId,
+    tournamentId,
+    tournamentName,
+    roundName,
+    opponentName,
+    status,
+    deadline = 'Jan 22, 2024',
+    scheduledTime,
+    opponentAvailability = [],
+    myAvailability = [],
+    onMatchUpdate,
+    home,
+    away,
+    evidences,
+}: MatchDetailsModalProps) {
+    const { user } = useAuth();
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Availability state (migrated from MatchScheduleCard if needed)
+    const [mySlots, setMySlots] = useState<string[]>(myAvailability);
+    const [opponentSlots, setOpponentSlots] = useState<string[]>(opponentAvailability);
+    const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+    const [confirmedTime, setConfirmedTime] = useState<string | undefined>(scheduledTime);
+    const [currentStatus, setCurrentStatus] = useState<MatchStatus>(status);
+
+    // Reporting state
+    const [homeScore, setHomeScore] = useState('');
+    const [awayScore, setAwayScore] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [selectedImages, setSelectedImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
+
+    // Details for completed matches
+    const [matchDetails, setMatchDetails] = useState<MatchResultDetailDto | null>(null);
+    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+    // Image preview state
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (visible && matchId) {
+            // Optimization: if we already have evidences and scores, skip fetch
+            if (status === 'completed' && evidences && home && away && home.score !== null && away.score !== null) {
+                setMatchDetails({
+                    homeUser: home.username,
+                    homeUserId: home.userId,
+                    awayUser: away.username,
+                    awayUserId: away.userId,
+                    homeUserScore: home.score,
+                    awayUserScore: away.score,
+                    evidences: evidences
+                });
+                return;
+            }
+
+            if (status === 'pending_availability') {
+                fetchAvailability();
+            } else {
+                fetchMatchDetails();
+            }
+        }
+    }, [visible, status, matchId, evidences, home, away]);
+
+    const fetchMatchDetails = async () => {
+        if (!matchId) return;
+        setIsLoadingDetails(true);
+        setError(null);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_MATCH_DETAILS(matchId));
+            if (response.ok) {
+                const data = await response.json();
+                setMatchDetails(data);
+            } else {
+                setError('Failed to load match results');
+            }
+        } catch (err) {
+            console.error('Error fetching match details:', err);
+            setError('An error occurred while loading results');
+        } finally {
+            setIsLoadingDetails(false);
+        }
+    };
+
+    const fetchAvailability = async () => {
+        if (!user?.id || !matchId) return;
+        setIsLoadingAvailability(true);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_MATCH_AVAILABILITY(matchId, user.id));
+            if (response.ok) {
+                const data = await response.json();
+                if (data.mySlots) setMySlots(data.mySlots);
+                if (data.opponentSlots) setOpponentSlots(data.opponentSlots);
+                if (data.confirmedTime) {
+                    const confirmedDate = new Date(data.confirmedTime);
+                    setConfirmedTime(confirmedDate.toLocaleString());
+                    setCurrentStatus('scheduled');
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching availability:', error);
+        } finally {
+            setIsLoadingAvailability(false);
+        }
+    };
+
+    const pickImages = async () => {
+        try {
+            const { status: pStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (pStatus !== 'granted') {
+                setError('Sorry, we need camera roll permissions to make this work!');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsMultipleSelection: true,
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                setSelectedImages(prev => [...prev, ...result.assets]);
+            }
+        } catch (err) {
+            console.error('Error picking images:', err);
+            setError('Failed to pick images');
+        }
+    };
+
+    const removeImage = (uri: string) => {
+        setSelectedImages(prev => prev.filter(img => img.uri !== uri));
+    };
+
+    const handleSubmitResult = async () => {
+        if (!matchId || !tournamentId) return;
+        if (homeScore === '' || awayScore === '') {
+            setError('Please enter scores for both players');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const payload = {
+                MatchId: matchId,
+                HomeScore: parseInt(homeScore, 10),
+                AwayScore: parseInt(awayScore, 10),
+                TournamentId: tournamentId
+            };
+
+            const response = await authenticatedFetch(ENDPOINTS.REPORT_MATCH_RESULT, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || 'Failed to report result');
+            }
+
+            if (selectedImages.length > 0) {
+                const formData = new FormData();
+                selectedImages.forEach((img, index) => {
+                    const filename = img.uri.split('/').pop() || `evidence-${index}.jpg`;
+                    const match = /\.(\w+)$/.exec(filename);
+                    const type = match ? `image/${match[1]}` : `image/jpeg`;
+                    // @ts-ignore
+                    formData.append('files', { uri: img.uri, name: filename, type });
+                });
+
+                await authenticatedFetch(ENDPOINTS.UPLOAD_MATCH_EVIDENCE(matchId), {
+                    method: 'POST',
+                    body: formData,
+                });
+            }
+
+            onClose();
+            if (onMatchUpdate) onMatchUpdate();
+        } catch (err: any) {
+            console.error('Report result error:', err);
+            setError(err.message || 'An error occurred while reporting result');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const navigateToProfile = (userId?: string) => {
+        if (!userId) return;
+        onClose();
+        navigation.navigate('PlayerProfile', { id: userId });
+    };
+
+    return (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={visible}
+            onRequestClose={onClose}
+        >
+            <View className="flex-1 justify-end bg-black/50">
+                <View className="bg-card rounded-t-3xl border-t border-border/50 p-6 max-h-[90%]">
+                    {/* Header */}
+                    <View className="flex-row items-center justify-between mb-4">
+                        <View>
+                            <Text className="text-lg font-bold text-foreground">{tournamentName}</Text>
+                            <Text className="text-sm text-muted-foreground">{roundName}</Text>
+                        </View>
+                        <Pressable
+                            onPress={onClose}
+                            className="w-8 h-8 rounded-full bg-secondary items-center justify-center"
+                        >
+                            <Ionicons name="close" size={20} color="hsl(220, 15%, 55%)" />
+                        </Pressable>
+                    </View>
+
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        {status === 'completed' ? (
+                            <View className="py-2">
+                                {isLoadingDetails ? (
+                                    <View className="py-20 items-center justify-center">
+                                        <ActivityIndicator size="large" color="#10B981" />
+                                        <Text className="text-muted-foreground mt-4">Loading results...</Text>
+                                    </View>
+                                ) : matchDetails ? (
+                                    <View className="space-y-6">
+                                        <View className="items-center py-4 bg-muted/10 rounded-3xl border border-border/10">
+                                            <Text className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Final Score</Text>
+                                            <View className="flex-row items-center justify-center gap-8">
+                                                <Pressable onPress={() => navigateToProfile(matchDetails.homeUserId)} className="items-center gap-2">
+                                                    <PlayerAvatar name={matchDetails.homeUser} size="lg" />
+                                                    <Text className="text-xs font-bold text-foreground">{matchDetails.homeUser}</Text>
+                                                    <Text className="text-4xl font-black text-primary">{matchDetails.homeUserScore}</Text>
+                                                </Pressable>
+
+                                                <Text className="text-2xl font-black text-muted-foreground mb-4">:</Text>
+
+                                                <Pressable onPress={() => navigateToProfile(matchDetails.awayUserId)} className="items-center gap-2">
+                                                    <PlayerAvatar name={matchDetails.awayUser} size="lg" />
+                                                    <Text className="text-xs font-bold text-foreground">{matchDetails.awayUser}</Text>
+                                                    <Text className="text-4xl font-black text-white">{matchDetails.awayUserScore}</Text>
+                                                </Pressable>
+                                            </View>
+                                        </View>
+
+                                        {matchDetails.evidences && matchDetails.evidences.length > 0 && (
+                                            <View>
+                                                <View className="flex-row items-center gap-2 mb-3">
+                                                    <Ionicons name="images-outline" size={18} color="#64748B" />
+                                                    <Text className="text-sm font-bold text-foreground">Evidence Gallery</Text>
+                                                </View>
+                                                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                                                    {matchDetails.evidences.map((url, idx) => (
+                                                        <Pressable
+                                                            key={idx}
+                                                            className="mr-3"
+                                                            onPress={() => setPreviewImage(url)}
+                                                        >
+                                                            <Image
+                                                                source={{ uri: getOptimizedCloudinaryUrl(url, 400) }}
+                                                                className="w-40 h-56 rounded-2xl bg-muted"
+                                                                resizeMode="cover"
+                                                            />
+                                                        </Pressable>
+                                                    ))}
+                                                </ScrollView>
+                                            </View>
+                                        )}
+                                        <View className="py-6 items-center">
+                                            <View className="bg-primary/10 p-3 rounded-full mb-3">
+                                                <Ionicons name="shield-checkmark" size={32} color="#10B981" />
+                                            </View>
+                                            <Text className="text-foreground font-bold">Authenticated Result</Text>
+                                            <Text className="text-muted-foreground text-xs mt-1">This match results have been verified</Text>
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View className="py-20 items-center">
+                                        <Ionicons name="alert-circle-outline" size={48} color="#71717A" />
+                                        <Text className="text-muted-foreground mt-2">{error || 'No details available'}</Text>
+                                    </View>
+                                )}
+                            </View>
+                        ) : (status === 'scheduled' || status === 'ready_phase') ? (
+                            <View className="space-y-4">
+                                <View className="items-center mb-2">
+                                    <Text className="text-sm text-muted-foreground">Match Time</Text>
+                                    <Text className="text-lg font-bold text-primary mt-1">{scheduledTime || 'TBD'}</Text>
+                                </View>
+                                {error && (
+                                    <View className="bg-destructive/10 p-4 rounded-2xl mb-2">
+                                        <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+                                    </View>
+                                )}
+                                <View className="flex-row items-center justify-between gap-4">
+                                    <View className="flex-1 items-center gap-3">
+                                        <PlayerAvatar name={user?.username || 'You'} size="lg" />
+                                        <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                            {user?.username || 'You'}
+                                        </Text>
+                                        <TextInput
+                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                            placeholder="0"
+                                            placeholderTextColor="#71717A"
+                                            keyboardType="numeric"
+                                            value={homeScore}
+                                            onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
+                                        />
+                                    </View>
+                                    <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
+                                    <View className="flex-1 items-center gap-3">
+                                        <PlayerAvatar name={opponentName} size="lg" />
+                                        <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                            {opponentName}
+                                        </Text>
+                                        <TextInput
+                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                            placeholder="0"
+                                            placeholderTextColor="#71717A"
+                                            keyboardType="numeric"
+                                            value={awayScore}
+                                            onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
+                                        />
+                                    </View>
+                                </View>
+
+                                <View className="mt-6 border-t border-border/10 pt-6">
+                                    <View className="flex-row items-center justify-between mb-3">
+                                        <View>
+                                            <Text className="text-sm font-bold text-foreground">Evidence</Text>
+                                            <Text className="text-[11px] text-muted-foreground">Add match result screenshots</Text>
+                                        </View>
+                                        <Pressable onPress={pickImages} className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20">
+                                            <Ionicons name="add" size={16} color="#10B981" />
+                                            <Text className="text-xs font-bold text-primary ml-1">Add Photos</Text>
+                                        </Pressable>
+                                    </View>
+                                    {selectedImages.length > 0 ? (
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                                            {selectedImages.map((img, index) => (
+                                                <View key={img.uri + index} className="mr-3 mb-2">
+                                                    <Image source={{ uri: img.uri }} className="w-20 h-20 rounded-xl" />
+                                                    <Pressable onPress={() => removeImage(img.uri)} className="absolute -top-1.5 -right-1.5 bg-destructive w-5 h-5 rounded-full items-center justify-center border border-background shadow-sm">
+                                                        <Ionicons name="close" size={12} color="white" />
+                                                    </Pressable>
+                                                </View>
+                                            ))}
+                                        </ScrollView>
+                                    ) : (
+                                        <Pressable onPress={pickImages} className="h-20 border border-dashed border-border/30 rounded-2xl items-center justify-center bg-muted/5">
+                                            <Ionicons name="images-outline" size={24} color="#71717A" />
+                                            <Text className="text-[11px] text-muted-foreground mt-1">No photos selected</Text>
+                                        </Pressable>
+                                    )}
+                                </View>
+
+                                <View className="mt-6 flex-row gap-3">
+                                    <Button variant="outline" className="flex-1" onPress={() => { setHomeScore(''); setAwayScore(''); setError(null); setSelectedImages([]); }}>Clear</Button>
+                                    <Button className="flex-1" onPress={handleSubmitResult} loading={isSubmitting}>Submit Result</Button>
+                                </View>
+                            </View>
+                        ) : (
+                            <View className="py-10 items-center justify-center">
+                                <Text className="text-muted-foreground italic">Scheduling Not Supported Here</Text>
+                            </View>
+                        )}
+                    </ScrollView>
+                </View>
+            </View>
+
+            {/* Fullscreen Image Preview */}
+            <Modal
+                visible={!!previewImage}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setPreviewImage(null)}
+            >
+                <View className="flex-1 bg-black/90 items-center justify-center p-4">
+                    <Pressable
+                        className="absolute top-12 right-6 z-10 w-10 h-10 rounded-full bg-black/50 items-center justify-center border border-white/20"
+                        onPress={() => setPreviewImage(null)}
+                    >
+                        <Ionicons name="close" size={24} color="white" />
+                    </Pressable>
+
+                    {previewImage && (
+                        <Image
+                            source={{ uri: previewImage }}
+                            className="w-full h-full"
+                            resizeMode="contain"
+                        />
+                    )}
+                </View>
+            </Modal>
+        </Modal>
+    );
+}
