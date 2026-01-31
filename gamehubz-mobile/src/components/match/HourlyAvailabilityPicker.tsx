@@ -13,7 +13,8 @@ interface HourlyAvailabilityPickerProps {
     onSubmit: (selectedSlots: string[], dateTimeSlots: string[]) => void | Promise<void>;
 }
 
-const HOURS = [10, 12, 14, 16, 18, 20, 22]; // 10am to 10pm, every 2 hours
+// Generate hours from 00:00 to 23:00
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 const formatDate = (date: Date, format: string) => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -62,7 +63,7 @@ export function HourlyAvailabilityPicker({
 
     const [selectedSlots, setSelectedSlots] = useState<Set<string>>(initialKeys);
     const [submitted, setSubmitted] = useState(false);
-    const [weekOffset, setWeekOffset] = useState(0);
+    const [selectedDateIndex, setSelectedDateIndex] = useState(0);
 
     // Sync state when props change
     useEffect(() => {
@@ -85,13 +86,12 @@ export function HourlyAvailabilityPicker({
         }).filter(Boolean));
     }, [opponentAvailability]);
 
-    // Generate 5 days starting from today + weekOffset
+    // Generate 7 days starting from today
     const days = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const startDate = addDays(today, weekOffset * 5);
-        return Array.from({ length: 5 }, (_, i) => {
-            const date = addDays(startDate, i);
+        return Array.from({ length: 7 }, (_, i) => {
+            const date = addDays(today, i);
             return {
                 date,
                 label: formatDate(date, 'EEE'),
@@ -99,7 +99,9 @@ export function HourlyAvailabilityPicker({
                 key: formatDate(date, 'yyyy-MM-dd'),
             };
         });
-    }, [weekOffset]);
+    }, []);
+
+    const selectedDay = days[selectedDateIndex];
 
     const toggleSlot = (dayKey: string, hour: number) => {
         if (submitted) return;
@@ -116,10 +118,13 @@ export function HourlyAvailabilityPicker({
     };
 
     const handleSubmit = async () => {
-        // Convert slot IDs (e.g., "2024-01-23-14") to DateTime objects
+        // Convert slot IDs (e.g., "2024-01-23-14") to ISO Strings
         const dateTimeSlots = Array.from(selectedSlots).map(slot => {
-            const [year, month, day, hour] = slot.split('-');
-            // Create ISO 8601 datetime string
+            const parts = slot.split('-');
+            const year = parts[0];
+            const month = parts[1];
+            const day = parts[2];
+            const hour = parts[3];
             return `${year}-${month}-${day}T${hour.padStart(2, '0')}:00:00`;
         });
 
@@ -127,7 +132,7 @@ export function HourlyAvailabilityPicker({
         setSubmitted(true);
     };
 
-    const formatHour = (hour: number) => `${hour}:00`;
+    const formatHour = (hour: number) => `${hour.toString().padStart(2, '0')}:00`;
 
     const isOpponentAvailable = (dayKey: string, hour: number) => {
         return processedOpponentKeys.has(`${dayKey}-${hour}`);
@@ -135,108 +140,150 @@ export function HourlyAvailabilityPicker({
 
     return (
         <View className="space-y-4">
-            <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-2">
-                    <Ionicons name="calendar-outline" size={16} color="hsl(220, 15%, 55%)" />
-                    <Text className="text-sm text-muted-foreground">Deadline: {deadline}</Text>
+            {/* Header with Deadline */}
+            <View className="flex-row items-center gap-2 mb-2">
+                <Ionicons name="calendar-outline" size={16} color="#94A3B8" />
+                <Text className="text-sm text-slate-400 font-medium">Deadline: {deadline}</Text>
+            </View>
+
+            <Text className="text-sm text-slate-300">
+                Pick dates and times when you can play vs{' '}
+                <Text className="font-bold text-primary">{opponentName}</Text>
+            </Text>
+
+            {/* Date Tabs */}
+            <View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                    {days.map((day, index) => {
+                        const isSelected = selectedDateIndex === index;
+                        const hasSelectedSlots = Array.from(selectedSlots).some(s => s.startsWith(day.key));
+
+                        return (
+                            <Pressable
+                                key={day.key}
+                                onPress={() => setSelectedDateIndex(index)}
+                                className={cn(
+                                    "mr-2 px-4 py-3 rounded-2xl items-center min-w-[80px] border",
+                                    isSelected
+                                        ? "bg-primary border-primary"
+                                        : "bg-slate-800/40 border-slate-700/50"
+                                )}
+                            >
+                                <Text className={cn(
+                                    "text-xs font-bold uppercase tracking-tight",
+                                    isSelected ? "text-slate-900" : "text-slate-400"
+                                )}>
+                                    {day.label}
+                                </Text>
+                                <Text className={cn(
+                                    "text-[10px] mt-1",
+                                    isSelected ? "text-slate-900/70" : "text-slate-500"
+                                )}>
+                                    {day.fullLabel}
+                                </Text>
+                                {hasSelectedSlots && !isSelected && (
+                                    <View className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
+                                )}
+                            </Pressable>
+                        );
+                    })}
+                </ScrollView>
+            </View>
+
+            {/* Hourly List for Selected Date */}
+            <View className="bg-slate-900/50 rounded-3xl border border-slate-800/50 p-2 max-h-80">
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <View className="flex-row flex-wrap justify-between p-1">
+                        {HOURS.map((hour) => {
+                            const dayKey = selectedDay.key;
+                            const slotId = `${dayKey}-${hour}`;
+                            const isSelected = selectedSlots.has(slotId);
+                            const opponentAvail = isOpponentAvailable(dayKey, hour);
+
+                            return (
+                                <Pressable
+                                    key={slotId}
+                                    onPress={() => toggleSlot(dayKey, hour)}
+                                    disabled={submitted}
+                                    className={cn(
+                                        "w-[48%] h-14 mb-3 rounded-2xl items-center justify-center border-2",
+                                        isSelected
+                                            ? "bg-primary/20 border-primary"
+                                            : opponentAvail
+                                                ? "bg-accent/10 border-accent/40"
+                                                : "bg-slate-800/30 border-slate-700/30",
+                                        submitted && "opacity-50"
+                                    )}
+                                >
+                                    <View className="flex-row items-center gap-2">
+                                        <Text className={cn(
+                                            "text-sm font-bold",
+                                            isSelected ? "text-primary" : opponentAvail ? "text-accent" : "text-slate-300"
+                                        )}>
+                                            {formatHour(hour)}
+                                        </Text>
+                                        {opponentAvail && !isSelected && (
+                                            <Ionicons name="people" size={14} color="hsl(45, 90%, 55%)" />
+                                        )}
+                                        {isSelected && (
+                                            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                                        )}
+                                    </View>
+                                    {opponentAvail && (
+                                        <Text className="text-[9px] text-accent/80 absolute bottom-1 uppercase font-bold tracking-tighter">
+                                            Opponent Available
+                                        </Text>
+                                    )}
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </ScrollView>
+            </View>
+
+            {/* Legend */}
+            <View className="flex-row items-center justify-center gap-4 py-1">
+                <View className="flex-row items-center gap-1.5">
+                    <View className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Your Choice</Text>
                 </View>
-                <View className="flex-row items-center gap-1">
-                    <Pressable
-                        onPress={() => setWeekOffset((w) => Math.max(0, w - 1))}
-                        disabled={weekOffset === 0 || submitted}
-                        className="w-7 h-7 items-center justify-center"
-                    >
-                        <Ionicons name="chevron-back" size={16} color="hsl(220, 15%, 55%)" />
-                    </Pressable>
-                    <Pressable
-                        onPress={() => setWeekOffset((w) => w + 1)}
-                        disabled={submitted}
-                        className="w-7 h-7 items-center justify-center"
-                    >
-                        <Ionicons name="chevron-forward" size={16} color="hsl(220, 15%, 55%)" />
-                    </Pressable>
+                <View className="flex-row items-center gap-1.5">
+                    <View className="w-2.5 h-2.5 rounded-full bg-accent" />
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Opponent</Text>
                 </View>
             </View>
 
-            <Text className="text-sm text-foreground">
-                Tap times you're available to play{' '}
-                <Text className="font-semibold text-primary">{opponentName}</Text>
-            </Text>
-
-            {/* Hourly Grid */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View>
-                    {/* Day Headers */}
-                    <View className="flex-row mb-2">
-                        <View className="w-12" />
-                        {days.map((day) => (
-                            <View key={day.key} className="w-14 items-center">
-                                <Text className="text-xs font-medium text-foreground">{day.label}</Text>
-                                <Text className="text-[10px] text-muted-foreground">{day.fullLabel}</Text>
-                            </View>
-                        ))}
-                    </View>
-
-                    {/* Time Slots */}
-                    {HOURS.map((hour) => (
-                        <View key={hour} className="flex-row mb-1">
-                            <View className="w-12 items-end justify-center pr-2">
-                                <Text className="text-[10px] text-muted-foreground">{formatHour(hour)}</Text>
-                            </View>
-                            {days.map((day) => {
-                                const slotId = `${day.key}-${hour}`;
-                                const isSelected = selectedSlots.has(slotId);
-                                const opponentAvail = isOpponentAvailable(day.key, hour);
-
-                                return (
-                                    <Pressable
-                                        key={slotId}
-                                        onPress={() => toggleSlot(day.key, hour)}
-                                        disabled={submitted}
-                                        className={cn(
-                                            'w-14 h-8 mx-0.5 rounded-md items-center justify-center border',
-                                            isSelected
-                                                ? 'bg-primary border-primary'
-                                                : 'bg-secondary/50 border-border/30',
-                                            opponentAvail && !isSelected && 'border-accent/50',
-                                            submitted && 'opacity-70'
-                                        )}
-                                    >
-                                        {isSelected && (
-                                            <Ionicons name="checkmark" size={14} color="hsl(222, 47%, 6%)" />
-                                        )}
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-                    ))}
-                </View>
-            </ScrollView>
-
-            {opponentAvailability.length > 0 && (
-                <View className="flex-row items-center gap-1">
-                    <Ionicons name="checkmark" size={12} color="hsl(45, 90%, 55%)" />
-                    <Text className="text-xs text-accent">Highlighted borders = opponent available</Text>
-                </View>
-            )}
-
+            {/* Action Button */}
             {!submitted ? (
                 <Button
                     onPress={handleSubmit}
                     disabled={selectedSlots.size === 0}
-                    className="w-full bg-accent"
+                    className={cn(
+                        "w-full h-14 rounded-2xl shadow-lg",
+                        selectedSlots.size > 0 ? "bg-primary" : "bg-slate-700"
+                    )}
                 >
-                    <Text className="font-semibold text-accent-foreground">
-                        Confirm Availability ({selectedSlots.size} slots)
-                    </Text>
+                    <View className="flex-row items-center gap-2">
+                        <Ionicons name="send" size={18} color={selectedSlots.size > 0 ? "#0F172A" : "#64748B"} />
+                        <Text className={cn(
+                            "font-black text-base uppercase tracking-wider",
+                            selectedSlots.size > 0 ? "text-slate-900" : "text-slate-500"
+                        )}>
+                            Confirm Availability ({selectedSlots.size})
+                        </Text>
+                    </View>
                 </Button>
             ) : (
-                <View className="py-3 rounded-xl bg-primary/10 border border-primary/20 items-center">
-                    <Ionicons name="checkmark-circle" size={20} color="hsl(185, 75%, 45%)" />
-                    <Text className="text-sm font-medium text-primary mt-1">Availability Submitted</Text>
-                    <Text className="text-xs text-muted-foreground mt-1">
-                        Waiting for {opponentName} to submit theirs
-                    </Text>
+                <View className="py-4 rounded-3xl bg-primary/10 border border-primary/20 items-center justify-center">
+                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                    <Text className="text-primary font-bold mt-1 uppercase tracking-tight">Slots Submitted Successfully</Text>
+                    <Text className="text-xs text-slate-400 mt-1">Waiting for {opponentName} to confirm</Text>
+                    <Pressable
+                        onPress={() => setSubmitted(false)}
+                        className="mt-3 bg-primary/20 px-4 py-2 rounded-xl border border-primary/30"
+                    >
+                        <Text className="text-xs font-bold text-primary uppercase tracking-tight">Edit Slots</Text>
+                    </Pressable>
                 </View>
             )}
         </View>
