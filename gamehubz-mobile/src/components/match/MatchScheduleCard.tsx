@@ -6,8 +6,9 @@ import { HourlyAvailabilityPicker } from './HourlyAvailabilityPicker';
 import { Button } from '../ui/Button';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { cn } from '../../lib/utils';
-import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
+import { authenticatedFetch, ENDPOINTS, API_BASE_URL } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signalr';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
 import { MatchComment } from '../../types/auth';
@@ -67,6 +68,7 @@ export function MatchScheduleCard({
     const [isSendingComment, setIsSendingComment] = useState(false);
     const commentsScrollRef = useRef<ScrollView>(null);
     const mainScrollViewRef = useRef<ScrollView>(null);
+    const connectionRef = useRef<HubConnection | null>(null);
 
     // Collapsible sections state
     const [isEvidenceExpanded, setIsEvidenceExpanded] = useState(true);
@@ -156,14 +158,63 @@ export function MatchScheduleCard({
         if (modalVisible && currentStatus === 'pending_availability') {
             fetchAvailability();
         }
-        // Fetch comments for scheduled/active/pending matches
+        // Load history once when opening
         if (modalVisible && (currentStatus === 'scheduled' || currentStatus === 'ready_phase' || currentStatus === 'pending_availability')) {
             fetchComments();
-            // Auto-refresh comments every 15 seconds
-            const interval = setInterval(fetchComments, 15000);
-            return () => clearInterval(interval);
         }
     }, [modalVisible, currentStatus, matchId]);
+
+    // SignalR Connection
+    useEffect(() => {
+        if (!matchId || !modalVisible) return;
+
+        // 1. Configure Connection
+        const connection = new HubConnectionBuilder()
+            .withUrl(`${API_BASE_URL}/hubs/chat`)
+            .withAutomaticReconnect()
+            .configureLogging(LogLevel.Information)
+            .build();
+
+        // 2. Start Connection
+        connection.start()
+            .then(() => {
+                console.log('SignalR Connected');
+                // Join the specific match group
+                connection.invoke("JoinMatchGroup", matchId);
+            })
+            .catch((err) => console.error('SignalR Connection Error:', err));
+
+        // 3. Listen for Messages
+        connection.on("ReceiveMessage", (newMessage: any) => {
+            // Map explicitly to handle casing differences (Backend sends PascalCase)
+            const mappedMessage: MatchComment = {
+                id: newMessage.id || newMessage.Id,
+                userId: newMessage.userId || newMessage.UserId,
+                userNickname: newMessage.userNickname || newMessage.UserNickname || 'Unknown',
+                content: newMessage.content || newMessage.Content,
+                sentAt: newMessage.sentAt || newMessage.SentAt,
+            };
+
+            setComments((prevComments) => {
+                // Prevent duplicates if API POST also adds it locally
+                if (prevComments.some(c => c.id === mappedMessage.id)) return prevComments;
+                return [...prevComments, mappedMessage];
+            });
+
+            // Auto-scroll to bottom on new message
+            setTimeout(() => {
+                commentsScrollRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        });
+
+        connectionRef.current = connection;
+
+        // 4. Cleanup on unmount or modal close
+        return () => {
+            connection.off("ReceiveMessage");
+            connection.stop();
+        };
+    }, [matchId, modalVisible]);
 
     const handleAvailabilitySubmit = async (slots: string[], dateTimeSlots: string[]) => {
         try {

@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 // For physical devices, you MUST use your computer's local IP address (e.g., 192.168.1.5)
 const getApiHost = () => {
     if (Platform.OS === 'android') {
-        return '10.0.2.2';
+        return '192.168.0.10';
     }
     // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
     return '192.168.0.10';
