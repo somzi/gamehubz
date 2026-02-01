@@ -53,6 +53,7 @@ export default function TournamentDetailsScreen() {
         title: string;
         message: string;
     }>({ type: 'success', title: '', message: '' });
+    const [hubOwnerId, setHubOwnerId] = useState<string | undefined>(undefined);
 
     const handleJoin = async () => {
         if (!id || !user?.id) return;
@@ -170,6 +171,11 @@ export default function TournamentDetailsScreen() {
             }
             const data = await response.json();
             setStages(data.stages || []);
+
+            // Extract hubOwnerId from bracket response
+            if (data.hubOwnerId || data.HubOwnerId) {
+                setHubOwnerId(data.hubOwnerId || data.HubOwnerId);
+            }
         } catch (err) {
             console.error('Bracket fetch error:', err);
             setBracketError('Failed to load bracket structure');
@@ -922,6 +928,7 @@ export default function TournamentDetailsScreen() {
                 home={selectedMatch?.home}
                 away={selectedMatch?.away}
                 evidences={selectedMatch?.evidences}
+                hubOwnerId={hubOwnerId}
                 onMatchUpdate={() => {
                     fetchBracket(); // Refresh the bracket/league data
                     // Refresh details if needed

@@ -157,6 +157,7 @@ export function HourlyAvailabilityPicker({
                     {days.map((day, index) => {
                         const isSelected = selectedDateIndex === index;
                         const hasSelectedSlots = Array.from(selectedSlots).some(s => s.startsWith(day.key));
+                        const hasOpponentSlots = Array.from(processedOpponentKeys).some(s => s.startsWith(day.key));
 
                         return (
                             <Pressable
@@ -181,9 +182,14 @@ export function HourlyAvailabilityPicker({
                                 )}>
                                     {day.fullLabel}
                                 </Text>
-                                {hasSelectedSlots && !isSelected && (
-                                    <View className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
-                                )}
+                                <View className="absolute top-1 right-1 flex-row gap-0.5">
+                                    {!isSelected && hasSelectedSlots && (
+                                        <View className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    )}
+                                    {!isSelected && hasOpponentSlots && (
+                                        <View className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                    )}
+                                </View>
                             </Pressable>
                         );
                     })}
@@ -199,6 +205,7 @@ export function HourlyAvailabilityPicker({
                             const slotId = `${dayKey}-${hour}`;
                             const isSelected = selectedSlots.has(slotId);
                             const opponentAvail = isOpponentAvailable(dayKey, hour);
+                            const isMutual = isSelected && opponentAvail;
 
                             return (
                                 <Pressable
@@ -207,29 +214,42 @@ export function HourlyAvailabilityPicker({
                                     disabled={submitted}
                                     className={cn(
                                         "w-[23%] h-12 mb-2 rounded-xl items-center justify-center border",
-                                        isSelected
-                                            ? "bg-primary/20 border-primary"
-                                            : opponentAvail
-                                                ? "bg-accent/10 border-accent/40"
-                                                : "bg-slate-800/30 border-slate-700/30",
+                                        isMutual
+                                            ? "bg-primary border-primary"
+                                            : isSelected
+                                                ? "bg-primary/20 border-primary"
+                                                : opponentAvail
+                                                    ? "bg-indigo-500/10 border-indigo-500/30"
+                                                    : "bg-slate-800/30 border-slate-700/30",
                                         submitted && "opacity-50"
                                     )}
                                 >
-                                    <View className="flex-row items-center justify-center gap-1">
-                                        <Text className={cn(
-                                            "text-xs font-bold",
-                                            isSelected ? "text-primary" : opponentAvail ? "text-accent" : "text-slate-300"
-                                        )}>
-                                            {formatHour(hour)}
-                                        </Text>
-                                        {isSelected && (
-                                            <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                                        )}
-                                    </View>
-                                    {opponentAvail && (
-                                        <Text className="text-[9px] text-accent/80 absolute bottom-1 uppercase font-bold tracking-tighter">
-                                            Opponent Available
-                                        </Text>
+                                    {isMutual ? (
+                                        <View className="items-center justify-center">
+                                            <Ionicons name="checkmark-done" size={16} color="#0F172A" />
+                                            <Text className="text-[10px] text-slate-900 uppercase font-black tracking-tighter -mt-0.5">
+                                                Mutual
+                                            </Text>
+                                        </View>
+                                    ) : (
+                                        <>
+                                            <View className="flex-row items-center justify-center gap-1">
+                                                <Text className={cn(
+                                                    "text-xs font-bold",
+                                                    isSelected ? "text-primary" : opponentAvail ? "text-indigo-400" : "text-slate-300"
+                                                )}>
+                                                    {formatHour(hour)}
+                                                </Text>
+                                                {isSelected && (
+                                                    <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                                                )}
+                                            </View>
+                                            {opponentAvail && (
+                                                <Text className="text-[9px] text-indigo-400/80 absolute bottom-1 uppercase font-bold tracking-tighter">
+                                                    Available
+                                                </Text>
+                                            )}
+                                        </>
                                     )}
                                 </Pressable>
                             );
@@ -239,14 +259,18 @@ export function HourlyAvailabilityPicker({
             </View >
 
             {/* Legend */}
-            < View className="flex-row items-center justify-center gap-4 py-1" >
+            < View className="flex-row items-center justify-center gap-3 py-1 flex-wrap" >
                 <View className="flex-row items-center gap-1.5">
-                    <View className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    <View className="w-2.5 h-2.5 rounded-full bg-primary/20 border border-primary" />
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Your Choice</Text>
                 </View>
                 <View className="flex-row items-center gap-1.5">
-                    <View className="w-2.5 h-2.5 rounded-full bg-accent" />
+                    <View className="w-2.5 h-2.5 rounded-full bg-indigo-500/20 border border-indigo-500/30" />
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Opponent</Text>
+                </View>
+                <View className="flex-row items-center gap-1.5">
+                    <View className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Mutual Slot</Text>
                 </View>
             </View >
 

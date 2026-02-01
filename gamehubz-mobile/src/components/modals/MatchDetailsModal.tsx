@@ -21,6 +21,7 @@ export interface MatchResultDetailDto {
     homeUserScore: number;
     awayUserScore: number;
     evidences: string[];
+    hubOwnerId?: string;
 }
 
 interface MatchDetailsModalProps {
@@ -40,6 +41,7 @@ interface MatchDetailsModalProps {
     home?: { userId: string; username: string; score: number | null };
     away?: { userId: string; username: string; score: number | null };
     evidences?: string[];
+    hubOwnerId?: string;
 }
 
 export function MatchDetailsModal({
@@ -59,6 +61,7 @@ export function MatchDetailsModal({
     home,
     away,
     evidences,
+    hubOwnerId,
 }: MatchDetailsModalProps) {
     const { user } = useAuth();
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -83,6 +86,9 @@ export function MatchDetailsModal({
 
     // Image preview state
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    // Edit mode state
+    const [isEditMode, setIsEditMode] = useState(false);
 
     useEffect(() => {
         if (visible && matchId) {
@@ -125,6 +131,7 @@ export function MatchDetailsModal({
             setError('An error occurred while loading results');
         } finally {
             setIsLoadingDetails(false);
+            setIsEditMode(false);
         }
     };
 
@@ -237,6 +244,25 @@ export function MatchDetailsModal({
         navigation.navigate('PlayerProfile', { id: userId });
     };
 
+    const handleEditResult = () => {
+        if (!matchDetails) return;
+        setHomeScore(matchDetails.homeUserScore.toString());
+        setAwayScore(matchDetails.awayUserScore.toString());
+        setIsEditMode(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditMode(false);
+        setHomeScore('');
+        setAwayScore('');
+        setSelectedImages([]);
+        setError(null);
+    };
+
+    // Permission check
+    const isHubOwner = hubOwnerId && user?.id && hubOwnerId.toLowerCase() === user.id.toLowerCase();
+    const canEditResult = isHubOwner && status === 'completed' && !isEditMode;
+
     return (
         <Modal
             animationType="slide"
@@ -270,55 +296,146 @@ export function MatchDetailsModal({
                                     </View>
                                 ) : matchDetails ? (
                                     <View className="space-y-6">
-                                        <View className="items-center py-4 bg-muted/10 rounded-3xl border border-border/10">
-                                            <Text className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Final Score</Text>
-                                            <View className="flex-row items-center justify-center gap-8">
-                                                <Pressable onPress={() => navigateToProfile(matchDetails.homeUserId)} className="items-center gap-2">
-                                                    <PlayerAvatar name={matchDetails.homeUser} size="lg" />
-                                                    <Text className="text-xs font-bold text-foreground">{matchDetails.homeUser}</Text>
-                                                    <Text className="text-4xl font-black text-primary">{matchDetails.homeUserScore}</Text>
-                                                </Pressable>
-
-                                                <Text className="text-2xl font-black text-muted-foreground mb-4">:</Text>
-
-                                                <Pressable onPress={() => navigateToProfile(matchDetails.awayUserId)} className="items-center gap-2">
-                                                    <PlayerAvatar name={matchDetails.awayUser} size="lg" />
-                                                    <Text className="text-xs font-bold text-foreground">{matchDetails.awayUser}</Text>
-                                                    <Text className="text-4xl font-black text-white">{matchDetails.awayUserScore}</Text>
-                                                </Pressable>
-                                            </View>
-                                        </View>
-
-                                        {matchDetails.evidences && matchDetails.evidences.length > 0 && (
-                                            <View>
-                                                <View className="flex-row items-center gap-2 mb-3">
-                                                    <Ionicons name="images-outline" size={18} color="#64748B" />
-                                                    <Text className="text-sm font-bold text-foreground">Evidence Gallery</Text>
-                                                </View>
-                                                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-                                                    {matchDetails.evidences.map((url, idx) => (
-                                                        <Pressable
-                                                            key={idx}
-                                                            className="mr-3"
-                                                            onPress={() => setPreviewImage(url)}
-                                                        >
-                                                            <Image
-                                                                source={{ uri: getOptimizedCloudinaryUrl(url, 400) }}
-                                                                className="w-40 h-56 rounded-2xl bg-muted"
-                                                                resizeMode="cover"
-                                                            />
+                                        {!isEditMode ? (
+                                            <>
+                                                <View className="items-center py-4 bg-muted/10 rounded-3xl border border-border/10">
+                                                    <Text className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Final Score</Text>
+                                                    <View className="flex-row items-center justify-center gap-8">
+                                                        <Pressable onPress={() => navigateToProfile(matchDetails.homeUserId)} className="items-center gap-2">
+                                                            <PlayerAvatar name={matchDetails.homeUser} size="lg" />
+                                                            <Text className="text-xs font-bold text-foreground">{matchDetails.homeUser}</Text>
+                                                            <Text className="text-4xl font-black text-primary">{matchDetails.homeUserScore}</Text>
                                                         </Pressable>
-                                                    ))}
-                                                </ScrollView>
-                                            </View>
+
+                                                        <Text className="text-2xl font-black text-muted-foreground mb-4">:</Text>
+
+                                                        <Pressable onPress={() => navigateToProfile(matchDetails.awayUserId)} className="items-center gap-2">
+                                                            <PlayerAvatar name={matchDetails.awayUser} size="lg" />
+                                                            <Text className="text-xs font-bold text-foreground">{matchDetails.awayUser}</Text>
+                                                            <Text className="text-4xl font-black text-white">{matchDetails.awayUserScore}</Text>
+                                                        </Pressable>
+                                                    </View>
+                                                </View>
+
+                                                {matchDetails.evidences && matchDetails.evidences.length > 0 && (
+                                                    <View>
+                                                        <View className="flex-row items-center gap-2 mb-3">
+                                                            <Ionicons name="images-outline" size={18} color="#64748B" />
+                                                            <Text className="text-sm font-bold text-foreground">Evidence Gallery</Text>
+                                                        </View>
+                                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                                                            {matchDetails.evidences.map((url, idx) => (
+                                                                <Pressable
+                                                                    key={idx}
+                                                                    className="mr-3"
+                                                                    onPress={() => setPreviewImage(url)}
+                                                                >
+                                                                    <Image
+                                                                        source={{ uri: getOptimizedCloudinaryUrl(url, 400) }}
+                                                                        className="w-40 h-56 rounded-2xl bg-muted"
+                                                                        resizeMode="cover"
+                                                                    />
+                                                                </Pressable>
+                                                            ))}
+                                                        </ScrollView>
+                                                    </View>
+                                                )}
+
+                                                {canEditResult && (
+                                                    <Button
+                                                        onPress={handleEditResult}
+                                                        variant="outline"
+                                                        className="w-full mt-4"
+                                                    >
+                                                        <View className="flex-row items-center gap-2">
+                                                            <Ionicons name="create-outline" size={18} color="#10B981" />
+                                                            <Text className="text-primary font-bold">Edit Result</Text>
+                                                        </View>
+                                                    </Button>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* Edit Mode */}
+                                                <View className="items-center mb-2">
+                                                    <Text className="text-sm text-muted-foreground">Editing Match Result</Text>
+                                                    <Text className="text-xs text-slate-500 mt-1">Hub Owner Privileges</Text>
+                                                </View>
+
+                                                {error && (
+                                                    <View className="bg-destructive/10 p-4 rounded-2xl mb-2">
+                                                        <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+                                                    </View>
+                                                )}
+
+                                                <View className="flex-row items-center justify-between gap-4">
+                                                    <View className="flex-1 items-center gap-3">
+                                                        <PlayerAvatar name={matchDetails.homeUser} size="lg" />
+                                                        <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                                            {matchDetails.homeUser}
+                                                        </Text>
+                                                        <TextInput
+                                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                            placeholder="0"
+                                                            placeholderTextColor="#71717A"
+                                                            keyboardType="numeric"
+                                                            value={homeScore}
+                                                            onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
+                                                        />
+                                                    </View>
+                                                    <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
+                                                    <View className="flex-1 items-center gap-3">
+                                                        <PlayerAvatar name={matchDetails.awayUser} size="lg" />
+                                                        <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                                            {matchDetails.awayUser}
+                                                        </Text>
+                                                        <TextInput
+                                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                            placeholder="0"
+                                                            placeholderTextColor="#71717A"
+                                                            keyboardType="numeric"
+                                                            value={awayScore}
+                                                            onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
+                                                        />
+                                                    </View>
+                                                </View>
+
+                                                <View className="mt-6 border-t border-border/10 pt-6">
+                                                    <View className="flex-row items-center justify-between mb-3">
+                                                        <View>
+                                                            <Text className="text-sm font-bold text-foreground">Evidence</Text>
+                                                            <Text className="text-[11px] text-muted-foreground">Add match result screenshots</Text>
+                                                        </View>
+                                                        <Pressable onPress={pickImages} className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20">
+                                                            <Ionicons name="add" size={16} color="#10B981" />
+                                                            <Text className="text-xs font-bold text-primary ml-1">Add Photos</Text>
+                                                        </Pressable>
+                                                    </View>
+                                                    {selectedImages.length > 0 ? (
+                                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                                                            {selectedImages.map((img, index) => (
+                                                                <View key={img.uri + index} className="mr-3 mb-2">
+                                                                    <Image source={{ uri: img.uri }} className="w-20 h-20 rounded-xl" />
+                                                                    <Pressable onPress={() => removeImage(img.uri)} className="absolute -top-1.5 -right-1.5 bg-destructive w-5 h-5 rounded-full items-center justify-center border border-background shadow-sm">
+                                                                        <Ionicons name="close" size={12} color="white" />
+                                                                    </Pressable>
+                                                                </View>
+                                                            ))}
+                                                        </ScrollView>
+                                                    ) : (
+                                                        <Pressable onPress={pickImages} className="h-20 border border-dashed border-border/30 rounded-2xl items-center justify-center bg-muted/5">
+                                                            <Ionicons name="images-outline" size={24} color="#71717A" />
+                                                            <Text className="text-[11px] text-muted-foreground mt-1">No photos selected</Text>
+                                                        </Pressable>
+                                                    )}
+                                                </View>
+
+                                                <View className="mt-6 flex-row gap-3">
+                                                    <Button variant="outline" className="flex-1" onPress={handleCancelEdit}>Cancel</Button>
+                                                    <Button className="flex-1" onPress={handleSubmitResult} loading={isSubmitting}>Save Changes</Button>
+                                                </View>
+                                            </>
                                         )}
-                                        <View className="py-6 items-center">
-                                            <View className="bg-primary/10 p-3 rounded-full mb-3">
-                                                <Ionicons name="shield-checkmark" size={32} color="#10B981" />
-                                            </View>
-                                            <Text className="text-foreground font-bold">Authenticated Result</Text>
-                                            <Text className="text-muted-foreground text-xs mt-1">This match results have been verified</Text>
-                                        </View>
                                     </View>
                                 ) : (
                                     <View className="py-20 items-center">
