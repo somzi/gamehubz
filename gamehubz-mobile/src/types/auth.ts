@@ -32,6 +32,15 @@ export interface HubSocial {
     hubId?: string;
 }
 
+export interface MatchComment {
+    id: string;
+    userId: string;
+    userNickname: string;
+    userAvatarUrl?: string;
+    content: string;
+    sentAt: string;
+}
+
 export interface UserInfo {
     id: string;
     username: string;

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, Modal, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Pressable, Modal, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
 import { HourlyAvailabilityPicker } from './HourlyAvailabilityPicker';
@@ -10,6 +10,7 @@ import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
+import { MatchComment } from '../../types/auth';
 
 type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
 
@@ -59,6 +60,19 @@ export function MatchScheduleCard({
     const [error, setError] = useState<string | null>(null);
     const [selectedImages, setSelectedImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
 
+    // Comments state
+    const [comments, setComments] = useState<MatchComment[]>([]);
+    const [newComment, setNewComment] = useState('');
+    const [isLoadingComments, setIsLoadingComments] = useState(false);
+    const [isSendingComment, setIsSendingComment] = useState(false);
+    const commentsScrollRef = useRef<ScrollView>(null);
+    const mainScrollViewRef = useRef<ScrollView>(null);
+
+    // Collapsible sections state
+    const [isEvidenceExpanded, setIsEvidenceExpanded] = useState(true);
+    const [isChatExpanded, setIsChatExpanded] = useState(true);
+    const [isAvailabilityExpanded, setIsAvailabilityExpanded] = useState(true);
+
     const fetchAvailability = async () => {
         if (!user?.id || !matchId) return;
         setIsLoadingAvailability(true);
@@ -81,10 +95,73 @@ export function MatchScheduleCard({
         }
     };
 
+    const fetchComments = async () => {
+        if (!matchId) return;
+        setIsLoadingComments(true);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_MATCH_COMMENTS(matchId));
+            if (response.ok) {
+                const data = await response.json();
+                setComments(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Error fetching comments:', error);
+        } finally {
+            setIsLoadingComments(false);
+        }
+    };
+
+    const handleSendComment = async () => {
+        if (!newComment.trim() || !matchId) return;
+
+        setIsSendingComment(true);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.POST_MATCH_COMMENT(matchId), {
+                method: 'POST',
+                body: JSON.stringify({ content: newComment.trim() }),
+            });
+
+            if (response.ok) {
+                setNewComment('');
+                await fetchComments();
+                // Scroll to bottom after new comment
+                setTimeout(() => {
+                    commentsScrollRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Error sending comment:', error);
+        } finally {
+            setIsSendingComment(false);
+        }
+    };
+
+    const formatCommentTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
+    };
+
     // Fetch availability when modal opens
-    React.useEffect(() => {
+    useEffect(() => {
         if (modalVisible && currentStatus === 'pending_availability') {
             fetchAvailability();
+        }
+        // Fetch comments for scheduled/active/pending matches
+        if (modalVisible && (currentStatus === 'scheduled' || currentStatus === 'ready_phase' || currentStatus === 'pending_availability')) {
+            fetchComments();
+            // Auto-refresh comments every 15 seconds
+            const interval = setInterval(fetchComments, 15000);
+            return () => clearInterval(interval);
         }
     }, [modalVisible, currentStatus, matchId]);
 
@@ -359,6 +436,13 @@ export function MatchScheduleCard({
 
     function renderModal() {
         const isPremium = variant === 'compact';
+
+        const scrollToBottom = () => {
+            setTimeout(() => {
+                mainScrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        };
+
         return (
             <Modal
                 animationType="slide"
@@ -366,228 +450,411 @@ export function MatchScheduleCard({
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View className={cn("flex-1 justify-end", isPremium ? "bg-black/80" : "bg-black/50")}>
-                    <View className={cn(
-                        "rounded-t-[40px] border-t p-8 max-h-[92%]",
-                        isPremium ? "bg-slate-900 border-white/10" : "bg-card border-border/50 p-6 max-h-[90%]"
-                    )}>
-                        {isPremium && <View className="w-12 h-1.5 bg-white/10 rounded-full self-center mb-6" />}
+                <View className={cn("flex-1", isPremium ? "bg-black/80" : "bg-black/50")}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        className="flex-1 justify-end"
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+                    >
+                        <View className={cn(
+                            "rounded-t-[40px] border-t p-8 max-h-[92%]",
+                            isPremium ? "bg-slate-900 border-white/10" : "bg-card border-border/50 p-6 max-h-[90%]"
+                        )}>
+                            {isPremium && <View className="w-12 h-1.5 bg-white/10 rounded-full self-center mb-6" />}
 
-                        {/* Header */}
-                        <View className="flex-row items-center justify-between mb-8">
-                            <View>
-                                <Text className={cn(
-                                    "font-black text-white tracking-tight",
-                                    isPremium ? "text-2xl" : "text-lg text-foreground"
-                                )}>
-                                    {tournamentName}
-                                </Text>
-                                <Text className={cn(
-                                    "font-bold uppercase tracking-widest mt-1",
-                                    isPremium ? "text-sm text-slate-400" : "text-sm text-muted-foreground"
-                                )}>{roundName}</Text>
-                            </View>
-                            <Pressable
-                                onPress={() => setModalVisible(false)}
-                                className={cn(
-                                    "rounded-full items-center justify-center",
-                                    isPremium ? "w-10 h-10 bg-white/5 border border-white/10" : "w-8 h-8 bg-secondary"
-                                )}
-                            >
-                                <Ionicons name="close" size={isPremium ? 24 : 20} color={isPremium ? "#94A3B8" : "hsl(220, 15%, 55%)"} />
-                            </Pressable>
-                        </View>
-
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            {currentStatus === 'pending_availability' && (
-                                <HourlyAvailabilityPicker
-                                    matchId={matchId}
-                                    deadline={deadline}
-                                    opponentName={opponentName}
-                                    opponentAvailability={opponentSlots}
-                                    initialSlots={mySlots}
-                                    onSubmit={handleAvailabilitySubmit}
-                                />
-                            )}
-
-                            {(currentStatus === 'scheduled' || currentStatus === 'ready_phase') && matchTime && (
-                                <View className={cn("gap-6", !isPremium && "space-y-4")}>
-                                    {/* Match Info */}
-                                    <View className="items-center mb-2">
-                                        <Text className={cn(
-                                            "font-black uppercase tracking-[2px]",
-                                            isPremium ? "text-xs text-slate-500" : "text-sm text-muted-foreground"
-                                        )}>Match Time</Text>
-                                        <Text className={cn(
-                                            "font-black text-primary mt-2",
-                                            isPremium ? "text-2xl" : "text-lg"
-                                        )}>{matchTime}</Text>
-                                    </View>
-
-                                    {/* Error Message */}
-                                    {error && (
-                                        <View className={cn(
-                                            "p-4 rounded-2xl mb-2 border",
-                                            isPremium ? "bg-destructive/10 border-destructive/20" : "bg-destructive/10 border-transparent"
-                                        )}>
-                                            <Text className={cn(
-                                                "text-sm text-center font-bold",
-                                                isPremium ? "text-destructive tracking-tight" : "text-destructive"
-                                            )}>{error}</Text>
-                                        </View>
+                            {/* Header */}
+                            <View className="flex-row items-center justify-between mb-8">
+                                <View>
+                                    <Text className={cn(
+                                        "font-black text-white tracking-tight",
+                                        isPremium ? "text-2xl" : "text-lg text-foreground"
+                                    )}>
+                                        {tournamentName}
+                                    </Text>
+                                    <Text className={cn(
+                                        "font-bold uppercase tracking-widest mt-1",
+                                        isPremium ? "text-sm text-slate-400" : "text-sm text-muted-foreground"
+                                    )}>{roundName}</Text>
+                                </View>
+                                <Pressable
+                                    onPress={() => setModalVisible(false)}
+                                    className={cn(
+                                        "rounded-full items-center justify-center",
+                                        isPremium ? "w-10 h-10 bg-white/5 border border-white/10" : "w-8 h-8 bg-secondary"
                                     )}
+                                >
+                                    <Ionicons name="close" size={isPremium ? 24 : 20} color={isPremium ? "#94A3B8" : "hsl(220, 15%, 55%)"} />
+                                </Pressable>
+                            </View>
 
-                                    {/* Players and Score Inputs */}
-                                    <View className="flex-row items-center justify-between gap-4">
-                                        {/* Home Player (You) */}
-                                        <View className="flex-1 items-center gap-3">
-                                            <PlayerAvatar name={user?.username || 'You'} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
-                                            <Text className={cn(
-                                                "font-black text-center",
-                                                isPremium ? "text-base text-white" : "text-sm text-foreground"
-                                            )} numberOfLines={1}>
-                                                {user?.username || 'You'}
-                                            </Text>
-                                            <TextInput
-                                                className={cn(
-                                                    "w-full rounded-2xl text-center font-black border",
-                                                    isPremium ? "bg-white/5 h-16 text-2xl text-primary border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
-                                                )}
-                                                placeholder="0"
-                                                placeholderTextColor={isPremium ? "#475569" : "#71717A"}
-                                                keyboardType="numeric"
-                                                value={homeScore}
-                                                onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
-                                            />
-                                        </View>
 
-                                        <View className="items-center justify-center h-16 mt-12">
-                                            <Text className="text-sm font-black text-slate-500 uppercase">VS</Text>
-                                        </View>
 
-                                        {/* Away Player (Opponent) */}
-                                        <View className="flex-1 items-center gap-3">
-                                            <PlayerAvatar name={opponentName} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
-                                            <Text className={cn(
-                                                "font-black text-center",
-                                                isPremium ? "text-base text-white" : "text-sm text-foreground"
-                                            )} numberOfLines={1}>
-                                                {opponentName}
-                                            </Text>
-                                            <TextInput
-                                                className={cn(
-                                                    "w-full rounded-2xl text-center font-black border",
-                                                    isPremium ? "bg-white/5 h-16 text-2xl text-white border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
-                                                )}
-                                                placeholder="0"
-                                                placeholderTextColor={isPremium ? "#475569" : "#71717A"}
-                                                keyboardType="numeric"
-                                                value={awayScore}
-                                                onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
-                                            />
-                                        </View>
-                                    </View>
-
-                                    {/* Evidence Section */}
-                                    <View className={cn("mt-4 pt-6 border-t", isPremium ? "border-white/5" : "border-border/10")}>
-                                        <View className="flex-row items-center justify-between mb-4">
-                                            <View>
+                            <ScrollView
+                                ref={mainScrollViewRef}
+                                showsVerticalScrollIndicator={false}
+                                keyboardShouldPersistTaps="handled"
+                                contentContainerStyle={{ flexGrow: 0, paddingBottom: 300 }}
+                            >
+                                {currentStatus === 'pending_availability' && (
+                                    <>
+                                        <Pressable
+                                            onPress={() => setIsAvailabilityExpanded(!isAvailabilityExpanded)}
+                                            className={cn("flex-row items-center justify-between mb-4")}
+                                        >
+                                            <View className={cn("flex-row items-center gap-2")}>
+                                                <Ionicons name="calendar-outline" size={isPremium ? 20 : 18} color="#10B981" />
                                                 <Text className={cn(
                                                     "font-black uppercase tracking-tight",
                                                     isPremium ? "text-lg text-white" : "text-sm text-foreground"
-                                                )}>Evidence</Text>
+                                                )}>Availability</Text>
+                                            </View>
+                                            <Ionicons
+                                                name={isAvailabilityExpanded ? "chevron-up" : "chevron-down"}
+                                                size={20}
+                                                color={isPremium ? "#64748B" : "#71717A"}
+                                            />
+                                        </Pressable>
+
+                                        {isAvailabilityExpanded && (
+                                            <HourlyAvailabilityPicker
+                                                matchId={matchId}
+                                                deadline={deadline}
+                                                opponentName={opponentName}
+                                                opponentAvailability={opponentSlots}
+                                                initialSlots={mySlots}
+                                                onSubmit={handleAvailabilitySubmit}
+                                            />
+                                        )}
+                                    </>
+                                )}
+
+                                {(currentStatus === 'scheduled' || currentStatus === 'ready_phase') && matchTime && (
+                                    <View className={cn("gap-6", !isPremium && "space-y-4")}>
+                                        {/* Match Info */}
+                                        <View className="items-center mb-2">
+                                            <Text className={cn(
+                                                "font-black uppercase tracking-[2px]",
+                                                isPremium ? "text-xs text-slate-500" : "text-sm text-muted-foreground"
+                                            )}>Match Time</Text>
+                                            <Text className={cn(
+                                                "font-black text-primary mt-2",
+                                                isPremium ? "text-2xl" : "text-lg"
+                                            )}>{matchTime}</Text>
+                                        </View>
+
+                                        {/* Error Message */}
+                                        {error && (
+                                            <View className={cn(
+                                                "p-4 rounded-2xl mb-2 border",
+                                                isPremium ? "bg-destructive/10 border-destructive/20" : "bg-destructive/10 border-transparent"
+                                            )}>
+                                                <Text className={cn(
+                                                    "text-sm text-center font-bold",
+                                                    isPremium ? "text-destructive tracking-tight" : "text-destructive"
+                                                )}>{error}</Text>
+                                            </View>
+                                        )}
+
+                                        {/* Players and Score Inputs */}
+                                        <View className="flex-row items-center justify-between gap-4">
+                                            {/* Home Player (You) */}
+                                            <View className="flex-1 items-center gap-3">
+                                                <PlayerAvatar name={user?.username || 'You'} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
+                                                <Text className={cn(
+                                                    "font-black text-center",
+                                                    isPremium ? "text-base text-white" : "text-sm text-foreground"
+                                                )} numberOfLines={1}>
+                                                    {user?.username || 'You'}
+                                                </Text>
+                                                <TextInput
+                                                    className={cn(
+                                                        "w-full rounded-2xl text-center font-black border",
+                                                        isPremium ? "bg-white/5 h-16 text-2xl text-primary border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
+                                                    )}
+                                                    placeholder="0"
+                                                    placeholderTextColor={isPremium ? "#475569" : "#71717A"}
+                                                    keyboardType="numeric"
+                                                    value={homeScore}
+                                                    onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
+                                                    onFocus={scrollToBottom}
+                                                />
+                                            </View>
+
+                                            <View className="items-center justify-center h-16 mt-12">
+                                                <Text className="text-sm font-black text-slate-500 uppercase">VS</Text>
+                                            </View>
+
+                                            {/* Away Player (Opponent) */}
+                                            <View className="flex-1 items-center gap-3">
+                                                <PlayerAvatar name={opponentName} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
+                                                <Text className={cn(
+                                                    "font-black text-center",
+                                                    isPremium ? "text-base text-white" : "text-sm text-foreground"
+                                                )} numberOfLines={1}>
+                                                    {opponentName}
+                                                </Text>
+                                                <TextInput
+                                                    className={cn(
+                                                        "w-full rounded-2xl text-center font-black border",
+                                                        isPremium ? "bg-white/5 h-16 text-2xl text-white border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
+                                                    )}
+                                                    placeholder="0"
+                                                    placeholderTextColor={isPremium ? "#475569" : "#71717A"}
+                                                    keyboardType="numeric"
+                                                    value={awayScore}
+                                                    onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
+                                                    onFocus={scrollToBottom}
+                                                />
+                                            </View>
+                                        </View>
+
+                                        {/* Evidence Section */}
+                                        <View className={cn("mt-4 pt-6 border-t", isPremium ? "border-white/5" : "border-border/10")}>
+                                            <Pressable
+                                                onPress={() => setIsEvidenceExpanded(!isEvidenceExpanded)}
+                                                className="flex-row items-center justify-between mb-4"
+                                            >
+                                                <View className="flex-row items-center gap-2">
+                                                    <Ionicons name="images-outline" size={isPremium ? 20 : 18} color="#10B981" />
+                                                    <Text className={cn(
+                                                        "font-black uppercase tracking-tight",
+                                                        isPremium ? "text-lg text-white" : "text-sm text-foreground"
+                                                    )}>Evidence</Text>
+                                                    <Text className={cn(
+                                                        "font-bold",
+                                                        isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground"
+                                                    )}>({selectedImages.length})</Text>
+                                                </View>
+                                                <Ionicons
+                                                    name={isEvidenceExpanded ? "chevron-up" : "chevron-down"}
+                                                    size={20}
+                                                    color={isPremium ? "#64748B" : "#71717A"}
+                                                />
+                                            </Pressable>
+
+                                            {isEvidenceExpanded && (
+                                                <>
+                                                    <View className="flex-row items-center gap-3 mb-3">
+                                                        <Pressable onPress={pickImages} className={cn(
+                                                            "flex-row items-center px-4 py-2.5 rounded-xl border self-start",
+                                                            isPremium ? "bg-primary/20 border-primary/30" : "bg-primary/10 border-primary/20"
+                                                        )}>
+                                                            <Ionicons name="add" size={isPremium ? 20 : 16} color="#10B981" />
+                                                            <Text className={cn(
+                                                                "font-black uppercase ml-1.5",
+                                                                isPremium ? "text-xs text-primary" : "text-xs text-primary"
+                                                            )}>{isPremium ? "Photos" : "Add"}</Text>
+                                                        </Pressable>
+
+                                                        <Pressable
+                                                            onPress={() => {
+                                                                setHomeScore('');
+                                                                setAwayScore('');
+                                                                setError(null);
+                                                                setSelectedImages([]);
+                                                            }}
+                                                            className={cn(
+                                                                "flex-row items-center px-4 py-2.5 rounded-xl border self-start",
+                                                                isPremium ? "bg-white/5 border-white/10" : "bg-muted/20 border-border/10"
+                                                            )}
+                                                        >
+                                                            <Ionicons name="trash-outline" size={isPremium ? 20 : 16} color={isPremium ? "#94A3B8" : "#71717A"} />
+                                                            <Text className={cn(
+                                                                "font-bold uppercase ml-1.5",
+                                                                isPremium ? "text-xs text-slate-400" : "text-xs text-muted-foreground"
+                                                            )}>Clear</Text>
+                                                        </Pressable>
+                                                    </View>
+                                                    {selectedImages.length > 0 ? (
+                                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                                                            {selectedImages.map((img, index) => (
+                                                                <View key={img.uri + index} className="mr-3 mb-2">
+                                                                    <Image source={{ uri: img.uri }} className={cn("rounded-xl", isPremium ? "w-24 h-24 border border-white/10" : "w-20 h-20")} />
+                                                                    <Pressable onPress={() => removeImage(img.uri)} className={cn(
+                                                                        "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full items-center justify-center border-2 shadow-sm",
+                                                                        isPremium ? "bg-destructive border-slate-900" : "bg-destructive border-background"
+                                                                    )}>
+                                                                        <Ionicons name="close" size={14} color="white" />
+                                                                    </Pressable>
+                                                                </View>
+                                                            ))}
+                                                        </ScrollView>
+                                                    ) : (
+                                                        <Pressable onPress={pickImages} className={cn(
+                                                            "h-24 border-2 border-dashed rounded-3xl items-center justify-center",
+                                                            isPremium ? "border-white/10 bg-white/[0.02]" : "border-border/20 bg-muted/5"
+                                                        )}>
+                                                            <Ionicons name="images-outline" size={isPremium ? 32 : 24} color={isPremium ? "#475569" : "#71717A"} />
+                                                            <Text className={cn(
+                                                                "font-bold uppercase tracking-widest mt-1",
+                                                                isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground"
+                                                            )}>{isPremium ? "No Photos" : "No Selection"}</Text>
+                                                        </Pressable>
+                                                    )}
+                                                </>
+                                            )}
+                                        </View>
+
+
+
+                                        {/* Action Buttons */}
+
+                                    </View>
+                                )}
+
+                                {/* Shared Comments Section */}
+                                {(currentStatus === 'scheduled' || currentStatus === 'ready_phase' || currentStatus === 'pending_availability') && (
+                                    <View className={cn("mt-4 pt-6 border-t", isPremium ? "border-white/5" : "border-border/10")}>
+                                        <Pressable
+                                            onPress={() => setIsChatExpanded(!isChatExpanded)}
+                                            className="flex-row items-center justify-between mb-4"
+                                        >
+                                            <View className="flex-row items-center gap-2">
+                                                <Ionicons name="chatbubbles-outline" size={isPremium ? 20 : 18} color="#10B981" />
+                                                <Text className={cn(
+                                                    "font-black uppercase tracking-tight",
+                                                    isPremium ? "text-lg text-white" : "text-sm text-foreground"
+                                                )}>Match Chat</Text>
                                                 <Text className={cn(
                                                     "font-bold",
                                                     isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground"
-                                                )}>{isPremium ? "Attach match results" : "Add screenshots"}</Text>
+                                                )}>({comments.length})</Text>
                                             </View>
-                                            <Pressable onPress={pickImages} className={cn(
-                                                "flex-row items-center px-4 py-2.5 rounded-xl border",
-                                                isPremium ? "bg-primary/20 border-primary/30" : "bg-primary/10 border-primary/20"
-                                            )}>
-                                                <Ionicons name="add" size={isPremium ? 20 : 16} color="#10B981" />
-                                                <Text className={cn(
-                                                    "font-black uppercase ml-1.5",
-                                                    isPremium ? "text-xs text-primary" : "text-xs text-primary"
-                                                )}>{isPremium ? "Photos" : "Add"}</Text>
-                                            </Pressable>
-                                        </View>
-                                        {selectedImages.length > 0 ? (
-                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-                                                {selectedImages.map((img, index) => (
-                                                    <View key={img.uri + index} className="mr-3 mb-2">
-                                                        <Image source={{ uri: img.uri }} className={cn("rounded-xl", isPremium ? "w-24 h-24 border border-white/10" : "w-20 h-20")} />
-                                                        <Pressable onPress={() => removeImage(img.uri)} className={cn(
-                                                            "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full items-center justify-center border-2 shadow-sm",
-                                                            isPremium ? "bg-destructive border-slate-900" : "bg-destructive border-background"
-                                                        )}>
-                                                            <Ionicons name="close" size={14} color="white" />
-                                                        </Pressable>
+                                            <Ionicons
+                                                name={isChatExpanded ? "chevron-up" : "chevron-down"}
+                                                size={20}
+                                                color={isPremium ? "#64748B" : "#71717A"}
+                                            />
+                                        </Pressable>
+
+                                        {isChatExpanded && (
+                                            <>
+                                                {/* Comments List */}
+                                                {isLoadingComments ? (
+                                                    <View className="h-32 items-center justify-center">
+                                                        <ActivityIndicator size="small" color="#10B981" />
                                                     </View>
-                                                ))}
-                                            </ScrollView>
-                                        ) : (
-                                            <Pressable onPress={pickImages} className={cn(
-                                                "h-24 border-2 border-dashed rounded-3xl items-center justify-center",
-                                                isPremium ? "border-white/10 bg-white/[0.02]" : "border-border/20 bg-muted/5"
-                                            )}>
-                                                <Ionicons name="images-outline" size={isPremium ? 32 : 24} color={isPremium ? "#475569" : "#71717A"} />
-                                                <Text className={cn(
-                                                    "font-bold uppercase tracking-widest mt-1",
-                                                    isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground"
-                                                )}>{isPremium ? "No Photos" : "No Selection"}</Text>
-                                            </Pressable>
+                                                ) : comments.length > 0 ? (
+                                                    <ScrollView
+                                                        ref={commentsScrollRef}
+                                                        className={cn("mb-3", isPremium ? "max-h-48" : "max-h-40")}
+                                                        nestedScrollEnabled
+                                                        showsVerticalScrollIndicator={false}
+                                                    >
+                                                        {comments.map((comment) => {
+                                                            const isMyComment = comment.userId === user?.id;
+                                                            return (
+                                                                <View key={comment.id} className={cn(
+                                                                    "mb-3 p-3 rounded-xl",
+                                                                    isPremium
+                                                                        ? isMyComment ? "bg-primary/10 border border-primary/20" : "bg-white/5 border border-white/10"
+                                                                        : isMyComment ? "bg-primary/10" : "bg-muted/30"
+                                                                )}>
+                                                                    <View className="flex-row items-center justify-between mb-1">
+                                                                        <Text className={cn(
+                                                                            "font-bold",
+                                                                            isPremium ? "text-xs" : "text-[11px]",
+                                                                            isMyComment ? "text-primary" : isPremium ? "text-white" : "text-foreground"
+                                                                        )}>{comment.userNickname}</Text>
+                                                                        <Text className={cn(
+                                                                            "font-medium",
+                                                                            isPremium ? "text-[10px] text-slate-500" : "text-[9px] text-muted-foreground"
+                                                                        )}>{formatCommentTime(comment.sentAt)}</Text>
+                                                                    </View>
+                                                                    <Text className={cn(
+                                                                        "leading-5",
+                                                                        isPremium ? "text-sm text-white" : "text-xs text-foreground"
+                                                                    )}>{comment.content}</Text>
+                                                                </View>
+                                                            );
+                                                        })}
+                                                    </ScrollView>
+                                                ) : (
+                                                    <View className={cn(
+                                                        "h-24 border border-dashed rounded-2xl items-center justify-center mb-3",
+                                                        isPremium ? "border-white/10 bg-white/[0.02]" : "border-border/20 bg-muted/5"
+                                                    )}>
+                                                        <Ionicons name="chatbubble-outline" size={isPremium ? 28 : 24} color={isPremium ? "#475569" : "#71717A"} />
+                                                        <Text className={cn(
+                                                            "font-bold uppercase tracking-widest mt-1",
+                                                            isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground"
+                                                        )}>No messages yet</Text>
+                                                    </View>
+                                                )}
+
+                                                {/* Comment Input */}
+                                                <View className="flex-row gap-2">
+                                                    <TextInput
+                                                        className={cn(
+                                                            "flex-1 rounded-xl px-4 py-3 border",
+                                                            isPremium ? "bg-white/5 text-white border-white/10" : "bg-muted/30 text-foreground border-border/10"
+                                                        )}
+                                                        placeholder="Type a message..."
+                                                        placeholderTextColor={isPremium ? "#475569" : "#71717A"}
+                                                        value={newComment}
+                                                        onChangeText={setNewComment}
+                                                        multiline
+                                                        maxLength={500}
+                                                        style={{ minHeight: isPremium ? 48 : 44, maxHeight: 80 }}
+                                                    />
+                                                    <Pressable
+                                                        onPress={handleSendComment}
+                                                        disabled={!newComment.trim() || isSendingComment}
+                                                        className={cn(
+                                                            "rounded-xl items-center justify-center border",
+                                                            isPremium ? "w-12 h-12 bg-primary/20 border-primary/30" : "w-11 h-11 bg-primary/10 border-primary/20",
+                                                            (!newComment.trim() || isSendingComment) && "opacity-50"
+                                                        )}
+                                                    >
+                                                        {isSendingComment ? (
+                                                            <ActivityIndicator size="small" color="#10B981" />
+                                                        ) : (
+                                                            <Ionicons name="send" size={isPremium ? 20 : 18} color="#10B981" />
+                                                        )}
+                                                    </Pressable>
+                                                </View>
+                                            </>
                                         )}
                                     </View>
+                                )}
 
-                                    {/* Action Buttons */}
-                                    <View className="mt-8 flex-row gap-4 pb-4">
+                                {/* Submit Button (Moved to bottom) */}
+                                {(currentStatus === 'scheduled' || currentStatus === 'ready_phase') && (
+                                    <View className="mt-6 mb-4">
                                         <Button
-                                            variant="outline"
-                                            className={cn("flex-1 h-14 rounded-2xl", isPremium ? "border-white/10" : "border-border/10")}
-                                            onPress={() => {
-                                                setHomeScore('');
-                                                setAwayScore('');
-                                                setError(null);
-                                                setSelectedImages([]);
-                                            }}
-                                        >
-                                            <Text className={cn("font-bold uppercase", isPremium ? "text-slate-400" : "text-muted-foreground")}>Clear</Text>
-                                        </Button>
-                                        <Button
-                                            className="flex-[2] h-14 rounded-2xl"
+                                            className="w-full h-14 rounded-2xl"
                                             onPress={handleSubmitResult}
                                             loading={isSubmitting}
                                         >
                                             <Text className={cn("font-black uppercase tracking-widest", isPremium ? "text-slate-900" : "text-white")}>Submit Result</Text>
                                         </Button>
                                     </View>
-                                </View>
-                            )}
+                                )}
 
-                            {currentStatus === 'completed' && (
-                                <View className={cn(
-                                    "py-12 items-center rounded-[40px] border mt-4",
-                                    isPremium ? "bg-white/5 border-white/10" : "bg-muted/10 border-transparent"
-                                )}>
+                                {currentStatus === 'completed' && (
                                     <View className={cn(
-                                        "w-20 h-20 rounded-full items-center justify-center border",
-                                        isPremium ? "bg-primary/20 border-primary/30" : "bg-primary/20 border-transparent"
+                                        "py-12 items-center rounded-[40px] border mt-4",
+                                        isPremium ? "bg-white/5 border-white/10" : "bg-muted/10 border-transparent"
                                     )}>
-                                        <Ionicons name="checkmark" size={40} color="#10B981" />
+                                        <View className={cn(
+                                            "w-20 h-20 rounded-full items-center justify-center border",
+                                            isPremium ? "bg-primary/20 border-primary/30" : "bg-primary/20 border-transparent"
+                                        )}>
+                                            <Ionicons name="checkmark" size={40} color="#10B981" />
+                                        </View>
+                                        <Text className={cn(
+                                            "font-black mt-6 uppercase tracking-widest",
+                                            isPremium ? "text-xl text-white" : "text-foreground"
+                                        )}>Completed</Text>
+                                        {isPremium && <Text className="text-sm font-medium text-slate-500 mt-2">Results have been recorded</Text>}
                                     </View>
-                                    <Text className={cn(
-                                        "font-black mt-6 uppercase tracking-widest",
-                                        isPremium ? "text-xl text-white" : "text-foreground"
-                                    )}>Completed</Text>
-                                    {isPremium && <Text className="text-sm font-medium text-slate-500 mt-2">Results have been recorded</Text>}
-                                </View>
-                            )}
-                            <View className="h-10" />
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
+                                )}
+                                <View className="h-10" />
+                            </ScrollView>
+                        </View>
+                    </KeyboardAvoidingView>
+                </View >
+            </Modal >
         );
     }
 }

@@ -59,6 +59,8 @@ export const ENDPOINTS = {
     KICK_HUB_MEMBER: (hubId: string, userId: string) => `${API_BASE_URL}/api/Hub/${hubId}/user/${userId}/kick`,
     UPLOAD_MATCH_EVIDENCE: (id: string) => `${API_BASE_URL}/api/match/${id}/evidence`,
     GET_MATCH_DETAILS: (id: string) => `${API_BASE_URL}/api/match/${id}/details`,
+    GET_MATCH_COMMENTS: (matchId: string) => `${API_BASE_URL}/api/MatchChat/${matchId}/history`,
+    POST_MATCH_COMMENT: (matchId: string) => `${API_BASE_URL}/api/MatchChat/${matchId}`,
 };
 
 let authToken: string | null = null;

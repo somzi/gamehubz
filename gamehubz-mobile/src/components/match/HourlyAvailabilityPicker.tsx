@@ -206,7 +206,7 @@ export function HourlyAvailabilityPicker({
                                     onPress={() => toggleSlot(dayKey, hour)}
                                     disabled={submitted}
                                     className={cn(
-                                        "w-[48%] h-14 mb-3 rounded-2xl items-center justify-center border-2",
+                                        "w-[23%] h-12 mb-2 rounded-xl items-center justify-center border",
                                         isSelected
                                             ? "bg-primary/20 border-primary"
                                             : opponentAvail
@@ -215,18 +215,15 @@ export function HourlyAvailabilityPicker({
                                         submitted && "opacity-50"
                                     )}
                                 >
-                                    <View className="flex-row items-center gap-2">
+                                    <View className="flex-row items-center justify-center gap-1">
                                         <Text className={cn(
-                                            "text-sm font-bold",
+                                            "text-xs font-bold",
                                             isSelected ? "text-primary" : opponentAvail ? "text-accent" : "text-slate-300"
                                         )}>
                                             {formatHour(hour)}
                                         </Text>
-                                        {opponentAvail && !isSelected && (
-                                            <Ionicons name="people" size={14} color="hsl(45, 90%, 55%)" />
-                                        )}
                                         {isSelected && (
-                                            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                                            <Ionicons name="checkmark-circle" size={12} color="#10B981" />
                                         )}
                                     </View>
                                     {opponentAvail && (
@@ -239,10 +236,10 @@ export function HourlyAvailabilityPicker({
                         })}
                     </View>
                 </ScrollView>
-            </View>
+            </View >
 
             {/* Legend */}
-            <View className="flex-row items-center justify-center gap-4 py-1">
+            < View className="flex-row items-center justify-center gap-4 py-1" >
                 <View className="flex-row items-center gap-1.5">
                     <View className="w-2.5 h-2.5 rounded-full bg-primary" />
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Your Choice</Text>
@@ -251,41 +248,43 @@ export function HourlyAvailabilityPicker({
                     <View className="w-2.5 h-2.5 rounded-full bg-accent" />
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Opponent</Text>
                 </View>
-            </View>
+            </View >
 
             {/* Action Button */}
-            {!submitted ? (
-                <Button
-                    onPress={handleSubmit}
-                    disabled={selectedSlots.size === 0}
-                    className={cn(
-                        "w-full h-14 rounded-2xl shadow-lg",
-                        selectedSlots.size > 0 ? "bg-primary" : "bg-slate-700"
-                    )}
-                >
-                    <View className="flex-row items-center gap-2">
-                        <Ionicons name="send" size={18} color={selectedSlots.size > 0 ? "#0F172A" : "#64748B"} />
-                        <Text className={cn(
-                            "font-black text-base uppercase tracking-wider",
-                            selectedSlots.size > 0 ? "text-slate-900" : "text-slate-500"
-                        )}>
-                            Confirm Availability ({selectedSlots.size})
-                        </Text>
-                    </View>
-                </Button>
-            ) : (
-                <View className="py-4 rounded-3xl bg-primary/10 border border-primary/20 items-center justify-center">
-                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                    <Text className="text-primary font-bold mt-1 uppercase tracking-tight">Slots Submitted Successfully</Text>
-                    <Text className="text-xs text-slate-400 mt-1">Waiting for {opponentName} to confirm</Text>
-                    <Pressable
-                        onPress={() => setSubmitted(false)}
-                        className="mt-3 bg-primary/20 px-4 py-2 rounded-xl border border-primary/30"
+            {
+                !submitted ? (
+                    <Button
+                        onPress={handleSubmit}
+                        disabled={selectedSlots.size === 0}
+                        className={cn(
+                            "w-full h-14 rounded-2xl shadow-lg",
+                            selectedSlots.size > 0 ? "bg-primary" : "bg-slate-700"
+                        )}
                     >
-                        <Text className="text-xs font-bold text-primary uppercase tracking-tight">Edit Slots</Text>
-                    </Pressable>
-                </View>
-            )}
-        </View>
+                        <View className="flex-row items-center gap-2">
+                            <Ionicons name="send" size={18} color={selectedSlots.size > 0 ? "#0F172A" : "#64748B"} />
+                            <Text className={cn(
+                                "font-black text-base uppercase tracking-wider",
+                                selectedSlots.size > 0 ? "text-slate-900" : "text-slate-500"
+                            )}>
+                                Confirm Availability ({selectedSlots.size})
+                            </Text>
+                        </View>
+                    </Button>
+                ) : (
+                    <View className="py-4 rounded-3xl bg-primary/10 border border-primary/20 items-center justify-center">
+                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                        <Text className="text-primary font-bold mt-1 uppercase tracking-tight">Slots Submitted Successfully</Text>
+                        <Text className="text-xs text-slate-400 mt-1">Waiting for {opponentName} to confirm</Text>
+                        <Pressable
+                            onPress={() => setSubmitted(false)}
+                            className="mt-3 bg-primary/20 px-4 py-2 rounded-xl border border-primary/30"
+                        >
+                            <Text className="text-xs font-bold text-primary uppercase tracking-tight">Edit Slots</Text>
+                        </Pressable>
+                    </View>
+                )
+            }
+        </View >
     );
 }
