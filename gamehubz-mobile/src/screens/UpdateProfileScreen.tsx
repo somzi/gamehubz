@@ -13,6 +13,10 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { SelectInput } from '../components/ui/SelectInput';
 import { StatusModal } from '../components/modals/StatusModal';
+import * as ImagePicker from 'expo-image-picker';
+import { authenticatedFetch, ENDPOINTS } from '../lib/api';
+import { PlayerAvatar } from '../components/ui/PlayerAvatar';
+import { ActivityIndicator } from 'react-native';
 
 type UpdateProfileNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -34,6 +38,10 @@ export default function UpdateProfileScreen() {
         onClose?: () => void;
     }>({ type: 'success', title: '', message: '' });
 
+    // Avatar state
+    const [avatarUri, setAvatarUri] = useState<string | null>(null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
     useEffect(() => {
         refreshUser();
     }, []);
@@ -44,6 +52,78 @@ export default function UpdateProfileScreen() {
             setNickName(user.nickName || '');
         }
     }, [user]);
+
+    const handlePickAvatar = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (permissionResult.status !== 'granted') {
+                Alert.alert('Permission Required', 'We need access to your photos to change your avatar.');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const selectedAsset = result.assets[0];
+                setAvatarUri(selectedAsset.uri);
+                handleUploadAvatar(selectedAsset);
+            }
+        } catch (error) {
+            console.error('Error picking avatar:', error);
+            Alert.alert('Error', 'Failed to pick image');
+        }
+    };
+
+    const handleUploadAvatar = async (asset: ImagePicker.ImagePickerAsset) => {
+        if (!asset.uri) return;
+
+        setIsUploadingAvatar(true);
+        try {
+            const formData = new FormData();
+            const filename = asset.uri.split('/').pop() || 'avatar.jpg';
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+            // @ts-ignore
+            formData.append('avatar', { uri: asset.uri, name: filename, type });
+
+            const response = await authenticatedFetch(ENDPOINTS.UPLOAD_AVATAR, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                setStatusModalConfig({
+                    type: 'success',
+                    title: 'Avatar Updated',
+                    message: 'Your profile picture has been updated successfully.'
+                });
+                setShowStatusModal(true);
+                // Refresh user profile to get new avatar URL
+                await refreshUser();
+            } else {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Failed to upload avatar');
+            }
+        } catch (error: any) {
+            console.error('Error uploading avatar:', error);
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Upload Failed',
+                message: error.message || 'Failed to update profile picture'
+            });
+            setShowStatusModal(true);
+            // Revert preview if failed
+            setAvatarUri(null);
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
 
     const socialTypeOptions = [
         { label: 'Instagram', value: SocialType.Instagram },
@@ -188,6 +268,30 @@ export default function UpdateProfileScreen() {
                 className="flex-1"
             >
                 <ScrollView className="flex-1 px-4 py-6">
+                    {/* Avatar Section */}
+                    <View className="items-center mb-8">
+                        <View className="relative">
+                            <PlayerAvatar
+                                name={user?.username || 'User'}
+                                src={avatarUri || user?.avatarUrl}
+                                size="xl"
+                                className="w-24 h-24 border-4 border-primary/20"
+                            />
+                            <TouchableOpacity
+                                onPress={handlePickAvatar}
+                                disabled={isUploadingAvatar}
+                                className="absolute bottom-0 right-0 bg-primary w-8 h-8 rounded-full items-center justify-center border-2 border-background shadow-sm"
+                            >
+                                {isUploadingAvatar ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <Ionicons name="camera" size={16} color="white" />
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                        <Text className="text-sm font-medium text-muted-foreground mt-3">Change Profile Photo</Text>
+                    </View>
+
                     <View className="mb-8">
                         <Text className="text-lg font-bold text-foreground mb-4">Basic Info</Text>
                         <Input

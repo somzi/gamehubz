@@ -61,6 +61,7 @@ export const ENDPOINTS = {
     GET_MATCH_DETAILS: (id: string) => `${API_BASE_URL}/api/match/${id}/details`,
     GET_MATCH_COMMENTS: (matchId: string) => `${API_BASE_URL}/api/MatchChat/${matchId}/history`,
     POST_MATCH_COMMENT: (matchId: string) => `${API_BASE_URL}/api/MatchChat/${matchId}`,
+    UPLOAD_AVATAR: `${API_BASE_URL}/api/userProfile/avatar`,
 };
 
 let authToken: string | null = null;

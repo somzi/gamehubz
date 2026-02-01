@@ -57,6 +57,7 @@ export interface User {
     userRoleId: string;
     userRoleDisplayName: string;
     userRoleSystemName: string;
+    avatarUrl?: string;
     language: string | null;
     username: string;
     nickName?: string;

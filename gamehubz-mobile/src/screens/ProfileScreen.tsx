@@ -165,7 +165,7 @@ export default function ProfileScreen() {
                 <View className="items-center mt-4">
                     <View className="relative">
                         <View className="p-1 rounded-full border-2 border-primary">
-                            <PlayerAvatar src={undefined} name={displayData.username} size="xl" className="border-0" />
+                            <PlayerAvatar src={user?.avatarUrl} name={displayData.username} size="xl" className="border-0" />
                         </View>
                     </View>
                     <Text className="text-2xl font-bold mt-4 text-white">{displayData.username}</Text>

@@ -8,6 +8,10 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { PageHeader } from '../components/layout/PageHeader';
+import * as ImagePicker from 'expo-image-picker';
+import { authenticatedFetch, ENDPOINTS } from '../lib/api';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
+import { StatusModal } from '../components/modals/StatusModal';
 
 type EditProfileNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -38,6 +42,85 @@ export default function EditProfileScreen() {
     const { user, logout, refreshUser } = useAuth();
     const navigation = useNavigation<EditProfileNavigationProp>();
 
+    // Avatar state
+    const [avatarUri, setAvatarUri] = React.useState<string | null>(null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+    const [showStatusModal, setShowStatusModal] = React.useState(false);
+    const [statusModalConfig, setStatusModalConfig] = React.useState<{
+        type: 'success' | 'error' | 'info';
+        title: string;
+        message: string;
+    }>({ type: 'success', title: '', message: '' });
+
+    const handlePickAvatar = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (permissionResult.status !== 'granted') {
+                Alert.alert('Permission Required', 'We need access to your photos to change your avatar.');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const selectedAsset = result.assets[0];
+                setAvatarUri(selectedAsset.uri);
+                handleUploadAvatar(selectedAsset);
+            }
+        } catch (error) {
+            console.error('Error picking avatar:', error);
+            Alert.alert('Error', 'Failed to pick image');
+        }
+    };
+
+    const handleUploadAvatar = async (asset: ImagePicker.ImagePickerAsset) => {
+        if (!asset.uri) return;
+
+        setIsUploadingAvatar(true);
+        try {
+            const formData = new FormData();
+            const filename = asset.uri.split('/').pop() || 'avatar.jpg';
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+            // @ts-ignore
+            formData.append('avatar', { uri: asset.uri, name: filename, type });
+
+            const response = await authenticatedFetch(ENDPOINTS.UPLOAD_AVATAR, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                setStatusModalConfig({
+                    type: 'success',
+                    title: 'Avatar Updated',
+                    message: 'Your profile picture has been updated successfully.'
+                });
+                setShowStatusModal(true);
+                await refreshUser();
+            } else {
+                throw new Error('Failed to upload avatar');
+            }
+        } catch (error: any) {
+            console.error('Error uploading avatar:', error);
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Upload Failed',
+                message: 'Failed to update profile picture'
+            });
+            setShowStatusModal(true);
+            setAvatarUri(null);
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
+
     useFocusEffect(
         useCallback(() => {
             if (user?.id) {
@@ -64,7 +147,24 @@ export default function EditProfileScreen() {
             <ScrollView className="flex-1 px-6">
                 {/* User Info Header (Optional but looks nice) */}
                 <View className="items-center py-6">
-                    <PlayerAvatar name={user?.username || 'Guest'} size="lg" />
+                    <View className="relative">
+                        <PlayerAvatar
+                            name={user?.username || 'Guest'}
+                            src={avatarUri || user?.avatarUrl}
+                            size="lg"
+                        />
+                        <TouchableOpacity
+                            onPress={handlePickAvatar}
+                            disabled={isUploadingAvatar}
+                            className="absolute -bottom-1 -right-1 bg-primary w-8 h-8 rounded-full items-center justify-center border-2 border-background shadow-sm"
+                        >
+                            {isUploadingAvatar ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <Ionicons name="camera" size={14} color="white" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
                     <Text className="text-xl font-bold text-white mt-3">{user?.username || 'Guest'}</Text>
                     <Text className="text-gray-500 text-sm">{user?.email || ''}</Text>
                 </View>
@@ -114,6 +214,14 @@ export default function EditProfileScreen() {
                     <Text className="text-white text-xs">GameHubz Mobile v1.0.0</Text>
                 </View>
             </ScrollView>
+
+            <StatusModal
+                visible={showStatusModal}
+                onClose={() => setShowStatusModal(false)}
+                type={statusModalConfig.type}
+                title={statusModalConfig.title}
+                message={statusModalConfig.message}
+            />
         </SafeAreaView>
     );
 }
