@@ -7,6 +7,7 @@ import HubProfileScreen from '../screens/HubProfileScreen';
 import PlayerProfileScreen from '../screens/PlayerProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
+import MyMatchesScreen from '../screens/MyMatchesScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -99,6 +100,10 @@ export function RootNavigator() {
                     <Stack.Screen
                         name="HubMembers"
                         component={HubMembersScreen}
+                    />
+                    <Stack.Screen
+                        name="MyMatches"
+                        component={MyMatchesScreen}
                     />
                 </>
             )}

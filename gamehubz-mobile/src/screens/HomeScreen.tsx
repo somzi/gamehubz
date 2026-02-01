@@ -110,28 +110,36 @@ export default function HomeScreen() {
         }, [user?.id])
     );
 
-    const renderSectionHeader = (title: string, icon: any, color: string, sectionKey: keyof typeof expandedSections, badge?: number) => (
-        <Pressable
-            onPress={() => toggleSection(sectionKey)}
-            className="flex-row items-center justify-between mb-4 px-1"
-        >
-            <View className="flex-row items-center gap-2">
+    const renderSectionHeader = (title: string, icon: any, color: string, sectionKey: keyof typeof expandedSections, badge?: number, onSeeAll?: () => void) => (
+        <View className="flex-row items-center justify-between mb-4">
+            <Pressable
+                onPress={() => toggleSection(sectionKey)}
+                className="flex-row items-center gap-2"
+            >
                 <View className="p-1 px-1.5 bg-white/5 rounded-lg border border-white/10">
                     <Ionicons name={icon} size={16} color={color} />
                 </View>
-                <Text className="text-sm font-bold text-slate-400 uppercase tracking-[2px]">{title}</Text>
+                <Text className="text-sm font-black text-slate-400 uppercase tracking-[2px]">{title}</Text>
                 {badge !== undefined && badge > 0 && (
                     <View className="bg-primary/20 border border-primary/30 px-1.5 py-0.5 rounded-md ml-1">
                         <Text className="text-[10px] font-black text-primary">{badge}</Text>
                     </View>
                 )}
-            </View>
-            <Ionicons
-                name={expandedSections[sectionKey] ? "chevron-up" : "chevron-down"}
-                size={16}
-                color="#64748B"
-            />
-        </Pressable>
+                <Ionicons
+                    name={expandedSections[sectionKey] ? "chevron-up" : "chevron-down"}
+                    size={14}
+                    color="#64748B"
+                    className="ml-1"
+                />
+            </Pressable>
+
+            {onSeeAll && (
+                <Pressable onPress={onSeeAll} className="flex-row items-center gap-1 bg-white/5 px-2.5 py-1.5 rounded-xl border border-white/10">
+                    <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">See All</Text>
+                    <Ionicons name="arrow-forward" size={12} color="#94A3B8" />
+                </Pressable>
+            )}
+        </View>
     );
 
     return (
@@ -143,17 +151,15 @@ export default function HomeScreen() {
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} tintColor="#10B981" />}
                 contentContainerStyle={{ paddingBottom: 100 }}
             >
-                <View className="px-4 py-4 space-y-32">
-
-
+                <View className="px-4 py-4 space-y-8">
 
                     {/* Action Required */}
                     {actionRequiredMatches.length > 0 && (
                         <View>
-                            {renderSectionHeader('Attention', 'alert-circle', '#EAB308', 'actionRequired', actionRequiredMatches.length)}
+                            {renderSectionHeader('Attention', 'alert-circle', '#EAB308', 'actionRequired', actionRequiredMatches.length, () => navigation.navigate('MyMatches'))}
                             {expandedSections.actionRequired && (
                                 <View className="gap-3 mt-1">
-                                    {actionRequiredMatches.map((match, index) => (
+                                    {actionRequiredMatches.slice(0, 3).map((match, index) => (
                                         <MatchScheduleCard
                                             key={match.matchId || `pending-${index}`}
                                             matchId={match.id || match.matchId || ''}
@@ -163,7 +169,6 @@ export default function HomeScreen() {
                                             opponentName={match.opponentName}
                                             status="pending_availability"
                                             onMatchUpdate={fetchMatches}
-                                            onPress={() => { }}
                                         />
                                     ))}
                                 </View>
@@ -172,13 +177,13 @@ export default function HomeScreen() {
                     )}
 
                     {/* Community News Feed */}
-                    <View>
-                        {renderSectionHeader('Highlights', 'planet-outline', '#10B981', 'communityFeed')}
+                    <View className="mt-8">
+                        {renderSectionHeader('Highlights', 'planet-outline', '#10B981', 'communityFeed', undefined, () => { })}
 
                         {expandedSections.communityFeed && (
                             <View className="gap-3 mt-1">
                                 {hubActivities.length > 0 ? (
-                                    hubActivities.map((item, index) => (
+                                    hubActivities.slice(0, 3).map((item, index) => (
                                         <FeedCard
                                             key={index}
                                             hubName={item.hubName}
@@ -186,7 +191,6 @@ export default function HomeScreen() {
                                             message={item.message}
                                             tournamentName={item.tournamentName}
                                             timestamp={item.timeAgo}
-                                            // TODO: Add navigation to specific activity if needed
                                             onClick={() => { }}
                                         />
                                     ))
@@ -200,13 +204,13 @@ export default function HomeScreen() {
                     </View>
 
                     {/* My Matches */}
-                    <View>
-                        {renderSectionHeader('Active Matches', 'game-controller-outline', '#6366F1', 'myMatches')}
+                    <View className="mt-8">
+                        {renderSectionHeader('Active Matches', 'game-controller-outline', '#6366F1', 'myMatches', undefined, () => navigation.navigate('MyMatches'))}
 
                         {expandedSections.myMatches && (
                             <View className="gap-3 mt-1">
                                 {myMatches.length > 0 ? (
-                                    myMatches.map((match, index) => (
+                                    myMatches.slice(0, 3).map((match, index) => (
                                         <MatchScheduleCard
                                             key={match.matchId || `scheduled-${index}`}
                                             matchId={match.id || ''}
@@ -217,7 +221,6 @@ export default function HomeScreen() {
                                             status="scheduled"
                                             scheduledTime={match.scheduledTime ? new Date(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'TBD'}
                                             onMatchUpdate={fetchMatches}
-                                            onPress={() => { }}
                                         />
                                     ))
                                 ) : (
@@ -233,5 +236,6 @@ export default function HomeScreen() {
             </ScrollView>
         </SafeAreaView>
     );
+
 }
 

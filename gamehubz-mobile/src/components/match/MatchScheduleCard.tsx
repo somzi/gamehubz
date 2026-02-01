@@ -25,6 +25,7 @@ interface MatchScheduleCardProps {
     opponentAvailability?: string[];
     onMatchUpdate?: () => void;
     onPress?: () => void;
+    variant?: 'default' | 'compact';
 }
 
 export function MatchScheduleCard({
@@ -39,6 +40,7 @@ export function MatchScheduleCard({
     opponentAvailability: initialOpponentAvailability = [],
     onMatchUpdate,
     onPress,
+    variant = 'default',
 }: MatchScheduleCardProps) {
     const { user } = useAuth();
     const [modalVisible, setModalVisible] = useState(false);
@@ -248,13 +250,80 @@ export function MatchScheduleCard({
         }
     };
 
+    const isSetAvailability = currentStatus === 'pending_availability';
+
+    if (variant === 'compact') {
+        return (
+            <>
+                <Pressable
+                    onPress={() => setModalVisible(true)}
+                    className={cn(
+                        "w-[240px] bg-card/60 rounded-[32px] border border-white/5 p-5 mr-3",
+                        currentStatus === 'ready_phase' && "border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.1)]"
+                    )}
+                >
+                    <View className="flex-row items-center justify-between mb-4">
+                        <View className={cn(
+                            "w-12 h-12 rounded-2xl items-center justify-center",
+                            isSetAvailability ? "bg-yellow-500/10" :
+                                currentStatus === 'scheduled' ? "bg-primary/10" : "bg-indigo-500/10"
+                        )}>
+                            <Ionicons
+                                name={isSetAvailability ? "alert-circle" : "game-controller"}
+                                size={24}
+                                color={isSetAvailability ? "#EAB308" :
+                                    currentStatus === 'scheduled' ? "#10B981" : "#6366F1"}
+                            />
+                        </View>
+                        <View className="items-end">
+                            <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{roundName}</Text>
+                            <Text className="text-[10px] font-bold text-slate-500" numberOfLines={1}>{tournamentName}</Text>
+                        </View>
+                    </View>
+
+                    <Text className="text-xl font-black text-white leading-tight" numberOfLines={1}>
+                        vs {opponentName}
+                    </Text>
+
+                    <View className="mt-4 pt-4 border-t border-white/5">
+                        {isSetAvailability ? (
+                            <View className="flex-row items-center gap-2 bg-yellow-500/10 self-start px-3 py-2 rounded-xl border border-yellow-500/20">
+                                <Ionicons name="calendar-outline" size={14} color="#EAB308" />
+                                <Text className="text-[11px] font-black text-yellow-500 uppercase tracking-tight">Set Availability</Text>
+                            </View>
+                        ) : (
+                            <View className={cn(
+                                "flex-row items-center gap-2 self-start px-3 py-2 rounded-xl border",
+                                currentStatus === 'scheduled' ? "bg-primary/10 border-primary/20" : "bg-indigo-500/10 border-indigo-500/20"
+                            )}>
+                                <Ionicons
+                                    name={currentStatus === 'scheduled' ? "time-outline" : "flash-outline"}
+                                    size={14}
+                                    color={currentStatus === 'scheduled' ? "#10B981" : "#6366F1"}
+                                />
+                                <Text className={cn(
+                                    "text-[11px] font-black uppercase tracking-tight",
+                                    currentStatus === 'scheduled' ? "text-primary" : "text-indigo-500"
+                                )}>
+                                    {currentStatus === 'scheduled' ? matchTime : "Ready Check"}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                </Pressable>
+
+                {renderModal()}
+            </>
+        );
+    }
+
     return (
         <>
             <Card
                 onPress={() => setModalVisible(true)}
                 className={cn(
                     "mb-2",
-                    currentStatus === 'ready_phase' && "border-indigo-500/30"
+                    currentStatus === 'ready_phase' && "border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
                 )}
             >
                 <View className="flex-row items-center gap-4">
@@ -284,28 +353,48 @@ export function MatchScheduleCard({
                 </View>
             </Card>
 
-            {/* Modal for scheduling / ready check */}
+            {renderModal()}
+        </>
+    );
+
+    function renderModal() {
+        const isPremium = variant === 'compact';
+        return (
             <Modal
                 animationType="slide"
                 transparent={true}
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View className="flex-1 justify-end bg-black/50">
-                    <View className="bg-card rounded-t-3xl border-t border-border/50 p-6 max-h-[90%]">
+                <View className={cn("flex-1 justify-end", isPremium ? "bg-black/80" : "bg-black/50")}>
+                    <View className={cn(
+                        "rounded-t-[40px] border-t p-8 max-h-[92%]",
+                        isPremium ? "bg-slate-900 border-white/10" : "bg-card border-border/50 p-6 max-h-[90%]"
+                    )}>
+                        {isPremium && <View className="w-12 h-1.5 bg-white/10 rounded-full self-center mb-6" />}
+
                         {/* Header */}
-                        <View className="flex-row items-center justify-between mb-4">
+                        <View className="flex-row items-center justify-between mb-8">
                             <View>
-                                <Text className="text-lg font-bold text-foreground">
+                                <Text className={cn(
+                                    "font-black text-white tracking-tight",
+                                    isPremium ? "text-2xl" : "text-lg text-foreground"
+                                )}>
                                     {tournamentName}
                                 </Text>
-                                <Text className="text-sm text-muted-foreground">{roundName}</Text>
+                                <Text className={cn(
+                                    "font-bold uppercase tracking-widest mt-1",
+                                    isPremium ? "text-sm text-slate-400" : "text-sm text-muted-foreground"
+                                )}>{roundName}</Text>
                             </View>
                             <Pressable
                                 onPress={() => setModalVisible(false)}
-                                className="w-8 h-8 rounded-full bg-secondary items-center justify-center"
+                                className={cn(
+                                    "rounded-full items-center justify-center",
+                                    isPremium ? "w-10 h-10 bg-white/5 border border-white/10" : "w-8 h-8 bg-secondary"
+                                )}
                             >
-                                <Ionicons name="close" size={20} color="hsl(220, 15%, 55%)" />
+                                <Ionicons name="close" size={isPremium ? 24 : 20} color={isPremium ? "#94A3B8" : "hsl(220, 15%, 55%)"} />
                             </Pressable>
                         </View>
 
@@ -322,17 +411,29 @@ export function MatchScheduleCard({
                             )}
 
                             {(currentStatus === 'scheduled' || currentStatus === 'ready_phase') && matchTime && (
-                                <View className="space-y-4">
+                                <View className={cn("gap-6", !isPremium && "space-y-4")}>
                                     {/* Match Info */}
                                     <View className="items-center mb-2">
-                                        <Text className="text-sm text-muted-foreground">Match Time</Text>
-                                        <Text className="text-lg font-bold text-primary mt-1">{matchTime}</Text>
+                                        <Text className={cn(
+                                            "font-black uppercase tracking-[2px]",
+                                            isPremium ? "text-xs text-slate-500" : "text-sm text-muted-foreground"
+                                        )}>Match Time</Text>
+                                        <Text className={cn(
+                                            "font-black text-primary mt-2",
+                                            isPremium ? "text-2xl" : "text-lg"
+                                        )}>{matchTime}</Text>
                                     </View>
 
                                     {/* Error Message */}
                                     {error && (
-                                        <View className="bg-destructive/10 p-4 rounded-2xl mb-2">
-                                            <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
+                                        <View className={cn(
+                                            "p-4 rounded-2xl mb-2 border",
+                                            isPremium ? "bg-destructive/10 border-destructive/20" : "bg-destructive/10 border-transparent"
+                                        )}>
+                                            <Text className={cn(
+                                                "text-sm text-center font-bold",
+                                                isPremium ? "text-destructive tracking-tight" : "text-destructive"
+                                            )}>{error}</Text>
                                         </View>
                                     )}
 
@@ -340,32 +441,46 @@ export function MatchScheduleCard({
                                     <View className="flex-row items-center justify-between gap-4">
                                         {/* Home Player (You) */}
                                         <View className="flex-1 items-center gap-3">
-                                            <PlayerAvatar name={user?.username || 'You'} size="lg" />
-                                            <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                            <PlayerAvatar name={user?.username || 'You'} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
+                                            <Text className={cn(
+                                                "font-black text-center",
+                                                isPremium ? "text-base text-white" : "text-sm text-foreground"
+                                            )} numberOfLines={1}>
                                                 {user?.username || 'You'}
                                             </Text>
                                             <TextInput
-                                                className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                className={cn(
+                                                    "w-full rounded-2xl text-center font-black border",
+                                                    isPremium ? "bg-white/5 h-16 text-2xl text-primary border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
+                                                )}
                                                 placeholder="0"
-                                                placeholderTextColor="#71717A"
+                                                placeholderTextColor={isPremium ? "#475569" : "#71717A"}
                                                 keyboardType="numeric"
                                                 value={homeScore}
                                                 onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
                                             />
                                         </View>
 
-                                        <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
+                                        <View className="items-center justify-center h-16 mt-12">
+                                            <Text className="text-sm font-black text-slate-500 uppercase">VS</Text>
+                                        </View>
 
                                         {/* Away Player (Opponent) */}
                                         <View className="flex-1 items-center gap-3">
-                                            <PlayerAvatar name={opponentName} size="lg" />
-                                            <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
+                                            <PlayerAvatar name={opponentName} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
+                                            <Text className={cn(
+                                                "font-black text-center",
+                                                isPremium ? "text-base text-white" : "text-sm text-foreground"
+                                            )} numberOfLines={1}>
                                                 {opponentName}
                                             </Text>
                                             <TextInput
-                                                className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                className={cn(
+                                                    "w-full rounded-2xl text-center font-black border",
+                                                    isPremium ? "bg-white/5 h-16 text-2xl text-white border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
+                                                )}
                                                 placeholder="0"
-                                                placeholderTextColor="#71717A"
+                                                placeholderTextColor={isPremium ? "#475569" : "#71717A"}
                                                 keyboardType="numeric"
                                                 value={awayScore}
                                                 onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
@@ -374,41 +489,62 @@ export function MatchScheduleCard({
                                     </View>
 
                                     {/* Evidence Section */}
-                                    <View className="mt-6 border-t border-border/10 pt-6">
-                                        <View className="flex-row items-center justify-between mb-3">
+                                    <View className={cn("mt-4 pt-6 border-t", isPremium ? "border-white/5" : "border-border/10")}>
+                                        <View className="flex-row items-center justify-between mb-4">
                                             <View>
-                                                <Text className="text-sm font-bold text-foreground">Evidence</Text>
-                                                <Text className="text-[11px] text-muted-foreground">Add match result screenshots</Text>
+                                                <Text className={cn(
+                                                    "font-black uppercase tracking-tight",
+                                                    isPremium ? "text-lg text-white" : "text-sm text-foreground"
+                                                )}>Evidence</Text>
+                                                <Text className={cn(
+                                                    "font-bold",
+                                                    isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground"
+                                                )}>{isPremium ? "Attach match results" : "Add screenshots"}</Text>
                                             </View>
-                                            <Pressable onPress={pickImages} className="flex-row items-center bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20">
-                                                <Ionicons name="add" size={16} color="#10B981" />
-                                                <Text className="text-xs font-bold text-primary ml-1">Add Photos</Text>
+                                            <Pressable onPress={pickImages} className={cn(
+                                                "flex-row items-center px-4 py-2.5 rounded-xl border",
+                                                isPremium ? "bg-primary/20 border-primary/30" : "bg-primary/10 border-primary/20"
+                                            )}>
+                                                <Ionicons name="add" size={isPremium ? 20 : 16} color="#10B981" />
+                                                <Text className={cn(
+                                                    "font-black uppercase ml-1.5",
+                                                    isPremium ? "text-xs text-primary" : "text-xs text-primary"
+                                                )}>{isPremium ? "Photos" : "Add"}</Text>
                                             </Pressable>
                                         </View>
                                         {selectedImages.length > 0 ? (
                                             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
                                                 {selectedImages.map((img, index) => (
                                                     <View key={img.uri + index} className="mr-3 mb-2">
-                                                        <Image source={{ uri: img.uri }} className="w-20 h-20 rounded-xl" />
-                                                        <Pressable onPress={() => removeImage(img.uri)} className="absolute -top-1.5 -right-1.5 bg-destructive w-5 h-5 rounded-full items-center justify-center border border-background shadow-sm">
-                                                            <Ionicons name="close" size={12} color="white" />
+                                                        <Image source={{ uri: img.uri }} className={cn("rounded-xl", isPremium ? "w-24 h-24 border border-white/10" : "w-20 h-20")} />
+                                                        <Pressable onPress={() => removeImage(img.uri)} className={cn(
+                                                            "absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full items-center justify-center border-2 shadow-sm",
+                                                            isPremium ? "bg-destructive border-slate-900" : "bg-destructive border-background"
+                                                        )}>
+                                                            <Ionicons name="close" size={14} color="white" />
                                                         </Pressable>
                                                     </View>
                                                 ))}
                                             </ScrollView>
                                         ) : (
-                                            <Pressable onPress={pickImages} className="h-20 border border-dashed border-border/30 rounded-2xl items-center justify-center bg-muted/5">
-                                                <Ionicons name="images-outline" size={24} color="#71717A" />
-                                                <Text className="text-[11px] text-muted-foreground mt-1">No photos selected</Text>
+                                            <Pressable onPress={pickImages} className={cn(
+                                                "h-24 border-2 border-dashed rounded-3xl items-center justify-center",
+                                                isPremium ? "border-white/10 bg-white/[0.02]" : "border-border/20 bg-muted/5"
+                                            )}>
+                                                <Ionicons name="images-outline" size={isPremium ? 32 : 24} color={isPremium ? "#475569" : "#71717A"} />
+                                                <Text className={cn(
+                                                    "font-bold uppercase tracking-widest mt-1",
+                                                    isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground"
+                                                )}>{isPremium ? "No Photos" : "No Selection"}</Text>
                                             </Pressable>
                                         )}
                                     </View>
 
                                     {/* Action Buttons */}
-                                    <View className="mt-6 flex-row gap-3">
+                                    <View className="mt-8 flex-row gap-4 pb-4">
                                         <Button
                                             variant="outline"
-                                            className="flex-1"
+                                            className={cn("flex-1 h-14 rounded-2xl", isPremium ? "border-white/10" : "border-border/10")}
                                             onPress={() => {
                                                 setHomeScore('');
                                                 setAwayScore('');
@@ -416,29 +552,43 @@ export function MatchScheduleCard({
                                                 setSelectedImages([]);
                                             }}
                                         >
-                                            Clear
+                                            <Text className={cn("font-bold uppercase", isPremium ? "text-slate-400" : "text-muted-foreground")}>Clear</Text>
                                         </Button>
                                         <Button
-                                            className="flex-1"
+                                            className="flex-[2] h-14 rounded-2xl"
                                             onPress={handleSubmitResult}
                                             loading={isSubmitting}
                                         >
-                                            Submit Result
+                                            <Text className={cn("font-black uppercase tracking-widest", isPremium ? "text-slate-900" : "text-white")}>Submit Result</Text>
                                         </Button>
                                     </View>
                                 </View>
                             )}
 
                             {currentStatus === 'completed' && (
-                                <View className="py-6 items-center">
-                                    <Ionicons name="checkmark-circle" size={48} color="hsl(220, 15%, 55%)" />
-                                    <Text className="text-muted-foreground mt-2">Match completed</Text>
+                                <View className={cn(
+                                    "py-12 items-center rounded-[40px] border mt-4",
+                                    isPremium ? "bg-white/5 border-white/10" : "bg-muted/10 border-transparent"
+                                )}>
+                                    <View className={cn(
+                                        "w-20 h-20 rounded-full items-center justify-center border",
+                                        isPremium ? "bg-primary/20 border-primary/30" : "bg-primary/20 border-transparent"
+                                    )}>
+                                        <Ionicons name="checkmark" size={40} color="#10B981" />
+                                    </View>
+                                    <Text className={cn(
+                                        "font-black mt-6 uppercase tracking-widest",
+                                        isPremium ? "text-xl text-white" : "text-foreground"
+                                    )}>Completed</Text>
+                                    {isPremium && <Text className="text-sm font-medium text-slate-500 mt-2">Results have been recorded</Text>}
                                 </View>
                             )}
+                            <View className="h-10" />
                         </ScrollView>
                     </View>
                 </View>
             </Modal>
-        </>
-    );
+        );
+    }
 }
+
