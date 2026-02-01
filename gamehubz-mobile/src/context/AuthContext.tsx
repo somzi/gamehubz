@@ -14,6 +14,7 @@ interface AuthContextType {
     saveUserSocial: (social: UserSocial) => Promise<boolean>;
     deleteUserSocial: (id: string) => Promise<boolean>;
     refreshUser: () => Promise<void>;
+    deleteAccount: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -275,6 +276,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthToken(null);
     }, [refreshToken, token]);
 
+    const deleteAccount = useCallback(async (): Promise<boolean> => {
+        setIsLoading(true);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.DELETE_ACCOUNT, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                setUser(null);
+                setToken(null);
+                setRefreshToken(null);
+                setAuthToken(null);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Delete account error:', error);
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         setAuthToken(token);
     }, [token]);
@@ -291,7 +315,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         saveUserSocial,
         deleteUserSocial,
         refreshUser,
-    }), [user, token, isLoading, login, register, logout, updateProfile, saveUserSocial, refreshUser]);
+        deleteAccount,
+    }), [user, token, isLoading, login, register, logout, updateProfile, saveUserSocial, refreshUser, deleteAccount]);
 
     return (
         <AuthContext.Provider value={authContextValue}>

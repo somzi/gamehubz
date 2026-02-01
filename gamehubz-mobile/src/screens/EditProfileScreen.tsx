@@ -39,7 +39,7 @@ function MenuItem({ icon, label, onPress, color = "#71717A", showChevron = true 
 }
 
 export default function EditProfileScreen() {
-    const { user, logout, refreshUser } = useAuth();
+    const { user, logout, deleteAccount, refreshUser } = useAuth();
     const navigation = useNavigation<EditProfileNavigationProp>();
 
     // Avatar state
@@ -140,6 +140,38 @@ export default function EditProfileScreen() {
         );
     };
 
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            'Delete Account',
+            'Are you sure you want to delete your account? This action is permanent and cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const success = await deleteAccount();
+                        if (success) {
+                            setStatusModalConfig({
+                                type: 'success',
+                                title: 'Account Deleted',
+                                message: 'Your account has been successfully deleted.'
+                            });
+                            setShowStatusModal(true);
+                        } else {
+                            setStatusModalConfig({
+                                type: 'error',
+                                title: 'Delete Failed',
+                                message: 'Failed to delete your account. Please try again later.'
+                            });
+                            setShowStatusModal(true);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-background" edges={['top']}>
             <PageHeader title="Edit Profile" showBack />
@@ -205,6 +237,13 @@ export default function EditProfileScreen() {
                         icon="log-out-outline"
                         label="Log Out"
                         onPress={handleLogout}
+                        color="#EF4444"
+                        showChevron={false}
+                    />
+                    <MenuItem
+                        icon="trash-outline"
+                        label="Delete Account"
+                        onPress={handleDeleteAccount}
                         color="#EF4444"
                         showChevron={false}
                     />
