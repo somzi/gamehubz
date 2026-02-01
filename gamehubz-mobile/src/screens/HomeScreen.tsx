@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { DashboardActivityDto } from '../types/dashboard';
+import { HighlightsModal } from '../components/modals/HighlightsModal';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -41,6 +42,7 @@ export default function HomeScreen() {
         communityFeed: true,
         myMatches: true
     });
+    const [showHighlightsModal, setShowHighlightsModal] = useState(false);
 
     const toggleSection = (section: keyof typeof expandedSections) => {
         setExpandedSections(prev => ({
@@ -178,7 +180,7 @@ export default function HomeScreen() {
 
                     {/* Community News Feed */}
                     <View className="mt-8">
-                        {renderSectionHeader('Highlights', 'planet-outline', '#10B981', 'communityFeed', undefined, () => { })}
+                        {renderSectionHeader('Highlights', 'planet-outline', '#10B981', 'communityFeed', undefined, () => setShowHighlightsModal(true))}
 
                         {expandedSections.communityFeed && (
                             <View className="gap-3 mt-1">
@@ -234,6 +236,12 @@ export default function HomeScreen() {
                     </View>
                 </View>
             </ScrollView>
+
+            <HighlightsModal
+                visible={showHighlightsModal}
+                onClose={() => setShowHighlightsModal(false)}
+                activities={hubActivities}
+            />
         </SafeAreaView>
     );
 
