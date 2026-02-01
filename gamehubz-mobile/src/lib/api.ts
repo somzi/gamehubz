@@ -53,6 +53,8 @@ export const ENDPOINTS = {
     GET_HUB_ACTIVITY_HOME: `${API_BASE_URL}/api/hubActivity/home`,
     CREATE_HUB: `${API_BASE_URL}/api/hub/create`,
     DELETE_USER_SOCIAL: (id: string) => `${API_BASE_URL}/api/UserSocial/${id}`,
+    HUB_SOCIAL: `${API_BASE_URL}/api/HubSocial`,
+    DELETE_HUB_SOCIAL: (id: string) => `${API_BASE_URL}/api/HubSocial/${id}`,
     UPDATE_TOURNAMENT: `${API_BASE_URL}/api/tournament/update`,
     KICK_HUB_MEMBER: (hubId: string, userId: string) => `${API_BASE_URL}/api/Hub/${hubId}/user/${userId}/kick`,
     UPLOAD_MATCH_EVIDENCE: (id: string) => `${API_BASE_URL}/api/match/${id}/evidence`,

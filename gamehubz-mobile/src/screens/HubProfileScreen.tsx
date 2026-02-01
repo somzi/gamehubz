@@ -13,6 +13,9 @@ import { Tabs } from '../components/ui/Tabs';
 import { cn } from '../lib/utils';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { SocialLinks } from '../components/profile/SocialLinks';
+import { SocialType } from '../types/auth';
+import { getSocialUrl } from '../lib/social';
 
 type HubProfileRouteProp = RouteProp<RootStackParamList, 'HubProfile'>;
 
@@ -160,6 +163,26 @@ export default function HubProfileScreen() {
         }
     };
 
+    const mapSocialsToLinks = (socials: any[]) => {
+        if (!socials || socials.length === 0) return [];
+        return socials.map(s => {
+            const type = s.socialType !== undefined ? s.socialType : s.type;
+            let platform: any = 'discord';
+
+            switch (type) {
+                case SocialType.Instagram: platform = 'instagram'; break;
+                case SocialType.X: platform = 'twitter'; break;
+                case SocialType.Facebook: platform = 'facebook'; break;
+                case SocialType.TikTok: platform = 'tiktok'; break;
+                case SocialType.YouTube: platform = 'youtube'; break;
+                case SocialType.Discord: platform = 'discord'; break;
+            }
+
+            const url = s.url && s.url !== '#' ? s.url : getSocialUrl(platform, s.username);
+            return { platform, username: s.username, url };
+        });
+    };
+
     const tabs = [
         { label: 'Live', value: 'live' },
         { label: 'Upcoming', value: 'upcoming' },
@@ -246,6 +269,13 @@ export default function HubProfileScreen() {
                                 </Text>
                             </View>
                         </View>
+
+                        {/* Hub Socials */}
+                        {hubData.hubSocials && hubData.hubSocials.length > 0 && (
+                            <View className="mt-4">
+                                <SocialLinks links={mapSocialsToLinks(hubData.hubSocials)} className="justify-center" />
+                            </View>
+                        )}
 
                         {!isOwner && (
                             <Button

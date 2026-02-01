@@ -15,6 +15,7 @@ export type RootStackParamList = {
     UpdateProfile: undefined;
     ManageHub: { hubId: string };
     HubMembers: { hubId: string };
+    ManageHubSocials: { hubId: string };
     MyMatches: undefined;
 };
 

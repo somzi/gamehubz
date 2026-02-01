@@ -24,6 +24,14 @@ export interface UserSocial {
     username: string;
 }
 
+export interface HubSocial {
+    id?: string;
+    socialType?: SocialType;
+    type?: SocialType;
+    username: string;
+    hubId?: string;
+}
+
 export interface UserInfo {
     id: string;
     username: string;

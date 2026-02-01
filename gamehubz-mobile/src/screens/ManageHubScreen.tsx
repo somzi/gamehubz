@@ -129,6 +129,11 @@ export default function ManageHubScreen() {
                         onPress={() => setShowEditModal(true)}
                     />
                     <MenuItem
+                        icon="share-social-outline"
+                        label="Manage Socials"
+                        onPress={() => navigation.navigate('ManageHubSocials', { hubId })}
+                    />
+                    <MenuItem
                         icon="trophy-outline"
                         label="Create Tournament"
                         onPress={() => setShowCreateTournamentModal(true)}
