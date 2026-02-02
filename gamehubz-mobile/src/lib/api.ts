@@ -5,10 +5,10 @@ import { Platform } from 'react-native';
 // For physical devices, you MUST use your computer's local IP address (e.g., 192.168.1.5)
 const getApiHost = () => {
     if (Platform.OS === 'android') {
-        return '192.168.0.10';
+        return '192.168.0.3';
     }
     // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
-    return '192.168.0.10';
+    return '192.168.0.3';
 };
 
 export const API_HOST = getApiHost();
@@ -47,6 +47,7 @@ export const ENDPOINTS = {
     UNFOLLOW_HUB: (userId: string, hubId: string) => `${API_BASE_URL}/api/userHub/unfollow?userId=${userId}&hubId=${hubId}`,
     UPDATE_HUB: `${API_BASE_URL}/api/hub/update`,
     SUBMIT_MATCH_AVAILABILITY: `${API_BASE_URL}/api/match/availability`,
+    GET_HUB_MEMBERS: (id: string) => `${API_BASE_URL}/api/Hub/${id}/members`,
     GET_MATCH_AVAILABILITY: (matchId: string, userId: string) => `${API_BASE_URL}/api/match/${matchId}/availability/user/${userId}`,
     GET_USER_HOME_MATCHES: (userId: string) => `${API_BASE_URL}/api/match/home/${userId}`,
     CHECK_REGISTRATION: (id: string, userId: string) => `${API_BASE_URL}/api/tournament/${id}/user/${userId}/registred`,
