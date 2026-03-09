@@ -221,6 +221,7 @@ export default function TournamentsScreen() {
                                 navigation.navigate('TournamentDetails', { id: tId });
                             }}
                             index={index}
+                            hubName={tournament.HubName || tournament.hubName}
                         />
                     </View>
                 ))}

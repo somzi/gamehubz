@@ -211,6 +211,7 @@ export default function HubProfileScreen() {
                         prizePool={`${tournament.prizeCurrency === 1 ? '$' : '€'}${tournament.prize}`}
                         players={new Array(tournament.numberOfParticipants || 0).fill({})}
                         onClick={() => navigation.navigate('TournamentDetails', { id: tournament.id })}
+                        hubName={hubData.name}
                     />
                 ))}
                 {isListLoading && <ActivityIndicator size="small" color="#8B5CF6" className="py-4" />}

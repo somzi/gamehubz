@@ -412,6 +412,7 @@ export default function ProfileScreen() {
                                                 prizePool={`${t.prizeCurrency === 1 ? '$' : t.prizeCurrency === 2 ? '€' : ''}${t.prize}`}
                                                 players={new Array(t.numberOfParticipants || 0).fill({})}
                                                 onClick={() => navigation.navigate('TournamentDetails', { id: t.id })}
+                                                hubName={t.hubName || t.HubName}
                                             />
                                         ))}
                                         {hasMoreTournaments && isLoadingMoreTournaments && (
