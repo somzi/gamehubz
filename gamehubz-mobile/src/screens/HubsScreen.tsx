@@ -47,17 +47,24 @@ export default function HubsScreen() {
     const [error, setError] = useState<string | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
+    // Pagination State
+    const [pageNumber, setPageNumber] = useState(0);
+    const [hasMoreHubs, setHasMoreHubs] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
     const fetchHubs = async (showLoading = true) => {
         if (showLoading) setLoading(true);
         setError(null);
+        setPageNumber(0);
+        setHasMoreHubs(true);
         try {
             let apiUrl = ENDPOINTS.HUBS;
 
             if (user?.id) {
                 if (activeTab === 'joined') {
-                    apiUrl = ENDPOINTS.GET_USER_HUBS(user.id);
+                    apiUrl = ENDPOINTS.GET_USER_HUBS(user.id, 0);
                 } else if (activeTab === 'discovery') {
-                    apiUrl = ENDPOINTS.GET_DISCOVERY_HUBS(user.id);
+                    apiUrl = ENDPOINTS.GET_DISCOVERY_HUBS(user.id, 0);
                 }
             }
 
@@ -81,6 +88,7 @@ export default function HubsScreen() {
             }
 
             setHubs(hubsList);
+            setHasMoreHubs(hubsList.length === 10); // Assume page size of 10
         } catch (err) {
             console.error('Fetch error:', err);
             setError('Failed to load hubs. Please check your connection.');
@@ -99,6 +107,55 @@ export default function HubsScreen() {
     const onRefresh = () => {
         setIsRefreshing(true);
         fetchHubs(false);
+    };
+
+    const loadMoreHubs = async () => {
+        if (!user?.id || isLoadingMore || !hasMoreHubs) return;
+
+        setIsLoadingMore(true);
+        const nextPage = pageNumber + 1;
+
+        try {
+            let apiUrl = "";
+            if (activeTab === 'joined') {
+                apiUrl = ENDPOINTS.GET_USER_HUBS(user.id, nextPage);
+            } else if (activeTab === 'discovery') {
+                apiUrl = ENDPOINTS.GET_DISCOVERY_HUBS(user.id, nextPage);
+            } else {
+                setHasMoreHubs(false);
+                return;
+            }
+
+            const response = await authenticatedFetch(apiUrl);
+            if (response.ok) {
+                const data = await response.json();
+                const resultData = data.result || data;
+                const hubsList = Array.isArray(resultData) ? resultData : (resultData.items || []);
+
+                if (hubsList.length > 0) {
+                    setHubs(prev => [...prev, ...hubsList]);
+                    setPageNumber(nextPage);
+                    setHasMoreHubs(hubsList.length === 10);
+                } else {
+                    setHasMoreHubs(false);
+                }
+            } else {
+                setHasMoreHubs(false);
+            }
+        } catch (error) {
+            console.error('Error fetching more hubs:', error);
+            setHasMoreHubs(false);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
+    const handleScroll = (event: any) => {
+        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+        const paddingToBottom = 50;
+        if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+            loadMoreHubs();
+        }
     };
 
     const handleCreateHub = async () => {
@@ -190,6 +247,8 @@ export default function HubsScreen() {
                         refreshControl={
                             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
                         }
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
                     >
                         <View className="gap-3 pb-8">
                             {filteredHubs.length === 0 ? (
@@ -212,37 +271,44 @@ export default function HubsScreen() {
                                     )}
                                 </View>
                             ) : (
-                                filteredHubs.map((hub) => (
-                                    <Card
-                                        key={hub.id}
-                                        onPress={() => navigation.navigate('HubProfile', { id: hub.id })}
-                                        className="p-4"
-                                    >
-                                        <View className="flex-row gap-3">
-                                            <PlayerAvatar name={hub.name} size="md" className="w-12 h-12" />
-                                            <View className="flex-1">
-                                                <Text className="text-base font-bold text-foreground">{hub.name}</Text>
-                                                <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={2}>
-                                                    {hub.description}
-                                                </Text>
-                                                <View className="flex-row items-center gap-3 mt-2">
-                                                    <View className="flex-row items-center gap-1">
-                                                        <Ionicons name="people-outline" size={10} color="#64748B" />
-                                                        <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                                                            {hub.numberOfUsers} Fans
-                                                        </Text>
-                                                    </View>
-                                                    <View className="flex-row items-center gap-1">
-                                                        <Ionicons name="trophy-outline" size={10} color="#64748B" />
-                                                        <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                                                            {hub.numberOfTournaments} Events
-                                                        </Text>
+                                <>
+                                    {filteredHubs.map((hub, idx) => (
+                                        <Card
+                                            key={`${hub.id}-${idx}`}
+                                            onPress={() => navigation.navigate('HubProfile', { id: hub.id })}
+                                            className="p-4"
+                                        >
+                                            <View className="flex-row gap-3">
+                                                <PlayerAvatar name={hub.name} size="md" className="w-12 h-12" />
+                                                <View className="flex-1">
+                                                    <Text className="text-base font-bold text-foreground">{hub.name}</Text>
+                                                    <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={2}>
+                                                        {hub.description}
+                                                    </Text>
+                                                    <View className="flex-row items-center gap-3 mt-2">
+                                                        <View className="flex-row items-center gap-1">
+                                                            <Ionicons name="people-outline" size={10} color="#64748B" />
+                                                            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                                                {hub.numberOfUsers} Fans
+                                                            </Text>
+                                                        </View>
+                                                        <View className="flex-row items-center gap-1">
+                                                            <Ionicons name="trophy-outline" size={10} color="#64748B" />
+                                                            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                                                {hub.numberOfTournaments} Events
+                                                            </Text>
+                                                        </View>
                                                     </View>
                                                 </View>
                                             </View>
+                                        </Card>
+                                    ))}
+                                    {hasMoreHubs && isLoadingMore && (
+                                        <View className="py-4 items-center justify-center">
+                                            <ActivityIndicator size="small" color="#8B5CF6" />
                                         </View>
-                                    </Card>
-                                ))
+                                    )}
+                                </>
                             )}
                         </View>
                     </ScrollView>

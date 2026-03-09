@@ -38,6 +38,12 @@ export default function PlayerProfileScreen() {
     const [tournamentsPage, setTournamentsPage] = useState(0);
     const [hasMoreTournaments, setHasMoreTournaments] = useState(true);
     const [isLoadingMoreTournaments, setIsLoadingMoreTournaments] = useState(false);
+
+    const [userMatches, setUserMatches] = useState<any[]>([]);
+    const [matchesPage, setMatchesPage] = useState(0);
+    const [hasMoreMatches, setHasMoreMatches] = useState(true);
+    const [isLoadingMoreMatches, setIsLoadingMoreMatches] = useState(false);
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -48,11 +54,14 @@ export default function PlayerProfileScreen() {
             setError(null);
             setTournamentsPage(0);
             setHasMoreTournaments(true);
+            setMatchesPage(0);
+            setHasMoreMatches(true);
             try {
-                const [infoRes, statsRes, tournamentsRes] = await Promise.all([
+                const [infoRes, statsRes, tournamentsRes, matchesRes] = await Promise.all([
                     authenticatedFetch(ENDPOINTS.GET_USER_INFO(id)),
                     authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(id)),
-                    authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id, 0))
+                    authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id, 0)),
+                    authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(id, 0))
                 ]);
 
                 if (infoRes.ok) {
@@ -85,6 +94,14 @@ export default function PlayerProfileScreen() {
                     const itemsArray = Array.isArray(items) ? items : [];
                     setUserTournaments(itemsArray);
                     setHasMoreTournaments(itemsArray.length === 10);
+                }
+
+                if (matchesRes.ok) {
+                    const matchesData = await matchesRes.json();
+                    const items = matchesData.items || matchesData.Items || matchesData.result || matchesData;
+                    const itemsArray = Array.isArray(items) ? items : [];
+                    setUserMatches(itemsArray);
+                    setHasMoreMatches(itemsArray.length === 10);
                 }
 
                 if (!infoRes.ok && !statsRes.ok) {
@@ -125,6 +142,33 @@ export default function PlayerProfileScreen() {
             setHasMoreTournaments(false);
         } finally {
             setIsLoadingMoreTournaments(false);
+        }
+    };
+
+    const loadMoreMatches = async () => {
+        if (!id || isLoadingMoreMatches || !hasMoreMatches) return;
+
+        setIsLoadingMoreMatches(true);
+        const nextPage = matchesPage + 1;
+
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(id, nextPage));
+            if (response.ok) {
+                const data = await response.json();
+                const items = data.items || data.Items || data.result || data;
+                const itemsArray = Array.isArray(items) ? items : [];
+
+                setUserMatches(prev => [...prev, ...itemsArray]);
+                setMatchesPage(nextPage);
+                setHasMoreMatches(itemsArray.length === 10);
+            } else {
+                setHasMoreMatches(false);
+            }
+        } catch (error) {
+            console.error('Error fetching more matches:', error);
+            setHasMoreMatches(false);
+        } finally {
+            setIsLoadingMoreMatches(false);
         }
     };
 
@@ -213,7 +257,6 @@ export default function PlayerProfileScreen() {
     };
 
     const performanceList = playerMatches?.performance || [];
-    const matches: any[] = []; // We will get matches from the new endpoint later
 
     const handleScroll = (event: any) => {
         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -221,6 +264,8 @@ export default function PlayerProfileScreen() {
         if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
             if (activeTab === 'tournaments' && hasMoreTournaments && !isLoadingMoreTournaments) {
                 loadMoreTournaments();
+            } else if (activeTab === 'matches' && hasMoreMatches && !isLoadingMoreMatches) {
+                loadMoreMatches();
             }
         }
     };
@@ -428,18 +473,25 @@ export default function PlayerProfileScreen() {
                         {activeTab === 'matches' && (
                             <View className="gap-3">
                                 <Text className="text-lg font-bold text-white">Match History</Text>
-                                {matches.length > 0 ? (
-                                    matches.map((match, idx) => (
-                                        <MatchHistoryCard
-                                            key={idx}
-                                            tournamentName={match.tournamentName}
-                                            opponentName={match.opponentName}
-                                            result={match.isWin ? 'win' : 'loss'}
-                                            userScore={match.userScore ?? undefined}
-                                            opponentScore={match.opponentScore ?? undefined}
-                                            date={match.scheduledTime ? new Date(match.scheduledTime).toLocaleDateString() : (match.isWin ? 'W' : 'L')}
-                                        />
-                                    ))
+                                {userMatches.length > 0 ? (
+                                    <>
+                                        {userMatches.map((match, idx) => (
+                                            <MatchHistoryCard
+                                                key={idx}
+                                                tournamentName={match.tournamentName || match.hubName || 'Match'}
+                                                opponentName={match.opponentName}
+                                                result={match.isWin === true ? 'win' : match.isWin === false ? 'loss' : 'draw'}
+                                                userScore={match.userScore ?? undefined}
+                                                opponentScore={match.opponentScore ?? undefined}
+                                                date={match.scheduledTime ? new Date(match.scheduledTime).toLocaleDateString() : 'N/A'}
+                                            />
+                                        ))}
+                                        {hasMoreMatches && isLoadingMoreMatches && (
+                                            <View className="mt-4 py-4 items-center justify-center">
+                                                <ActivityIndicator size="small" color="#10B981" />
+                                            </View>
+                                        )}
+                                    </>
                                 ) : (
                                     <View className="items-center py-12">
                                         <Ionicons name="documents-outline" size={48} color="#1E293B" />

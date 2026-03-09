@@ -8,7 +8,7 @@ interface MatchHistoryCardProps {
     tournamentName: string;
     hubName?: string;
     opponentName: string;
-    result: "win" | "loss";
+    result: "win" | "loss" | "draw";
     date: string;
     userScore?: number;
     opponentScore?: number;
@@ -28,6 +28,7 @@ export function MatchHistoryCard({
     className,
 }: MatchHistoryCardProps) {
     const isWin = result === "win";
+    const isDraw = result === "draw";
     const displayName = hubName ? `${tournamentName}` : tournamentName;
 
     return (
@@ -36,13 +37,13 @@ export function MatchHistoryCard({
                 <View
                     className={cn(
                         "w-12 h-12 rounded-2xl items-center justify-center",
-                        isWin ? "bg-primary/10" : "bg-destructive/10"
+                        isWin ? "bg-primary/10" : isDraw ? "bg-blue-400/10" : "bg-destructive/10"
                     )}
                 >
                     <Ionicons
-                        name={isWin ? "trophy" : "close-circle"}
+                        name={isWin ? "trophy" : isDraw ? "remove-circle" : "close-circle"}
                         size={24}
-                        color={isWin ? "#10B981" : "#EF4444"}
+                        color={isWin ? "#10B981" : isDraw ? "#60A5FA" : "#EF4444"}
                     />
                 </View>
 
@@ -61,13 +62,13 @@ export function MatchHistoryCard({
                     <View className="flex-row items-center mt-1">
                         <View className={cn(
                             "px-2 py-0.5 rounded-md flex-row items-center",
-                            isWin ? "bg-primary/10" : "bg-destructive/10"
+                            isWin ? "bg-primary/10" : isDraw ? "bg-blue-400/10" : "bg-destructive/10"
                         )}>
                             <Text className={cn(
                                 "text-[10px] font-black uppercase tracking-tighter",
-                                isWin ? "text-primary" : "text-destructive"
+                                isWin ? "text-primary" : isDraw ? "text-blue-400" : "text-destructive"
                             )}>
-                                {isWin ? "Victory" : "Defeat"}
+                                {isWin ? "Victory" : isDraw ? "Draw" : "Defeat"}
                             </Text>
                         </View>
                         {userScore !== undefined && opponentScore !== undefined && (

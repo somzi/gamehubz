@@ -190,7 +190,6 @@ export default function ProfileScreen() {
     };
 
     const performanceList = playerMatches?.performance || [];
-    const matches: any[] = []; // We will get matches from the new endpoint later
 
     const mapSocialsToLinks = (socials: any[]) => {
         return socials.map(s => {
