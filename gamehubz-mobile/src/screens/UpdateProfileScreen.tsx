@@ -132,6 +132,7 @@ export default function UpdateProfileScreen() {
         { label: 'TikTok', value: SocialType.TikTok },
         { label: 'YouTube', value: SocialType.YouTube },
         { label: 'Discord', value: SocialType.Discord },
+        { label: 'Telegram', value: SocialType.Telegram },
     ];
 
     const getSocialIcon = (type: SocialType) => {
@@ -142,6 +143,7 @@ export default function UpdateProfileScreen() {
             case SocialType.TikTok: return 'logo-tiktok';
             case SocialType.YouTube: return 'logo-youtube';
             case SocialType.Discord: return 'logo-discord';
+            case SocialType.Telegram: return 'paper-plane';
             default: return 'link-outline';
         }
     };

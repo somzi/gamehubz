@@ -4,7 +4,7 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { cn } from '../../lib/utils';
 
 interface SocialLink {
-    platform: "discord" | "tiktok" | "instagram" | "twitter" | "youtube";
+    platform: "discord" | "tiktok" | "instagram" | "twitter" | "youtube" | "facebook" | "telegram";
     username: string;
     url?: string;
 }
@@ -44,6 +44,11 @@ const platformConfig: any = {
         icon: <FontAwesome name="facebook" size={20} />,
         color: "text-[#1877F2]",
         bgColor: "bg-[#1877F2]/20",
+    },
+    telegram: {
+        icon: <Ionicons name="paper-plane" size={18} />,
+        color: "text-[#0088cc]",
+        bgColor: "bg-[#0088cc]/20",
     },
 };
 

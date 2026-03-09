@@ -197,6 +197,7 @@ export default function PlayerProfileScreen() {
                 case SocialType.TikTok: platform = 'tiktok'; break;
                 case SocialType.YouTube: platform = 'youtube'; break;
                 case SocialType.Discord: platform = 'discord'; break;
+                case SocialType.Telegram: platform = 'telegram'; break;
             }
 
             const url = s.url && s.url !== '#' ? s.url : getSocialUrl(platform, s.username);

@@ -22,6 +22,8 @@ export const getSocialUrl = (platform: string, username: string): string => {
             // but we can return the username or a search link if needed.
             // For now, let's return '#' as it usually requires an invite link or specific channel link.
             return '#';
+        case 'telegram':
+            return `https://t.me/${cleanUsername}`;
         default:
             return '#';
     }

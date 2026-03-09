@@ -15,6 +15,7 @@ export enum SocialType {
     TikTok = 4,
     YouTube = 5,
     Discord = 6,
+    Telegram = 7,
 }
 
 export interface UserSocial {
