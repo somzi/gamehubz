@@ -13,7 +13,7 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = 'default' }: Tabs
     if (variant === 'pills') {
         return (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View className="flex-row gap-2 px-1">
+                <View className="flex-row gap-1 px-1">
                     {tabs.map((tab) => (
                         <Pressable
                             key={tab.value}
@@ -22,7 +22,7 @@ export function Tabs({ tabs, activeTab, onTabChange, variant = 'default' }: Tabs
                                 onTabChange(tab.value);
                             }}
                             className={cn(
-                                "px-6 py-2 rounded-full border",
+                                "px-4 py-2 rounded-full border",
                                 activeTab === tab.value
                                     ? "bg-[#4F46E5] border-[#4F46E5]"
                                     : "bg-transparent border-white/10"
