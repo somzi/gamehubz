@@ -197,22 +197,24 @@ export default function TournamentsScreen() {
         }
 
         return (
-            <View className="gap-3 pb-24">
+            <View className="pb-24 mt-4">
                 {tournaments.map((tournament: any, index: number) => (
-                    <TournamentCard
-                        key={tournament.Id || tournament.id || `t-${index}`}
-                        name={tournament.Name || tournament.name}
-                        description={tournament.Description || tournament.description}
-                        status={getTournamentStatus(tournament.Status ?? tournament.status)}
-                        date={new Date(tournament.StartDate || tournament.startDate).toLocaleDateString()}
-                        region={getRegionName(tournament.Region ?? tournament.region)}
-                        prizePool={`${getCurrencySymbol(tournament.PrizeCurrency ?? tournament.prizeCurrency)}${tournament.Prize ?? tournament.prize}`}
-                        players={new Array(tournament.NumberOfParticipants ?? tournament.numberOfParticipants ?? tournament.participantsCount ?? tournament.tournamentParticipants?.length ?? 0).fill({})}
-                        onClick={() => {
-                            const tId = tournament.Id || tournament.id || tournament.tournamentId;
-                            navigation.navigate('TournamentDetails', { id: tId });
-                        }}
-                    />
+                    <View key={tournament.Id || tournament.id || `t-${index}`} className="mb-5">
+                        <TournamentCard
+                            name={tournament.Name || tournament.name}
+                            description={tournament.Description || tournament.description}
+                            status={getTournamentStatus(tournament.Status ?? tournament.status)}
+                            date={new Date(tournament.StartDate || tournament.startDate).toLocaleDateString()}
+                            region={getRegionName(tournament.Region ?? tournament.region)}
+                            prizePool={`${getCurrencySymbol(tournament.PrizeCurrency ?? tournament.prizeCurrency)}${tournament.Prize ?? tournament.prize}`}
+                            players={new Array(tournament.NumberOfParticipants ?? tournament.numberOfParticipants ?? tournament.participantsCount ?? tournament.tournamentParticipants?.length ?? 0).fill({})}
+                            onClick={() => {
+                                const tId = tournament.Id || tournament.id || tournament.tournamentId;
+                                navigation.navigate('TournamentDetails', { id: tId });
+                            }}
+                            index={index}
+                        />
+                    </View>
                 ))}
 
                 {hasMore && (
@@ -244,11 +246,12 @@ export default function TournamentsScreen() {
                     <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#10B981" />
                 }
             >
-                <View className="px-4 py-4 space-y-4">
+                <View className="px-4 py-4 gap-6">
                     <Tabs
                         tabs={tabs}
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
+                        variant="pills"
                     />
 
                     {renderContent()}
