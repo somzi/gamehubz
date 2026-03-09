@@ -26,7 +26,8 @@ export const ENDPOINTS = {
     GET_USER_INFO: (id: string) => `${API_BASE_URL}/api/UserProfile/${id}/info`,
     GET_USER_HUBS: (userId: string) => `${API_BASE_URL}/api/Hub/user/${userId}/joined`,
     GET_DISCOVERY_HUBS: (userId: string) => `${API_BASE_URL}/api/Hub/user/${userId}/discovery`,
-    GET_PROFILE_TOURNAMENTS: (userId: string) => `${API_BASE_URL}/api/UserProfile/${userId}/tournaments`,
+    GET_PROFILE_TOURNAMENTS: (userId: string, pageNumber: number = 0) => `${API_BASE_URL}/api/UserProfile/${userId}/tournaments?pageNumber=${pageNumber}`,
+    GET_PROFILE_MATCHES: (userId: string, pageNumber: number = 0) => `${API_BASE_URL}/api/UserProfile/${userId}/matches?pageNumber=${pageNumber}`,
     CREATE_TOURNAMENT: `${API_BASE_URL}/api/tournament`,
     GET_USER_TOURNAMENTS: (userId: string, status: number, page: number, pageSize: number = 10) =>
         `${API_BASE_URL}/api/User/${userId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,
@@ -66,6 +67,7 @@ export const ENDPOINTS = {
     DELETE_ACCOUNT: `${API_BASE_URL}/api/Auth`,
     FORGOT_PASSWORD: `${API_BASE_URL}/api/Auth/forgotPassword`,
     RESET_PASSWORD: `${API_BASE_URL}/api/Auth/resetPassword`,
+    GET_ALL_HUB_ACTIVITY: (pageNumber: number) => `${API_BASE_URL}/api/hubActivity/all?pageNumber=${pageNumber}`,
 };
 
 let authToken: string | null = null;

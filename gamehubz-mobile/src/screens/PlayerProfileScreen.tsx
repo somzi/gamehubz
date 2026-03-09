@@ -35,6 +35,9 @@ export default function PlayerProfileScreen() {
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [playerMatches, setPlayerMatches] = useState<PlayerMatchesDto | null>(null);
     const [userTournaments, setUserTournaments] = useState<any[]>([]);
+    const [tournamentsPage, setTournamentsPage] = useState(0);
+    const [hasMoreTournaments, setHasMoreTournaments] = useState(true);
+    const [isLoadingMoreTournaments, setIsLoadingMoreTournaments] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -43,11 +46,13 @@ export default function PlayerProfileScreen() {
             if (!id) return;
             setIsLoading(true);
             setError(null);
+            setTournamentsPage(0);
+            setHasMoreTournaments(true);
             try {
                 const [infoRes, statsRes, tournamentsRes] = await Promise.all([
                     authenticatedFetch(ENDPOINTS.GET_USER_INFO(id)),
                     authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(id)),
-                    authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id))
+                    authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id, 0))
                 ]);
 
                 if (infoRes.ok) {
@@ -57,12 +62,29 @@ export default function PlayerProfileScreen() {
 
                 if (statsRes.ok) {
                     const statsData = await statsRes.json();
-                    setPlayerMatches(statsData.result || statsData);
+                    const s = statsData.result || statsData;
+                    const normalizedStats: PlayerMatchesDto = {
+                        stats: s.stats || s.Stats ? {
+                            totalMatches: s.stats?.TotalMatches || s.stats?.totalMatches || s.Stats?.TotalMatches || s.Stats?.totalMatches || 0,
+                            wins: s.stats?.Wins || s.stats?.wins || s.Stats?.Wins || s.Stats?.wins || 0,
+                            losses: s.stats?.Losses || s.stats?.losses || s.Stats?.Losses || s.Stats?.losses || 0,
+                            draws: s.stats?.Draws || s.stats?.draws || s.Stats?.Draws || s.Stats?.draws || 0,
+                            tournamentsWon: s.stats?.tournamentsWon || s.Stats?.tournamentsWon || s.stats?.tournamentsWon || 0,
+                            winRate: s.stats?.WinRate || s.stats?.winRate || s.Stats?.WinRate || s.Stats?.winRate || 0,
+                        } : null,
+                        performance: (s.performance || s.Performance || []).map((m: any) => ({
+                            isWin: m.IsWin !== undefined ? m.IsWin : m.isWin
+                        }))
+                    };
+                    setPlayerMatches(normalizedStats);
                 }
 
                 if (tournamentsRes.ok) {
                     const tournamentsData = await tournamentsRes.json();
-                    setUserTournaments(tournamentsData.result || tournamentsData);
+                    const items = tournamentsData.items || tournamentsData.Items || tournamentsData.result || tournamentsData;
+                    const itemsArray = Array.isArray(items) ? items : [];
+                    setUserTournaments(itemsArray);
+                    setHasMoreTournaments(itemsArray.length === 10);
                 }
 
                 if (!infoRes.ok && !statsRes.ok) {
@@ -78,6 +100,34 @@ export default function PlayerProfileScreen() {
 
         fetchPlayerData();
     }, [id]);
+
+    const loadMoreTournaments = async () => {
+        if (!id || isLoadingMoreTournaments || !hasMoreTournaments) return;
+
+        setIsLoadingMoreTournaments(true);
+        const nextPage = tournamentsPage + 1;
+
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id, nextPage));
+            if (response.ok) {
+                const data = await response.json();
+                const items = data.items || data.Items || data.result || data;
+                const itemsArray = Array.isArray(items) ? items : [];
+
+                setUserTournaments(prev => [...prev, ...itemsArray]);
+                setTournamentsPage(nextPage);
+                setHasMoreTournaments(itemsArray.length === 10);
+            } else {
+                setHasMoreTournaments(false);
+            }
+        } catch (error) {
+            console.error('Error fetching more tournaments:', error);
+            setHasMoreTournaments(false);
+        } finally {
+            setIsLoadingMoreTournaments(false);
+        }
+    };
+
 
     const getRegionName = (region?: number) => {
         switch (region) {
@@ -162,7 +212,18 @@ export default function PlayerProfileScreen() {
         socials: userInfo.userSocials || []
     };
 
-    const matches = playerMatches?.lastMatches || [];
+    const performanceList = playerMatches?.performance || [];
+    const matches: any[] = []; // We will get matches from the new endpoint later
+
+    const handleScroll = (event: any) => {
+        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+        const paddingToBottom = 50;
+        if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+            if (activeTab === 'tournaments' && hasMoreTournaments && !isLoadingMoreTournaments) {
+                loadMoreTournaments();
+            }
+        }
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -177,6 +238,8 @@ export default function PlayerProfileScreen() {
                 className="flex-1"
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 150 }}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
             >
                 {/* Profile Header Section */}
                 <View className="items-center mt-4">
@@ -229,12 +292,12 @@ export default function PlayerProfileScreen() {
                         {activeTab === 'stats' && (
                             <View>
                                 <Text className="text-lg font-bold text-white mb-2">Performance Trend</Text>
-                                <Text className="text-gray-500 text-xs mb-4">Last {Math.min(matches.length, 10)} Games Overview</Text>
+                                <Text className="text-gray-500 text-xs mb-4">Last {Math.min(performanceList.length, 10)} Games Overview</Text>
                                 <View className="bg-card-elevated rounded-3xl p-6 border border-white/5">
-                                    {matches.length > 0 ? (
+                                    {performanceList.length > 0 ? (
                                         <>
                                             <View className="flex-row items-center justify-between mb-4 px-2">
-                                                {matches.slice(0, 10).reverse().map((match, i) => (
+                                                {performanceList.slice(0, 10).reverse().map((match, i) => (
                                                     <View key={i} className="items-center">
                                                         <View
                                                             className={cn(
@@ -253,7 +316,7 @@ export default function PlayerProfileScreen() {
                                                 ))}
                                             </View>
                                             <View className="flex-row justify-between border-t border-white/5 pt-4 px-2">
-                                                {matches.slice(0, 10).map((_, i) => (
+                                                {performanceList.slice(0, 10).map((_, i) => (
                                                     <View key={i} className="w-8 items-center">
                                                         <Text className="text-[10px] text-gray-500 font-bold">{i + 1}</Text>
                                                     </View>
@@ -261,7 +324,7 @@ export default function PlayerProfileScreen() {
                                             </View>
                                         </>
                                     ) : (
-                                        <Text className="text-gray-500 text-center py-8">No match history available</Text>
+                                        <Text className="text-gray-500 text-center py-8">No performance data available</Text>
                                     )}
                                 </View>
 
@@ -334,18 +397,25 @@ export default function PlayerProfileScreen() {
                             <View className="gap-3">
                                 <Text className="text-lg font-bold text-white">Tournaments</Text>
                                 {userTournaments.length > 0 ? (
-                                    userTournaments.map((t) => (
-                                        <TournamentCard
-                                            key={t.id}
-                                            name={t.name || t.title}
-                                            status={getTournamentStatus(t.status)}
-                                            date={t.startDate ? new Date(t.startDate).toLocaleDateString() : 'N/A'}
-                                            region="Global" // Map properly if available
-                                            prizePool={`${t.prizeCurrency === 1 ? '$' : t.prizeCurrency === 2 ? '€' : ''}${t.prize}`}
-                                            players={new Array(t.numberOfParticipants || 0).fill({})}
-                                            onClick={() => navigation.navigate('TournamentDetails', { id: t.id })}
-                                        />
-                                    ))
+                                    <>
+                                        {userTournaments.map((t) => (
+                                            <TournamentCard
+                                                key={t.id}
+                                                name={t.name || t.title}
+                                                status={getTournamentStatus(t.status)}
+                                                date={t.startDate ? new Date(t.startDate).toLocaleDateString() : 'N/A'}
+                                                region="Global" // Map properly if available
+                                                prizePool={`${t.prizeCurrency === 1 ? '$' : t.prizeCurrency === 2 ? '€' : ''}${t.prize}`}
+                                                players={new Array(t.numberOfParticipants || 0).fill({})}
+                                                onClick={() => navigation.navigate('TournamentDetails', { id: t.id })}
+                                            />
+                                        ))}
+                                        {hasMoreTournaments && isLoadingMoreTournaments && (
+                                            <View className="mt-4 py-4 items-center justify-center">
+                                                <ActivityIndicator size="small" color="#10B981" />
+                                            </View>
+                                        )}
+                                    </>
                                 ) : (
                                     <View className="items-center py-12">
                                         <Ionicons name="trophy-outline" size={48} color="#1E293B" />

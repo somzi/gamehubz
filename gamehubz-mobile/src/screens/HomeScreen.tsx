@@ -240,7 +240,6 @@ export default function HomeScreen() {
             <HighlightsModal
                 visible={showHighlightsModal}
                 onClose={() => setShowHighlightsModal(false)}
-                activities={hubActivities}
             />
         </SafeAreaView>
     );
