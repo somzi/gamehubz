@@ -69,11 +69,20 @@ export function TournamentCard({
                     />
                 </View>
 
+<<<<<<< HEAD
                 <View className="flex-1 min-w-0 justify-center">
                     <Text className="text-lg font-black text-white mb-0.5" numberOfLines={2}>
                         {name}
                     </Text>
                     <Text className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+=======
+                {/* Central Content */}
+                <View className="flex-1 min-w-0 justify-center">
+                    <Text className="text-xl font-black text-white mb-1" numberOfLines={1}>
+                        {name}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-widest" numberOfLines={1}>
+>>>>>>> 9f26c3cfa632b289492c046a3c303ff9810590a8
                         {region} • {date}
                     </Text>
                 </View>
