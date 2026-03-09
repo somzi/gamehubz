@@ -69,11 +69,11 @@ export default function PlayerProfile() {
           <div className="flex flex-col items-center text-center">
             <PlayerAvatar name={playerData.username} size="xl" />
             <h1 className="text-xl font-bold mt-4">{playerData.username}</h1>
-            
+
             <div className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-semibold">
               Level {playerData.level}
             </div>
-            
+
             <div className="flex flex-col gap-1 mt-3 text-sm text-muted-foreground">
               <div className="flex items-center justify-center gap-2">
                 <Gamepad2 className="w-4 h-4" />
@@ -86,19 +86,19 @@ export default function PlayerProfile() {
         {/* Tabs */}
         <Tabs defaultValue="stats" className="w-full">
           <TabsList className="w-full bg-transparent border-b border-border rounded-none h-12 grid grid-cols-3">
-            <TabsTrigger 
-              value="stats" 
+            <TabsTrigger
+              value="stats"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
             >
               Stats
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="fairplay"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
             >
               Fair Play
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="social"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary text-xs"
             >

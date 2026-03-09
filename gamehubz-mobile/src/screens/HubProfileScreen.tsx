@@ -5,7 +5,6 @@ import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { PageHeader } from '../components/layout/PageHeader';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
-import { StatCard } from '../components/ui/StatCard';
 import { TournamentCard } from '../components/cards/TournamentCard';
 import { Button } from '../components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
@@ -246,7 +245,7 @@ export default function HubProfileScreen() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-[#0F172A]">
             <PageHeader
                 title="Hub Profile"
                 showBack
@@ -259,69 +258,118 @@ export default function HubProfileScreen() {
                     </Pressable>
                 ) : null}
             />
-            <ScrollView className="flex-1">
-                <View className="animate-slide-up">
-                    {/* Profile Header */}
-                    <View className="px-4 py-8 bg-card border-b border-border/30">
-                        <View className="flex-row items-center gap-4 mb-6">
-                            <PlayerAvatar 
-                                name={hubData.name} 
+            <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ paddingBottom: 100 }}
+                onScroll={({ nativeEvent }) => {
+                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 50) {
+                        loadMoreTournaments();
+                    }
+                }}
+                scrollEventThrottle={16}
+            >
+                {/* ─── Hero Section ─── */}
+                <View className="px-6 pt-6 pb-8">
+                    {/* Avatar + Name */}
+                    <View className="items-center">
+                        <View className="rounded-[28px] border-[3px] border-[#10B981]/30 p-1 mb-5">
+                            <PlayerAvatar
+                                name={hubData.name}
                                 src={hubData.avatarUrl || hubData.logoUrl}
-                                size="lg" 
-                                className="w-20 h-20" 
+                                size="xl"
+                                className="w-24 h-24 rounded-[24px]"
                             />
-                            <View className="flex-1">
-                                <Text className="text-2xl font-bold text-foreground">{hubData.name}</Text>
-                                <Text className="text-sm text-muted-foreground mt-1 leading-5">
-                                    {hubData.description || 'No description provided.'}
-                                </Text>
+                        </View>
+
+                        <View className="flex-row items-center gap-2 mb-1">
+                            <Text className="text-2xl font-black text-white tracking-tight">
+                                {hubData.name}
+                            </Text>
+                            <View className="w-5 h-5 rounded-full bg-[#10B981] items-center justify-center">
+                                <Ionicons name="checkmark" size={12} color="#fff" />
                             </View>
                         </View>
 
-                        {/* Hub Socials */}
+                        {hubData.description ? (
+                            <Text className="text-[13px] text-slate-400 text-center leading-5 mt-1 px-4 max-w-[300px]">
+                                {hubData.description}
+                            </Text>
+                        ) : null}
+
+                        {/* Social Icons Row */}
                         {hubData.hubSocials && hubData.hubSocials.length > 0 && (
-                            <View className="mt-4">
+                            <View className="mt-5">
                                 <SocialLinks links={mapSocialsToLinks(hubData.hubSocials)} className="justify-center" />
                             </View>
                         )}
-
-                        {!isOwner && (
-                            <Button
-                                onPress={handleFollowToggle}
-                                variant={isFollowing ? "secondary" : "default"}
-                                className="w-full"
-                            >
-                                <Text className={cn("font-bold", !isFollowing ? "text-white" : "text-foreground")}>
-                                    {isFollowing ? "Following" : "Follow Hub"}
-                                </Text>
-                            </Button>
-                        )}
                     </View>
 
-                    <View className="px-4 py-6 space-y-6">
-                        {/* Stats */}
-                        <View className="flex-row gap-3">
-                            <View className="flex-1">
-                                <StatCard icon="people" value={(hubData.numberOfUsers || 0).toLocaleString()} label="Followers" />
-                            </View>
-                            <View className="flex-1">
-                                <StatCard icon="trophy" value={hubData.numberOfTournaments || 0} label="Tournaments" variant="gold" />
-                            </View>
-                        </View>
-
-                        {/* Tournament Tabs */}
-                        <View className="space-y-4">
-                            <Tabs
-                                tabs={tabs}
-                                activeTab={activeTab}
-                                onTabChange={setActiveTab}
+                    {/* Follow / Manage Button */}
+                    {!isOwner && (
+                        <Pressable
+                            onPress={handleFollowToggle}
+                            className={cn(
+                                "mt-6 w-full py-4 rounded-2xl flex-row items-center justify-center gap-2 border",
+                                isFollowing
+                                    ? "bg-white/5 border-white/10"
+                                    : "bg-[#10B981] border-[#10B981]/50"
+                            )}
+                            style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                        >
+                            <Ionicons
+                                name={isFollowing ? "checkmark-circle" : "add-circle"}
+                                size={18}
+                                color={isFollowing ? "#94A3B8" : "#fff"}
                             />
-                            {renderTournamentList()}
+                            <Text className={cn(
+                                "font-black text-sm tracking-wide",
+                                isFollowing ? "text-slate-400" : "text-white"
+                            )}>
+                                {isFollowing ? "Following" : "Follow Hub"}
+                            </Text>
+                        </Pressable>
+                    )}
+                </View>
+
+                {/* ─── Stats Row ─── */}
+                <View className="flex-row px-4 py-5 gap-3">
+                    <View className="flex-1 bg-[#131B2E] rounded-3xl p-5 border border-white/5 items-center">
+                        <View className="w-11 h-11 rounded-2xl bg-indigo-500/10 items-center justify-center mb-3 border border-indigo-500/20">
+                            <Ionicons name="people" size={22} color="#818CF8" />
                         </View>
+                        <Text className="text-2xl font-black text-white mb-0.5">
+                            {(hubData.numberOfUsers || 0).toLocaleString()}
+                        </Text>
+                        <Text className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Followers
+                        </Text>
+                    </View>
+                    <View className="flex-1 bg-[#131B2E] rounded-3xl p-5 border border-white/5 items-center">
+                        <View className="w-11 h-11 rounded-2xl bg-amber-500/10 items-center justify-center mb-3 border border-amber-500/20">
+                            <Ionicons name="trophy" size={22} color="#FBBF24" />
+                        </View>
+                        <Text className="text-2xl font-black text-white mb-0.5">
+                            {hubData.numberOfTournaments || 0}
+                        </Text>
+                        <Text className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Tournaments
+                        </Text>
+                    </View>
+                </View>
+
+                {/* ─── Tournament Section ─── */}
+                <View className="px-4 pb-6">
+                    <Tabs
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                    />
+                    <View className="mt-4">
+                        {renderTournamentList()}
                     </View>
                 </View>
             </ScrollView>
-
         </SafeAreaView>
     );
 }
