@@ -141,15 +141,25 @@ export function HourlyAvailabilityPicker({
     return (
         <View className="space-y-4">
             {/* Header with Deadline */}
-            <View className="flex-row items-center gap-2 mb-2">
-                <Ionicons name="calendar-outline" size={16} color="#94A3B8" />
-                <Text className="text-sm text-slate-400 font-medium">Deadline: {deadline}</Text>
+            <View className="flex-row items-center gap-3 mb-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+                <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
+                    <Ionicons name="calendar" size={20} color="#10B981" />
+                </View>
+                <View>
+                    <Text className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Registration Deadline</Text>
+                    <Text className="text-lg text-white font-black">{deadline}</Text>
+                </View>
             </View>
 
-            <Text className="text-sm text-slate-300">
-                Pick dates and times when you can play vs{' '}
-                <Text className="font-bold text-primary">{opponentName}</Text>
-            </Text>
+            <View className="mb-2">
+                <Text className="text-lg font-black text-white tracking-tight">
+                    Pick your availability
+                </Text>
+                <Text className="text-sm text-slate-400 mt-1">
+                    Select time slots when you can play vs{' '}
+                    <Text className="font-bold text-primary">{opponentName}</Text>
+                </Text>
+            </View>
 
             {/* Date Tabs */}
             <View>
@@ -164,21 +174,21 @@ export function HourlyAvailabilityPicker({
                                 key={day.key}
                                 onPress={() => setSelectedDateIndex(index)}
                                 className={cn(
-                                    "mr-2 px-4 py-3 rounded-2xl items-center min-w-[80px] border",
+                                    "mr-3 px-5 py-4 rounded-[24px] items-center min-w-[100px] border-2",
                                     isSelected
-                                        ? "bg-primary border-primary"
+                                        ? "bg-primary border-primary shadow-lg shadow-primary/20"
                                         : "bg-slate-800/40 border-slate-700/50"
                                 )}
                             >
                                 <Text className={cn(
-                                    "text-xs font-bold uppercase tracking-tight",
+                                    "text-sm font-black uppercase tracking-widest",
                                     isSelected ? "text-slate-900" : "text-slate-400"
                                 )}>
                                     {day.label}
                                 </Text>
                                 <Text className={cn(
-                                    "text-[10px] mt-1",
-                                    isSelected ? "text-slate-900/70" : "text-slate-500"
+                                    "text-xs mt-1 font-bold",
+                                    isSelected ? "text-slate-900/60" : "text-slate-500"
                                 )}>
                                     {day.fullLabel}
                                 </Text>
@@ -197,7 +207,7 @@ export function HourlyAvailabilityPicker({
             </View>
 
             {/* Hourly List for Selected Date */}
-            <View className="bg-slate-900/50 rounded-3xl border border-slate-800/50 p-2 max-h-80">
+            <View className="bg-slate-900/50 rounded-[32px] border border-white/5 p-3 max-h-[450px]">
                 <ScrollView showsVerticalScrollIndicator={false}>
                     <View className="flex-row flex-wrap justify-between p-1">
                         {HOURS.map((hour) => {
@@ -213,9 +223,9 @@ export function HourlyAvailabilityPicker({
                                     onPress={() => toggleSlot(dayKey, hour)}
                                     disabled={submitted}
                                     className={cn(
-                                        "w-[23%] h-12 mb-2 rounded-xl items-center justify-center border",
+                                        "w-[23.5%] h-14 mb-2.5 rounded-2xl items-center justify-center border-2",
                                         isMutual
-                                            ? "bg-primary border-primary"
+                                            ? "bg-primary border-primary shadow-sm"
                                             : isSelected
                                                 ? "bg-primary/20 border-primary"
                                                 : opponentAvail
@@ -235,19 +245,23 @@ export function HourlyAvailabilityPicker({
                                         <>
                                             <View className="flex-row items-center justify-center gap-1">
                                                 <Text className={cn(
-                                                    "text-xs font-bold",
-                                                    isSelected ? "text-primary" : opponentAvail ? "text-indigo-400" : "text-slate-300"
+                                                    "text-xs font-black",
+                                                    isSelected ? "text-primary" : opponentAvail ? "text-indigo-400" : "text-slate-400"
                                                 )}>
                                                     {formatHour(hour)}
                                                 </Text>
-                                                {isSelected && (
-                                                    <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                                                )}
                                             </View>
                                             {opponentAvail && (
-                                                <Text className="text-[9px] text-indigo-400/80 absolute bottom-1 uppercase font-bold tracking-tighter">
-                                                    Available
-                                                </Text>
+                                                <View className="absolute bottom-1 bg-indigo-500/20 px-1 rounded">
+                                                    <Text className="text-[8px] text-indigo-400 uppercase font-black tracking-tighter">
+                                                        AVAIL
+                                                    </Text>
+                                                </View>
+                                            )}
+                                            {isSelected && !isMutual && (
+                                                <View className="absolute -top-1.5 -right-1.5 bg-primary rounded-full border-2 border-slate-900">
+                                                    <Ionicons name="checkmark" size={10} color="#0F172A" />
+                                                </View>
                                             )}
                                         </>
                                     )}

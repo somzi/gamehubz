@@ -752,30 +752,47 @@ export function MatchScheduleCard({
                                         </View>
 
                                         {isLoadingComments ? (
-                                            <View className="h-32 items-center justify-center">
+                                            <View className="h-48 items-center justify-center">
                                                 <ActivityIndicator size="small" color="#10B981" />
                                             </View>
                                         ) : comments.length > 0 ? (
                                             <ScrollView
                                                 ref={commentsScrollRef}
-                                                className={cn("mb-4", isPremium ? "max-h-[300px]" : "max-h-[250px]")}
+                                                className={cn("mb-6", isPremium ? "max-h-[500px]" : "max-h-[400px]")}
                                                 nestedScrollEnabled
                                                 showsVerticalScrollIndicator={false}
+                                                contentContainerStyle={{ paddingVertical: 10 }}
                                             >
                                                 {comments.map((comment) => {
                                                     const isMyComment = comment.userId === user?.id;
                                                     return (
                                                         <View key={comment.id} className={cn(
-                                                            "mb-3 p-3 rounded-xl",
-                                                            isPremium
-                                                                ? isMyComment ? "bg-primary/10 border border-primary/20" : "bg-white/5 border border-white/10"
-                                                                : isMyComment ? "bg-primary/10" : "bg-muted/30"
+                                                            "mb-4 max-w-[85%]",
+                                                            isMyComment ? "self-end items-end" : "self-start items-start"
                                                         )}>
-                                                            <View className="flex-row items-center justify-between mb-1">
-                                                                <Text className={cn("font-bold", isPremium ? "text-xs" : "text-[11px]", isMyComment ? "text-primary" : isPremium ? "text-white" : "text-foreground")}>{comment.userNickname}</Text>
-                                                                <Text className={cn("font-medium", isPremium ? "text-[10px] text-slate-500" : "text-[9px] text-muted-foreground")}>{formatCommentTime(comment.sentAt)}</Text>
+                                                            <View className="flex-row items-center gap-2 mb-1 px-1">
+                                                                {!isMyComment && (
+                                                                    <Text className={cn("font-black text-[10px] uppercase tracking-tighter", isPremium ? "text-primary" : "text-primary/70")}>
+                                                                        {comment.userNickname}
+                                                                    </Text>
+                                                                )}
+                                                                <Text className="text-[9px] font-bold text-slate-500">
+                                                                    {formatCommentTime(comment.sentAt)}
+                                                                </Text>
                                                             </View>
-                                                            <Text className={cn("leading-5", isPremium ? "text-sm text-white" : "text-xs text-foreground")}>{comment.content}</Text>
+                                                            <View className={cn(
+                                                                "px-4 py-3 rounded-[20px]",
+                                                                isMyComment 
+                                                                    ? "bg-primary rounded-tr-none" 
+                                                                    : "bg-slate-800 rounded-tl-none border border-white/5"
+                                                            )}>
+                                                                <Text className={cn(
+                                                                    "leading-5 font-medium",
+                                                                    isMyComment ? "text-slate-900" : "text-white"
+                                                                )}>
+                                                                    {comment.content}
+                                                                </Text>
+                                                            </View>
                                                         </View>
                                                     );
                                                 })}
@@ -787,34 +804,39 @@ export function MatchScheduleCard({
                                             </View>
                                         )}
 
-                                        <View className="flex-row gap-2 mt-2">
+                                        <View className="flex-row items-end gap-3 mt-2 bg-white/5 p-2 rounded-[24px] border border-white/10">
                                             <TextInput
                                                 className={cn(
-                                                    "flex-1 rounded-xl px-4 py-3 border",
-                                                    isPremium ? "bg-white/5 text-white border-white/10" : "bg-muted/30 text-foreground border-border/10"
+                                                    "flex-1 px-4 py-3 text-white font-medium",
                                                 )}
                                                 placeholder="Type a message..."
-                                                placeholderTextColor={isPremium ? "#475569" : "#71717A"}
+                                                placeholderTextColor="#64748B"
                                                 value={newComment}
                                                 onChangeText={setNewComment}
                                                 multiline
                                                 maxLength={500}
-                                                style={{ minHeight: isPremium ? 48 : 44, maxHeight: 80 }}
+                                                style={{ minHeight: 48, maxHeight: 120 }}
                                                 onFocus={scrollToBottom}
                                             />
                                             <Pressable
                                                 onPress={handleSendComment}
                                                 disabled={!newComment.trim() || isSendingComment}
                                                 className={cn(
-                                                    "rounded-xl items-center justify-center border",
-                                                    isPremium ? "w-12 h-12 bg-primary/20 border-primary/30" : "w-11 h-11 bg-primary/10 border-primary/20",
+                                                    "w-12 h-12 rounded-full items-center justify-center",
+                                                    newComment.trim() ? "bg-primary" : "bg-primary/20",
                                                     (!newComment.trim() || isSendingComment) && "opacity-50"
                                                 )}
+                                                style={({ pressed }) => [{
+                                                    backgroundColor: !newComment.trim() || isSendingComment 
+                                                        ? '#1E293B' 
+                                                        : pressed ? '#059669' : '#10B981',
+                                                    transform: [{ scale: pressed ? 0.95 : 1 }]
+                                                }]}
                                             >
                                                 {isSendingComment ? (
-                                                    <ActivityIndicator size="small" color="#10B981" />
+                                                    <ActivityIndicator size="small" color="#0F172A" />
                                                 ) : (
-                                                    <Ionicons name="send" size={isPremium ? 20 : 18} color="#10B981" />
+                                                    <Ionicons name="send" size={20} color="#0F172A" />
                                                 )}
                                             </Pressable>
                                         </View>
