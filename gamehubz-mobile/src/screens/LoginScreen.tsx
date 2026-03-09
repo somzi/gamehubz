@@ -100,14 +100,7 @@ export default function LoginScreen() {
 
                         <TouchableOpacity
                             className="self-end"
-                            onPress={() => {
-                                setStatusModalConfig({
-                                    type: 'info',
-                                    title: 'Coming Soon',
-                                    message: 'Forgot Password flow to be implemented'
-                                });
-                                setShowStatusModal(true);
-                            }}
+                            onPress={() => navigation.navigate('ForgotPassword' as any)}
                         >
                             <Text className="text-primary text-sm font-medium">Forgot Password?</Text>
                         </TouchableOpacity>

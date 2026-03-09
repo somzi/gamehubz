@@ -1,6 +1,8 @@
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
+    ForgotPassword: undefined;
+    ResetPassword: { email: string };
     MainTabs: undefined;
     TournamentDetails: { id: string };
     HubProfile: { id: string };

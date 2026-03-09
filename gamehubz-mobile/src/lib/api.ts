@@ -64,6 +64,8 @@ export const ENDPOINTS = {
     POST_MATCH_COMMENT: (matchId: string) => `${API_BASE_URL}/api/MatchChat/${matchId}`,
     UPLOAD_AVATAR: `${API_BASE_URL}/api/userProfile/avatar`,
     DELETE_ACCOUNT: `${API_BASE_URL}/api/Auth`,
+    FORGOT_PASSWORD: `${API_BASE_URL}/api/Auth/forgotPassword`,
+    RESET_PASSWORD: `${API_BASE_URL}/api/Auth/resetPassword`,
 };
 
 let authToken: string | null = null;

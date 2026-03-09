@@ -14,6 +14,8 @@ const Stack = createStackNavigator<RootStackParamList>();
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import UpdateProfileScreen from '../screens/UpdateProfileScreen';
 import ManageHubScreen from '../screens/ManageHubScreen';
@@ -43,6 +45,8 @@ export function RootNavigator() {
                 <>
                     <Stack.Screen name="Login" component={LoginScreen} />
                     <Stack.Screen name="Register" component={RegisterScreen} />
+                    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+                    <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
                 </>
             ) : (
                 <>
