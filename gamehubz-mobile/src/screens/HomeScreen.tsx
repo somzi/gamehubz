@@ -91,7 +91,8 @@ export default function HomeScreen() {
                     timeAgo: a.timeAgo || a.TimeAgo,
                     createdOn: a.createdOn || a.CreatedOn,
                     type: a.type || a.Type,
-                    hubAvatar: a.hubAvatar || a.HubAvatar
+                    hubAvatar: a.hubAvatar || a.HubAvatar,
+                    hubAvatarUrl: a.hubAvatarUrl || a.HubAvatarUrl
                 }));
                 setHubActivities(activities);
             }
@@ -189,7 +190,7 @@ export default function HomeScreen() {
                                         <FeedCard
                                             key={index}
                                             hubName={item.hubName}
-                                            hubAvatar={item.hubAvatar}
+                                            hubAvatar={item.hubAvatarUrl || item.hubAvatar}
                                             message={item.message}
                                             tournamentName={item.tournamentName}
                                             timestamp={item.timeAgo}

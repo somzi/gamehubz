@@ -13,6 +13,7 @@ import { cn } from '../lib/utils';
 import { Card } from '../components/ui/Card';
 import { Tabs } from '../components/ui/Tabs';
 import { useAuth } from '../context/AuthContext';
+import { HubCard } from '../components/cards/HubCard';
 
 import { API_BASE_URL, ENDPOINTS, authenticatedFetch } from '../lib/api';
 
@@ -28,6 +29,8 @@ interface Hub {
     tournaments?: any[];
     numberOfUsers: number;
     numberOfTournaments: number;
+    avatarUrl?: string;
+    logoUrl?: string;
 }
 
 export default function HubsScreen() {
@@ -273,35 +276,18 @@ export default function HubsScreen() {
                             ) : (
                                 <>
                                     {filteredHubs.map((hub, idx) => (
-                                        <Card
+                                        <HubCard
                                             key={`${hub.id}-${idx}`}
-                                            onPress={() => navigation.navigate('HubProfile', { id: hub.id })}
-                                            className="p-4"
-                                        >
-                                            <View className="flex-row gap-3">
-                                                <PlayerAvatar name={hub.name} size="md" className="w-12 h-12" />
-                                                <View className="flex-1">
-                                                    <Text className="text-base font-bold text-foreground">{hub.name}</Text>
-                                                    <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={2}>
-                                                        {hub.description}
-                                                    </Text>
-                                                    <View className="flex-row items-center gap-3 mt-2">
-                                                        <View className="flex-row items-center gap-1">
-                                                            <Ionicons name="people-outline" size={10} color="#64748B" />
-                                                            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                                                                {hub.numberOfUsers} Fans
-                                                            </Text>
-                                                        </View>
-                                                        <View className="flex-row items-center gap-1">
-                                                            <Ionicons name="trophy-outline" size={10} color="#64748B" />
-                                                            <Text className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                                                                {hub.numberOfTournaments} Events
-                                                            </Text>
-                                                        </View>
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        </Card>
+                                            name={hub.name}
+                                            description={hub.description}
+                                            numberOfUsers={hub.numberOfUsers}
+                                            numberOfTournaments={hub.numberOfTournaments}
+                                            avatarUrl={hub.avatarUrl || hub.logoUrl}
+                                            index={idx}
+                                            isJoined={activeTab === 'joined'}
+                                            onClick={() => navigation.navigate('HubProfile', { id: hub.id })}
+                                            className="mb-1"
+                                        />
                                     ))}
                                     {hasMoreHubs && isLoadingMore && (
                                         <View className="py-4 items-center justify-center">

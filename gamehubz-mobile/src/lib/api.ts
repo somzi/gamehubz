@@ -64,6 +64,7 @@ export const ENDPOINTS = {
     GET_MATCH_COMMENTS: (matchId: string) => `${API_BASE_URL}/api/MatchChat/${matchId}/history`,
     POST_MATCH_COMMENT: (matchId: string) => `${API_BASE_URL}/api/MatchChat/${matchId}`,
     UPLOAD_AVATAR: `${API_BASE_URL}/api/userProfile/avatar`,
+    UPLOAD_HUB_AVATAR: (id: string) => `${API_BASE_URL}/api/hub/${id}/avatar`,
     DELETE_ACCOUNT: `${API_BASE_URL}/api/Auth`,
     FORGOT_PASSWORD: `${API_BASE_URL}/api/Auth/forgotPassword`,
     RESET_PASSWORD: `${API_BASE_URL}/api/Auth/resetPassword`,

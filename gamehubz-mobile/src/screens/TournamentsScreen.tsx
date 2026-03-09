@@ -222,6 +222,7 @@ export default function TournamentsScreen() {
                             }}
                             index={index}
                             hubName={tournament.HubName || tournament.hubName}
+                            hubAvatarUrl={tournament.HubAvatarUrl || tournament.hubAvatarUrl}
                         />
                     </View>
                 ))}

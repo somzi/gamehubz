@@ -212,6 +212,7 @@ export default function HubProfileScreen() {
                         players={new Array(tournament.numberOfParticipants || 0).fill({})}
                         onClick={() => navigation.navigate('TournamentDetails', { id: tournament.id })}
                         hubName={hubData.name}
+                        hubAvatarUrl={hubData.avatarUrl || hubData.logoUrl}
                     />
                 ))}
                 {isListLoading && <ActivityIndicator size="small" color="#8B5CF6" className="py-4" />}
@@ -262,7 +263,12 @@ export default function HubProfileScreen() {
                     {/* Profile Header */}
                     <View className="px-4 py-8 bg-card border-b border-border/30">
                         <View className="flex-row items-center gap-4 mb-6">
-                            <PlayerAvatar name={hubData.name} size="lg" className="w-20 h-20" />
+                            <PlayerAvatar 
+                                name={hubData.name} 
+                                src={hubData.avatarUrl || hubData.logoUrl}
+                                size="lg" 
+                                className="w-20 h-20" 
+                            />
                             <View className="flex-1">
                                 <Text className="text-2xl font-bold text-foreground">{hubData.name}</Text>
                                 <Text className="text-sm text-muted-foreground mt-1 leading-5">

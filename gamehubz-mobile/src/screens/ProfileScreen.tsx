@@ -413,6 +413,7 @@ export default function ProfileScreen() {
                                                 players={new Array(t.numberOfParticipants || 0).fill({})}
                                                 onClick={() => navigation.navigate('TournamentDetails', { id: t.id })}
                                                 hubName={t.hubName || t.HubName}
+                                                hubAvatarUrl={t.hubAvatarUrl || t.HubAvatarUrl}
                                             />
                                         ))}
                                         {hasMoreTournaments && isLoadingMoreTournaments && (

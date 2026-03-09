@@ -1,47 +1,34 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { Card } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { StatusBadge } from '../ui/StatusBadge';
 import { cn } from '../../lib/utils';
 import { Ionicons } from '@expo/vector-icons';
-
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 
-interface TournamentCardProps {
+interface HubCardProps {
     name: string;
     description?: string;
-    status: 'live' | 'upcoming' | 'completed';
-    date: string;
-    region: string;
-    prizePool: string;
-    players: any[];
-    showApply?: boolean;
-    onApply?: () => void;
+    numberOfUsers: number;
+    numberOfTournaments?: number;
+    avatarUrl?: string;
     onClick: () => void;
+    isJoined?: boolean;
     className?: string;
     index?: number;
-    hubName?: string;
-    hubAvatarUrl?: string;
 }
 
-export function TournamentCard({
+export function HubCard({
     name,
     description,
-    status,
-    date,
-    region,
-    prizePool,
-    players,
-    showApply,
-    onApply,
+    numberOfUsers,
+    numberOfTournaments = 0,
+    avatarUrl,
     onClick,
+    isJoined,
     className,
     index = 0,
-    hubName,
-    hubAvatarUrl,
-}: TournamentCardProps) {
-    // Determine icon container style based on index
+}: HubCardProps) {
+    // Determine icon container style based on index (same as TournamentCard for consistency)
     const getIconStyles = (idx: number) => {
         const types = [
             { bg: "bg-indigo-500/10", border: "border-indigo-500/20", icon: "#818CF8" },
@@ -61,23 +48,23 @@ export function TournamentCard({
                 className
             )}
         >
-            {/* Top Section: Icon, Title/Hub, Status */}
+            {/* Top Section: Icon, Title, Status */}
             <View className="flex-row items-center gap-4">
                 <View className={cn(
                     "w-16 h-16 rounded-[22px] items-center justify-center border overflow-hidden",
                     iconStyle.bg,
                     iconStyle.border
                 )}>
-                    {hubAvatarUrl ? (
+                    {avatarUrl ? (
                         <PlayerAvatar
-                            name={hubName || name}
-                            src={hubAvatarUrl}
+                            name={name}
+                            src={avatarUrl}
                             size="lg"
                             className="w-full h-full rounded-none border-0"
                         />
                     ) : (
                         <Ionicons
-                            name="trophy"
+                            name="people"
                             size={28}
                             color={iconStyle.icon}
                         />
@@ -85,52 +72,45 @@ export function TournamentCard({
                 </View>
 
                 <View className="flex-1 min-w-0">
-                    <Text className="text-lg font-black text-white leading-tight mb-0.5">
+                    <Text className="text-lg font-black text-white leading-tight mb-0.5" numberOfLines={1}>
                         {name}
                     </Text>
                     <Text className="text-[#10B981] text-xs font-bold uppercase tracking-wider">
-                        {hubName || 'Official Hub'}
+                        Official Hub
                     </Text>
                 </View>
 
-                <View className={cn(
-                    "px-4 py-2 rounded-full border",
-                    status === 'live' ? "bg-red-500/10 border-red-500/30" :
-                    status === 'completed' ? "bg-[#10B981]/10 border-[#10B981]/30" : "bg-blue-500/10 border-blue-500/30"
-                )}>
-                    <Text className={cn(
-                        "text-[10px] font-black uppercase tracking-widest",
-                        status === 'live' ? "text-red-500" :
-                        status === 'completed' ? "text-[#10B981]" : "text-blue-400"
-                    )}>
-                        {status}
-                    </Text>
-                </View>
+                {isJoined && (
+                    <View className="px-4 py-2 rounded-full border bg-[#10B981]/10 border-[#10B981]/30">
+                        <Text className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">
+                            Joined
+                        </Text>
+                    </View>
+                )}
             </View>
 
             {/* Divider */}
             <View className="h-[1px] bg-white/5 my-5" />
 
-            {/* Bottom Section: Region, Date, Prize */}
+            {/* Bottom Section: Fans, Tournaments, etc */}
             <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-6">
                     <View className="flex-row items-center opacity-70">
-                        <Ionicons name="globe-outline" size={16} color="#FAFAFA" />
+                        <Ionicons name="people-outline" size={16} color="#FAFAFA" />
                         <Text className="text-[12px] font-bold text-slate-300 tracking-tight ml-2">
-                            {region}
+                            {numberOfUsers} Fans
                         </Text>
                     </View>
                     <View className="flex-row items-center opacity-70">
-                        <Ionicons name="calendar-outline" size={16} color="#FAFAFA" />
+                        <Ionicons name="trophy-outline" size={16} color="#FAFAFA" />
                         <Text className="text-[12px] font-bold text-slate-300 tracking-tight ml-2">
-                            {date}
+                            {numberOfTournaments} Tournaments
                         </Text>
                     </View>
                 </View>
 
-                <View className="flex-row items-center gap-2">
-                    <Ionicons name="cash" size={18} color="#FBBF24" />
-                    <Text className="text-[13px] font-black text-[#FBBF24] tracking-tight">{prizePool}</Text>
+                <View className="p-2 rounded-xl bg-white/5">
+                    <Ionicons name="chevron-forward" size={16} color="#64748B" />
                 </View>
             </View>
         </Card>

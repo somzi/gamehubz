@@ -43,7 +43,8 @@ export function HighlightsModal({ visible, onClose }: HighlightsModalProps) {
                     timeAgo: a.timeAgo || a.TimeAgo,
                     createdOn: a.createdOn || a.CreatedOn,
                     type: a.type || a.Type,
-                    hubAvatar: a.hubAvatar || a.HubAvatar
+                    hubAvatar: a.hubAvatar || a.HubAvatar,
+                    hubAvatarUrl: a.hubAvatarUrl || a.HubAvatarUrl
                 }));
 
                 if (pageNumber === 0) {
@@ -115,7 +116,7 @@ export function HighlightsModal({ visible, onClose }: HighlightsModalProps) {
                             <View className="mb-3">
                                 <FeedCard
                                     hubName={item.hubName}
-                                    hubAvatar={item.hubAvatar}
+                                    hubAvatar={item.hubAvatarUrl || item.hubAvatar}
                                     message={item.message}
                                     tournamentName={item.tournamentName}
                                     timestamp={item.timeAgo}

@@ -12,5 +12,6 @@ export interface DashboardActivityDto {
     timeAgo: string;
     createdOn: string; // ISO Date string
     type: HubActivityType;
-    hubAvatar?: string; // Optional, not in the provided DTO but good to have for UI
+    hubAvatar?: string; // Legacy/Fallback
+    hubAvatarUrl?: string; // New direct URL from backend
 }
