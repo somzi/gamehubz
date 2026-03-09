@@ -282,12 +282,12 @@ export function MatchDetailsModal({
     return (
         <Modal
             animationType="slide"
-            transparent={true}
+            transparent={false}
             visible={visible}
             onRequestClose={onClose}
         >
-            <View className="flex-1 justify-end bg-black/50">
-                <View className="bg-card rounded-t-3xl border-t border-border/50 p-6 max-h-[90%]">
+            <View className="flex-1 bg-card">
+                <View className="flex-1 p-6 pt-12">
                     {/* Header */}
                     <View className="flex-row items-center justify-between mb-4">
                         <View>

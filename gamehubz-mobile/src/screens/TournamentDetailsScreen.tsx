@@ -799,7 +799,7 @@ export default function TournamentDetailsScreen() {
                     )}
 
                     {activeTab === 'players' && (
-                        <View className="px-4 py-2 gap-2 pb-8">
+                        <View className="px-4 py-2 gap-4 pb-8">
                             {isLoadingParticipants ? (
                                 <View className="py-20 items-center justify-center">
                                     <ActivityIndicator size="large" color="#10B981" />

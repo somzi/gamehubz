@@ -197,7 +197,7 @@ export default function TournamentsScreen() {
         }
 
         return (
-            <View className="pb-24 mt-4">
+            <View className="pb-24 mt-8">
                 {tournaments.map((tournament: any, index: number) => (
                     <View key={tournament.Id || tournament.id || `t-${index}`} className="mb-5">
                         <TournamentCard
