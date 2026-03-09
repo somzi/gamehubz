@@ -598,7 +598,7 @@ export default function TournamentDetailsScreen() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-[#0F172A]">
             <PageHeader
                 title="Tournament"
                 showBack
@@ -613,26 +613,22 @@ export default function TournamentDetailsScreen() {
                     ) : null
                 }
             />
-            <ScrollView className="flex-1">
+            <ScrollView className="flex-1 bg-[#0F172A]">
                 <View className="animate-slide-up">
                     {/* Hero Section */}
-                    <View className="px-4 py-6 bg-card border-b border-border/30">
+                    <View className="px-4 py-8 bg-[#0B1120]">
                         <View className="flex-row justify-between items-start mb-4">
                             <View className="flex-1 mr-4">
-                                <Text className="text-xl font-bold text-foreground">{tournament.name}</Text>
-
+                                <Text className="text-3xl font-black text-white mb-2">{tournament.name}</Text>
+                                <View className="flex-row items-center gap-2">
+                                    <Ionicons name="people-outline" size={16} color="#71717A" />
+                                    <Text className="text-sm font-bold text-zinc-500">{tournament.numberOfParticipants || 0} Participants</Text>
+                                </View>
                             </View>
-                            <View className="bg-primary/20 px-2 py-1 rounded">
-                                <Text className="text-[10px] font-bold text-primary uppercase">{getStatusText(tournament.status)}</Text>
+                            <View className="bg-[#064E3B] px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#10B981]/20">
+                                <View className="w-2 h-2 rounded-full bg-[#10B981]" />
+                                <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-tighter">LIVE</Text>
                             </View>
-                        </View>
-
-                        <View className="flex-row items-center gap-6 mb-6">
-                            <View className="flex-row items-center gap-2">
-                                <Ionicons name="people-outline" size={16} color="#71717A" />
-                                <Text className="text-sm text-muted-foreground">{tournament.numberOfParticipants || 0} Participants</Text>
-                            </View>
-                            {/* Date removed as requested */}
                         </View>
 
                         {(() => {
@@ -680,53 +676,45 @@ export default function TournamentDetailsScreen() {
                     </View>
 
                     {activeTab === 'overview' && (
-                        <View className="px-4 py-4 space-y-6 pb-12">
+                        <View className="px-4 py-4 space-y-4 pb-12">
                             {/* Stats Grid */}
                             <View className="flex-row flex-wrap gap-3">
-                                <View className="flex-1 min-w-[150px] bg-card p-4 rounded-2xl border border-border/30">
-                                    <View className="flex-row items-center gap-2 mb-2">
-                                        <View className="w-8 h-8 rounded-full bg-accent/20 items-center justify-center">
-                                            <Ionicons name="cash-outline" size={16} color="#10B981" />
-                                        </View>
-                                        <Text className="text-xs text-muted-foreground font-medium">Prize Pool</Text>
+                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
+                                    <View className="w-10 h-10 rounded-2xl bg-[#F59E0B]/10 items-center justify-center mb-4">
+                                        <Ionicons name="trophy-outline" size={20} color="#F59E0B" />
                                     </View>
-                                    <Text className="text-lg font-bold text-foreground">
+                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Prize Pool</Text>
+                                    <Text className="text-xl font-black text-white">
                                         {tournament.prize} {tournament.prizeCurrency === 1 ? 'EUR' : 'USD'}
                                     </Text>
                                 </View>
 
-                                <View className="flex-1 min-w-[150px] bg-card p-4 rounded-2xl border border-border/30">
-                                    <View className="flex-row items-center gap-2 mb-2">
-                                        <View className="w-8 h-8 rounded-full bg-primary/20 items-center justify-center">
-                                            <Ionicons name="people-outline" size={16} color="#10B981" />
-                                        </View>
-                                        <Text className="text-xs text-muted-foreground font-medium">Max Players</Text>
+                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
+                                    <View className="w-10 h-10 rounded-2xl bg-[#4F46E5]/10 items-center justify-center mb-4">
+                                        <Ionicons name="people-outline" size={20} color="#4F46E5" />
                                     </View>
-                                    <Text className="text-lg font-bold text-foreground">
+                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Max Players</Text>
+                                    <Text className="text-xl font-black text-white">
                                         {tournament.maxPlayers || 'No Limit'}
                                     </Text>
                                 </View>
 
-                                <View className="flex-1 min-w-[150px] bg-card p-4 rounded-2xl border border-border/30">
-                                    <View className="flex-row items-center gap-2 mb-2">
-                                        <View className="w-8 h-8 rounded-full bg-blue-500/10 items-center justify-center">
-                                            <Ionicons name="calendar-outline" size={16} color="#3B82F6" />
-                                        </View>
-                                        <Text className="text-xs text-muted-foreground font-medium">Date</Text>
+                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
+                                    <View className="w-10 h-10 rounded-2xl bg-[#3B82F6]/10 items-center justify-center mb-4">
+                                        <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
                                     </View>
-                                    <Text className="text-sm font-bold text-foreground">
+                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Date</Text>
+                                    <Text className="text-xl font-black text-white">
                                         {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}
                                     </Text>
                                 </View>
 
-                                <View className="flex-1 min-w-[150px] bg-card p-4 rounded-2xl border border-border/30">
-                                    <View className="flex-row items-center gap-2 mb-2">
-                                        <View className="w-8 h-8 rounded-full bg-orange-500/10 items-center justify-center">
-                                            <Ionicons name="globe-outline" size={16} color="#F97316" />
-                                        </View>
-                                        <Text className="text-xs text-muted-foreground font-medium">Region</Text>
+                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
+                                    <View className="w-10 h-10 rounded-2xl bg-[#10B981]/10 items-center justify-center mb-4">
+                                        <Ionicons name="globe-outline" size={20} color="#10B981" />
                                     </View>
-                                    <Text className="text-lg font-bold text-foreground uppercase">
+                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Region</Text>
+                                    <Text className="text-xl font-black text-white uppercase">
                                         {tournament.region === TournamentRegion.Europe ? 'EU'
                                             : tournament.region === TournamentRegion.NorthAmerica ? 'NA'
                                                 : tournament.region === TournamentRegion.Asia ? 'Asia'
@@ -736,37 +724,48 @@ export default function TournamentDetailsScreen() {
                                                                 : 'Global'}
                                     </Text>
                                 </View>
-
-                                {tournament.registrationDeadline && (
-                                    <View className="flex-1 min-w-[150px] bg-card p-4 rounded-2xl border border-border/30">
-                                        <View className="flex-row items-center gap-2 mb-2">
-                                            <View className="w-8 h-8 rounded-full bg-red-500/10 items-center justify-center">
-                                                <Ionicons name="time-outline" size={16} color="#EF4444" />
-                                            </View>
-                                            <Text className="text-xs text-muted-foreground font-medium">Reg. Deadline</Text>
-                                        </View>
-                                        <Text className="text-sm font-bold text-foreground">
-                                            {new Date(tournament.registrationDeadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        </Text>
-                                    </View>
-                                )}
                             </View>
 
+                            {/* Registration Deadline Alert */}
+                            {tournament.registrationDeadline && (
+                                <Pressable className="w-full bg-[#181010]/80 p-5 rounded-3xl border border-red-500/10 flex-row items-center gap-4 mt-2">
+                                    <View className="w-12 h-12 rounded-2xl bg-red-500/10 items-center justify-center">
+                                        <Ionicons name="time-outline" size={24} color="#EF4444" />
+                                    </View>
+                                    <View className="flex-1 gap-1">
+                                        <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Reg. Deadline</Text>
+                                        <Text className="text-lg font-black text-white">
+                                            {(() => {
+                                                const d = new Date(tournament.registrationDeadline);
+                                                return `${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+                                            })()}
+                                        </Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={20} color="#1E293B" />
+                                </Pressable>
+                            )}
+
                             {/* Description Section */}
-                            <View className="space-y-3 mt-4">
-                                <Text className="text-sm font-bold text-foreground uppercase tracking-widest px-1">Description</Text>
-                                <View className="bg-card/50 p-8 rounded-2xl border border-border/10">
-                                    <Text className="text-muted-foreground leading-6">
+                            <View className="space-y-4 mt-6">
+                                <View className="flex-row items-center gap-2 px-1">
+                                    <Ionicons name="flash-outline" size={16} color="#F59E0B" />
+                                    <Text className="text-[10px] font-black text-white uppercase tracking-widest">Description</Text>
+                                </View>
+                                <View className="bg-[#131B2E]/50 p-6 rounded-3xl border border-white/5">
+                                    <Text className="text-slate-400 leading-6 text-sm">
                                         {tournament.description || 'Join this competitive tournament and prove your skills to climb the leaderboard.'}
                                     </Text>
                                 </View>
                             </View>
 
                             {/* Rules Section */}
-                            <View className="space-y-3 mt-8">
-                                <Text className="text-sm font-bold text-foreground uppercase tracking-widest px-1">Rules & Regulations</Text>
-                                <View className="bg-card/50 p-8 rounded-2xl border border-border/10">
-                                    <Text className="text-muted-foreground leading-6">
+                            <View className="space-y-4 mt-4">
+                                <View className="flex-row items-center gap-2 px-1">
+                                    <Ionicons name="shield-outline" size={16} color="#4F46E5" />
+                                    <Text className="text-[10px] font-black text-white uppercase tracking-widest">Rules & Regulations</Text>
+                                </View>
+                                <View className="bg-[#131B2E]/50 p-6 rounded-3xl border border-white/5">
+                                    <Text className="text-slate-400 leading-6 text-sm">
                                         {tournament.rules || '• Fair play is mandatory\n• No toxic behavior\n• Tournament organizers\' decisions are final.'}
                                     </Text>
                                 </View>
@@ -775,22 +774,26 @@ export default function TournamentDetailsScreen() {
                     )}
 
                     {activeTab === 'bracket' && (
-                        <View className="py-2">
+                        <View className="py-2 bg-[#0F172A] min-h-[400px]">
                             {loadingBracket ? (
                                 <View className="py-20 items-center justify-center">
                                     <ActivityIndicator size="large" color="#10B981" />
-                                    <Text className="text-muted-foreground mt-4">Loading structure...</Text>
+                                    <Text className="text-zinc-500 mt-4 font-bold">Loading bracket...</Text>
                                 </View>
                             ) : bracketError ? (
                                 <View className="py-20 items-center justify-center px-4">
-                                    <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-                                    <Text className="text-destructive mt-4 text-center">{bracketError}</Text>
-                                    <Button onPress={fetchBracket} variant="outline" size="sm" className="mt-4">
+                                    <View className="w-16 h-16 rounded-full bg-red-500/10 items-center justify-center mb-4">
+                                        <Ionicons name="alert-circle-outline" size={32} color="#EF4444" />
+                                    </View>
+                                    <Text className="text-red-500 font-bold text-center mb-6">{bracketError}</Text>
+                                    <Button onPress={fetchBracket} variant="outline" size="sm">
                                         Retry
                                     </Button>
                                 </View>
                             ) : (
-                                renderStages()
+                                <View className="flex-1">
+                                    {renderStages()}
+                                </View>
                             )}
                         </View>
                     )}
