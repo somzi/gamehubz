@@ -165,6 +165,14 @@ export default function TournamentsScreen() {
         { label: 'Completed', value: 'completed' },
     ];
 
+    const handleScroll = (event: any) => {
+        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+        const paddingToBottom = 50;
+        if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+            loadMore();
+        }
+    };
+
     const renderContent = () => {
         if (isLoading) {
             return (
@@ -217,18 +225,10 @@ export default function TournamentsScreen() {
                     </View>
                 ))}
 
-                {hasMore && (
-                    <TouchableOpacity
-                        onPress={loadMore}
-                        disabled={isMoreLoading}
-                        className="py-4 items-center bg-white/5 rounded-2xl border border-white/5 mt-2"
-                    >
-                        {isMoreLoading ? (
-                            <ActivityIndicator size="small" color="#10B981" />
-                        ) : (
-                            <Text className="text-primary font-bold">Load More</Text>
-                        )}
-                    </TouchableOpacity>
+                {hasMore && isMoreLoading && (
+                    <View className="py-8 items-center justify-center">
+                        <ActivityIndicator size="small" color="#10B981" />
+                    </View>
                 )}
             </View>
         );
@@ -245,6 +245,8 @@ export default function TournamentsScreen() {
                 refreshControl={
                     <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#10B981" />
                 }
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
             >
                 <View className="px-4 py-4 gap-6">
                     <Tabs
