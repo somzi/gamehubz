@@ -98,9 +98,9 @@ export function MatchScheduleCard({
         }
     };
 
-    const fetchComments = async () => {
+    const fetchComments = async (silent = false) => {
         if (!matchId) return;
-        setIsLoadingComments(true);
+        if (!silent) setIsLoadingComments(true);
         try {
             const response = await authenticatedFetch(ENDPOINTS.GET_MATCH_COMMENTS(matchId));
             if (response.ok) {
@@ -110,7 +110,7 @@ export function MatchScheduleCard({
         } catch (error) {
             console.error('Error fetching comments:', error);
         } finally {
-            setIsLoadingComments(false);
+            if (!silent) setIsLoadingComments(false);
         }
     };
 
@@ -126,7 +126,11 @@ export function MatchScheduleCard({
 
             if (response.ok) {
                 setNewComment('');
-                await fetchComments();
+                // If SignalR is not connected or fails, we might want a manual refresh
+                // but we should do it silently to avoid UI jumps
+                if (!connectionRef.current) {
+                    await fetchComments(true);
+                }
                 // Scroll to bottom after new comment
                 setTimeout(() => {
                     commentsScrollRef.current?.scrollToEnd({ animated: true });
@@ -154,16 +158,20 @@ export function MatchScheduleCard({
         return date.toLocaleDateString();
     };
 
-    // Fetch availability when modal opens
+    // Fetch availability and comments when modal opens
     useEffect(() => {
-        if (modalVisible && currentStatus === 'pending_availability') {
+        if (!modalVisible) return;
+
+        if (currentStatus === 'pending_availability') {
             fetchAvailability();
         }
-        // Load history once when opening
-        if (modalVisible && (currentStatus === 'scheduled' || currentStatus === 'ready_phase' || currentStatus === 'pending_availability')) {
+        
+        // Only load comments if they haven't been loaded for this match yet
+        // or if we explicitly want to refresh on open
+        if (currentStatus === 'scheduled' || currentStatus === 'ready_phase' || currentStatus === 'pending_availability') {
             fetchComments();
         }
-    }, [modalVisible, currentStatus, matchId]);
+    }, [modalVisible, matchId]); // Removed currentStatus from dependencies to prevent re-fetching on status changes
 
     // SignalR Connection
     useEffect(() => {
@@ -493,7 +501,11 @@ export function MatchScheduleCard({
 
         const scrollToBottom = () => {
             setTimeout(() => {
-                mainScrollViewRef.current?.scrollToEnd({ animated: true });
+                if (activeModalTab === 'chat') {
+                    commentsScrollRef.current?.scrollToEnd({ animated: true });
+                } else {
+                    mainScrollViewRef.current?.scrollToEnd({ animated: true });
+                }
             }, 150);
         };
 
@@ -587,19 +599,17 @@ export function MatchScheduleCard({
                                 </Pressable>
                             </View>
 
-                            <ScrollView
-                                ref={mainScrollViewRef}
-                                showsVerticalScrollIndicator={false}
-                                keyboardShouldPersistTaps="handled"
-                                // ⬇️ КЉУЧНА ИЗМЕНА 3: смањен padding, додат keyboardDismissMode
-                                keyboardDismissMode="interactive"
-                                contentContainerStyle={{
-                                    flexGrow: 1,
-                                    paddingBottom: Platform.OS === 'ios' ? 20 : 20,
-                                }}
-                            >
+                            <View className="flex-1">
                                 {activeModalTab === 'match' ? (
-                                    <>
+                                    <ScrollView
+                                        ref={mainScrollViewRef}
+                                        showsVerticalScrollIndicator={false}
+                                        keyboardShouldPersistTaps="handled"
+                                        contentContainerStyle={{
+                                            flexGrow: 1,
+                                            paddingBottom: 20,
+                                        }}
+                                    >
                                         {currentStatus === 'pending_availability' && (
                                             <View className="mb-4">
                                                 <HourlyAvailabilityPicker
@@ -742,7 +752,7 @@ export function MatchScheduleCard({
                                                 {isPremium && <Text className="text-sm font-medium text-slate-500 mt-2">Results have been recorded</Text>}
                                             </View>
                                         )}
-                                    </>
+                                    </ScrollView>
                                 ) : (
                                     <View className="flex-1">
                                         <View className="flex-row items-center gap-2 mb-4">
@@ -756,95 +766,100 @@ export function MatchScheduleCard({
                                                 <ActivityIndicator size="small" color="#10B981" />
                                             </View>
                                         ) : comments.length > 0 ? (
-                                            <ScrollView
-                                                ref={commentsScrollRef}
-                                                className={cn("mb-6", isPremium ? "max-h-[500px]" : "max-h-[400px]")}
-                                                nestedScrollEnabled
-                                                showsVerticalScrollIndicator={false}
-                                                contentContainerStyle={{ paddingVertical: 10 }}
-                                            >
-                                                {comments.map((comment) => {
-                                                    const isMyComment = comment.userId === user?.id;
-                                                    return (
-                                                        <View key={comment.id} className={cn(
-                                                            "mb-4 max-w-[85%]",
-                                                            isMyComment ? "self-end items-end" : "self-start items-start"
-                                                        )}>
-                                                            <View className="flex-row items-center gap-2 mb-1 px-1">
-                                                                {!isMyComment && (
-                                                                    <Text className={cn("font-black text-[10px] uppercase tracking-tighter", isPremium ? "text-primary" : "text-primary/70")}>
-                                                                        {comment.userNickname}
-                                                                    </Text>
-                                                                )}
-                                                                <Text className="text-[9px] font-bold text-slate-500">
-                                                                    {formatCommentTime(comment.sentAt)}
-                                                                </Text>
-                                                            </View>
-                                                            <View className={cn(
-                                                                "px-4 py-3 rounded-[20px]",
-                                                                isMyComment 
-                                                                    ? "bg-primary rounded-tr-none" 
-                                                                    : "bg-slate-800 rounded-tl-none border border-white/5"
+                                            <View className="flex-1">
+                                                <ScrollView
+                                                    ref={commentsScrollRef}
+                                                    className={cn("mb-2 flex-1")}
+                                                    nestedScrollEnabled
+                                                    showsVerticalScrollIndicator={false}
+                                                    contentContainerStyle={{ paddingVertical: 10 }}
+                                                    onContentSizeChange={() => commentsScrollRef.current?.scrollToEnd({ animated: true })}
+                                                >
+                                                    {comments.map((comment) => {
+                                                        const isMyComment = comment.userId === user?.id;
+                                                        return (
+                                                            <View key={comment.id} className={cn(
+                                                                "mb-4 max-w-[85%]",
+                                                                isMyComment ? "self-end items-end" : "self-start items-start"
                                                             )}>
-                                                                <Text className={cn(
-                                                                    "leading-5 font-medium",
-                                                                    isMyComment ? "text-slate-900" : "text-white"
+                                                                <View className="flex-row items-center gap-2 mb-1 px-1">
+                                                                    {!isMyComment && (
+                                                                        <Text className={cn("font-black text-[10px] uppercase tracking-tighter", isPremium ? "text-primary" : "text-primary/70")}>
+                                                                            {comment.userNickname}
+                                                                        </Text>
+                                                                    )}
+                                                                    <Text className="text-[9px] font-bold text-slate-500">
+                                                                        {formatCommentTime(comment.sentAt)}
+                                                                    </Text>
+                                                                </View>
+                                                                <View className={cn(
+                                                                    "px-4 py-3 rounded-[20px]",
+                                                                    isMyComment 
+                                                                        ? "bg-primary rounded-tr-none" 
+                                                                        : "bg-slate-800 rounded-tl-none border border-white/5"
                                                                 )}>
-                                                                    {comment.content}
-                                                                </Text>
+                                                                    <Text className={cn(
+                                                                        "leading-5 font-medium",
+                                                                        isMyComment ? "text-slate-900" : "text-white"
+                                                                    )}>
+                                                                        {comment.content}
+                                                                    </Text>
+                                                                </View>
                                                             </View>
-                                                        </View>
-                                                    );
-                                                })}
-                                            </ScrollView>
+                                                        );
+                                                    })}
+                                                </ScrollView>
+                                            </View>
                                         ) : (
                                             <View className={cn("h-32 border border-dashed rounded-2xl items-center justify-center mb-4", isPremium ? "border-white/10 bg-white/[0.02]" : "border-border/20 bg-muted/5")}>
                                                 <Ionicons name="chatbubble-outline" size={isPremium ? 28 : 24} color={isPremium ? "#475569" : "#71717A"} />
                                                 <Text className={cn("font-bold uppercase tracking-widest mt-1", isPremium ? "text-xs text-slate-500" : "text-[10px] text-muted-foreground")}>No messages yet</Text>
                                             </View>
                                         )}
-
-                                        <View className="flex-row items-end gap-3 mt-2 bg-white/5 p-2 rounded-[24px] border border-white/10">
-                                            <TextInput
-                                                className={cn(
-                                                    "flex-1 px-4 py-3 text-white font-medium",
-                                                )}
-                                                placeholder="Type a message..."
-                                                placeholderTextColor="#64748B"
-                                                value={newComment}
-                                                onChangeText={setNewComment}
-                                                multiline
-                                                maxLength={500}
-                                                style={{ minHeight: 48, maxHeight: 120 }}
-                                                onFocus={scrollToBottom}
-                                            />
-                                            <Pressable
-                                                onPress={handleSendComment}
-                                                disabled={!newComment.trim() || isSendingComment}
-                                                className={cn(
-                                                    "w-12 h-12 rounded-full items-center justify-center",
-                                                    newComment.trim() ? "bg-primary" : "bg-primary/20",
-                                                    (!newComment.trim() || isSendingComment) && "opacity-50"
-                                                )}
-                                                style={({ pressed }) => [{
-                                                    backgroundColor: !newComment.trim() || isSendingComment 
-                                                        ? '#1E293B' 
-                                                        : pressed ? '#059669' : '#10B981',
-                                                    transform: [{ scale: pressed ? 0.95 : 1 }]
-                                                }]}
-                                            >
-                                                {isSendingComment ? (
-                                                    <ActivityIndicator size="small" color="#0F172A" />
-                                                ) : (
-                                                    <Ionicons name="send" size={20} color="#0F172A" />
-                                                )}
-                                            </Pressable>
-                                        </View>
                                     </View>
                                 )}
+                            </View>
 
-                                <View className="h-4" />
-                            </ScrollView>
+                            {activeModalTab === 'chat' && (
+                                <View className="p-2 border-t border-white/5 pt-4">
+                                    <View className="flex-row items-end gap-3 bg-white/5 p-2 rounded-[24px] border border-white/10">
+                                        <TextInput
+                                            className={cn(
+                                                "flex-1 px-4 py-3 text-white font-medium",
+                                            )}
+                                            placeholder="Type a message..."
+                                            placeholderTextColor="#64748B"
+                                            value={newComment}
+                                            onChangeText={setNewComment}
+                                            multiline
+                                            maxLength={500}
+                                            style={{ minHeight: 48, maxHeight: 120 }}
+                                            onFocus={scrollToBottom}
+                                        />
+                                        <Pressable
+                                            onPress={handleSendComment}
+                                            disabled={!newComment.trim() || isSendingComment}
+                                            className={cn(
+                                                "w-12 h-12 rounded-full items-center justify-center",
+                                                newComment.trim() ? "bg-primary" : "bg-primary/20",
+                                                (!newComment.trim() || isSendingComment) && "opacity-50"
+                                            )}
+                                            style={({ pressed }) => [{
+                                                backgroundColor: !newComment.trim() || isSendingComment 
+                                                    ? '#1E293B' 
+                                                    : pressed ? '#059669' : '#10B981',
+                                                transform: [{ scale: pressed ? 0.95 : 1 }]
+                                            }]}
+                                        >
+                                            {isSendingComment ? (
+                                                <ActivityIndicator size="small" color="#0F172A" />
+                                            ) : (
+                                                <Ionicons name="send" size={20} color="#0F172A" />
+                                            )}
+                                        </Pressable>
+                                    </View>
+                                </View>
+                            )}
                         </View>
                     </KeyboardAvoidingView>
                 </View>
