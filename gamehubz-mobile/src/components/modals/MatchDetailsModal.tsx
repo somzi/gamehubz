@@ -22,6 +22,7 @@ export interface MatchResultDetailDto {
     awayUserScore: number;
     evidences: string[];
     hubOwnerId?: string;
+    scheduledTime?: string;
 }
 
 interface MatchDetailsModalProps {
@@ -122,7 +123,22 @@ export function MatchDetailsModal({
             const response = await authenticatedFetch(ENDPOINTS.GET_MATCH_DETAILS(matchId));
             if (response.ok) {
                 const data = await response.json();
-                setMatchDetails(data);
+                // Normalize casing if needed, though usually handled by serializer
+                const normalizedData = {
+                    ...data,
+                    scheduledTime: data.scheduledTime || data.ScheduledTime
+                };
+                setMatchDetails(normalizedData);
+                if (normalizedData.scheduledTime) {
+                    const date = new Date(normalizedData.scheduledTime);
+                    setConfirmedTime(date.toLocaleString(undefined, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }));
+                }
             } else {
                 setError('Failed to load match results');
             }
@@ -448,7 +464,7 @@ export function MatchDetailsModal({
                             <View className="space-y-4">
                                 <View className="items-center mb-2">
                                     <Text className="text-sm text-muted-foreground">Match Time</Text>
-                                    <Text className="text-lg font-bold text-primary mt-1">{scheduledTime || 'TBD'}</Text>
+                                    <Text className="text-lg font-bold text-primary mt-1">{confirmedTime || scheduledTime || 'TBD'}</Text>
                                 </View>
                                 {error && (
                                     <View className="bg-destructive/10 p-4 rounded-2xl mb-2">
@@ -457,9 +473,9 @@ export function MatchDetailsModal({
                                 )}
                                 <View className="flex-row items-center justify-between gap-4">
                                     <View className="flex-1 items-center gap-3">
-                                        <PlayerAvatar name={user?.username || 'You'} size="lg" />
+                                        <PlayerAvatar name={home?.username || 'Home'} size="lg" />
                                         <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
-                                            {user?.username || 'You'}
+                                            {home?.username || 'Home'}
                                         </Text>
                                         <TextInput
                                             className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
@@ -472,9 +488,9 @@ export function MatchDetailsModal({
                                     </View>
                                     <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
                                     <View className="flex-1 items-center gap-3">
-                                        <PlayerAvatar name={opponentName} size="lg" />
+                                        <PlayerAvatar name={away?.username || opponentName || 'Away'} size="lg" />
                                         <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
-                                            {opponentName}
+                                            {away?.username || opponentName || 'Away'}
                                         </Text>
                                         <TextInput
                                             className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"

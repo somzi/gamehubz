@@ -920,6 +920,13 @@ export default function TournamentDetailsScreen() {
                 tournamentName={tournament?.name}
                 roundName={selectedMatch?.roundName || 'Match Details'}
                 opponentName={selectedMatch?.away?.username}
+                scheduledTime={selectedMatch?.startTime ? new Date(selectedMatch.startTime).toLocaleString(undefined, {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : undefined}
                 status={
                     selectedMatch?.status === 3 || selectedMatch?.status === 4 ? 'completed' :
                         selectedMatch?.status === 2 ? 'ready_phase' :
