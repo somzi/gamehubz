@@ -333,7 +333,7 @@ export default function HubProfileScreen() {
                 </View>
 
                 {/* ─── Stats Row ─── */}
-                <View className="flex-row px-4 py-5 gap-3">
+                <View className="flex-row px-4 pt-5 pb-2 gap-3">
                     <View className="flex-1 bg-[#131B2E] rounded-3xl p-5 border border-white/5 items-center">
                         <View className="w-11 h-11 rounded-2xl bg-indigo-500/10 items-center justify-center mb-3 border border-indigo-500/20">
                             <Ionicons name="people" size={22} color="#818CF8" />
@@ -359,7 +359,7 @@ export default function HubProfileScreen() {
                 </View>
 
                 {/* ─── Tournament Section ─── */}
-                <View className="px-4 pb-6">
+                <View className="px-4 pt-4 pb-6">
                     <Tabs
                         tabs={tabs}
                         activeTab={activeTab}
