@@ -38,7 +38,7 @@ export function MatchHistoryCard({
 
     return (
         <Card onPress={onPress} className={cn("overflow-hidden", className)}>
-            <View className="flex-1">
+            <View className="w-full">
                 {/* Header Row: Hub/Tournament + Date */}
                 <View className="flex-row justify-between items-start mb-6 pb-2 border-b border-white/5">
                     <View className="flex-row items-start flex-1 pr-4">

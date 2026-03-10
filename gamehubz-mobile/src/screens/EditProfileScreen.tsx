@@ -214,11 +214,6 @@ export default function EditProfileScreen() {
                         onPress={() => navigation.navigate('ChangePassword')}
                     />
                     <MenuItem
-                        icon="notifications-outline"
-                        label="Notifications"
-                        onPress={() => navigation.navigate('Notifications')}
-                    />
-                    <MenuItem
                         icon="help-circle-outline"
                         label="Help Center"
                         onPress={() => navigation.navigate('HelpCenter')}
