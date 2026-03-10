@@ -441,7 +441,6 @@ export default function PlayerProfileScreen() {
 
                         {activeTab === 'tournaments' && (
                             <View className="gap-3">
-                                <Text className="text-lg font-bold text-white">Tournaments</Text>
                                 {userTournaments.length > 0 ? (
                                     <>
                                         {userTournaments.map((t) => (
@@ -475,7 +474,6 @@ export default function PlayerProfileScreen() {
 
                         {activeTab === 'matches' && (
                             <View className="gap-3">
-                                <Text className="text-lg font-bold text-white">Match History</Text>
                                 {userMatches.length > 0 ? (
                                     <>
                                         {userMatches.map((match, idx) => (

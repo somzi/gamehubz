@@ -147,7 +147,7 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <PageHeader title="Dashboard" showNotifications={true} className="border-b-0" />
+            <PageHeader title="Dashboard" showNotifications={false} className="border-b-0" />
 
             <ScrollView
                 className="flex-1"

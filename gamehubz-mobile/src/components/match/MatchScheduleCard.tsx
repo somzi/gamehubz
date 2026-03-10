@@ -165,7 +165,7 @@ export function MatchScheduleCard({
         if (currentStatus === 'pending_availability') {
             fetchAvailability();
         }
-        
+
         // Only load comments if they haven't been loaded for this match yet
         // or if we explicitly want to refresh on open
         if (currentStatus === 'scheduled' || currentStatus === 'ready_phase' || currentStatus === 'pending_availability') {
@@ -794,8 +794,8 @@ export function MatchScheduleCard({
                                                                 </View>
                                                                 <View className={cn(
                                                                     "px-4 py-3 rounded-[20px]",
-                                                                    isMyComment 
-                                                                        ? "bg-primary rounded-tr-none" 
+                                                                    isMyComment
+                                                                        ? "bg-primary rounded-tr-none"
                                                                         : "bg-slate-800 rounded-tl-none border border-white/5"
                                                                 )}>
                                                                     <Text className={cn(
@@ -845,8 +845,8 @@ export function MatchScheduleCard({
                                                 (!newComment.trim() || isSendingComment) && "opacity-50"
                                             )}
                                             style={({ pressed }) => [{
-                                                backgroundColor: !newComment.trim() || isSendingComment 
-                                                    ? '#1E293B' 
+                                                backgroundColor: !newComment.trim() || isSendingComment
+                                                    ? '#1E293B'
                                                     : pressed ? '#059669' : '#10B981',
                                                 transform: [{ scale: pressed ? 0.95 : 1 }]
                                             }]}

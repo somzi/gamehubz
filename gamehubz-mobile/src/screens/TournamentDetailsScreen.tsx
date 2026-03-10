@@ -616,7 +616,7 @@ export default function TournamentDetailsScreen() {
             <ScrollView className="flex-1 bg-[#0F172A]">
                 <View className="animate-slide-up">
                     {/* Hero Section */}
-                    <View className="px-4 py-8 bg-[#0B1120]">
+                    <View className="px-4 py-8 bg-[#0F172A]">
                         <View className="flex-row justify-between items-start mb-4">
                             <View className="flex-1 mr-4">
                                 <Text className="text-3xl font-black text-white mb-2">{tournament.name}</Text>
@@ -625,10 +625,40 @@ export default function TournamentDetailsScreen() {
                                     <Text className="text-sm font-bold text-zinc-500">{tournament.numberOfParticipants || 0} Participants</Text>
                                 </View>
                             </View>
-                            <View className="bg-[#064E3B] px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#10B981]/20">
-                                <View className="w-2 h-2 rounded-full bg-[#10B981]" />
-                                <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-tighter">LIVE</Text>
-                            </View>
+                            {(() => {
+                                const s = Number(tournament.status);
+                                if (s === 3) return (
+                                    <View className="bg-[#064E3B] px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#10B981]/20">
+                                        <View className="w-2 h-2 rounded-full bg-[#10B981]" />
+                                        <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-tighter">LIVE</Text>
+                                    </View>
+                                );
+                                if (s === 4) return (
+                                    <View className="bg-slate-800 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-slate-700/50">
+                                        <View className="w-2 h-2 rounded-full bg-slate-500" />
+                                        <Text className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Completed</Text>
+                                    </View>
+                                );
+                                if (s === 2) return (
+                                    <View className="bg-yellow-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-yellow-500/20">
+                                        <View className="w-2 h-2 rounded-full bg-yellow-400" />
+                                        <Text className="text-[10px] font-black text-yellow-400 uppercase tracking-tighter">Reg. Closed</Text>
+                                    </View>
+                                );
+                                if (s === 1) return (
+                                    <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
+                                        <View className="w-2 h-2 rounded-full bg-indigo-400" />
+                                        <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Upcoming</Text>
+                                    </View>
+                                );
+                                if (s === 0) return (
+                                    <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
+                                        <View className="w-2 h-2 rounded-full bg-indigo-400" />
+                                        <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Open</Text>
+                                    </View>
+                                );
+                                return null;
+                            })()}
                         </View>
 
                         {(() => {

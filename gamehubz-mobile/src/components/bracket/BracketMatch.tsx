@@ -56,17 +56,17 @@ export function BracketMatch({ home, away, startTime, status, className, onPress
         return (
             <Pressable
                 onPress={() => handlePlayerClick(participant.userId)}
-                className={cn(
-                    "flex-row items-center gap-2 px-3 py-2 rounded-lg border border-transparent h-10",
-                    isWinner ? "bg-accent/20 border-accent/30" : "bg-muted/30"
-                )}
+                className="flex-row items-center gap-2 px-3 py-2 rounded-lg h-10 bg-muted/30"
             >
                 <PlayerAvatar name={participant.username} size="sm" className="w-6 h-6" />
-                <Text className={cn("text-sm font-medium flex-1", isWinner ? "text-accent" : "text-foreground")} numberOfLines={1}>
+                <Text
+                    className={cn("text-sm font-medium flex-1", isWinner ? "text-primary" : "text-foreground")}
+                    numberOfLines={1}
+                >
                     {participant.username}
                 </Text>
                 {participant.score !== null && (
-                    <Text className={cn("text-sm font-bold", isWinner ? "text-accent" : "text-foreground")}>
+                    <Text className={cn("text-sm font-bold", isWinner ? "text-primary" : "text-foreground")}>
                         {participant.score}
                     </Text>
                 )}
