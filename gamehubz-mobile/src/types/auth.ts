@@ -48,6 +48,7 @@ export interface UserInfo {
     nickName?: string;
     region: RegionType;
     userSocials: UserSocial[];
+    avatarUrl?: string;
 }
 
 export interface User {

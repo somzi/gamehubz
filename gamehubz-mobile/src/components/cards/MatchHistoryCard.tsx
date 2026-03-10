@@ -1,13 +1,16 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { Card } from '../ui/Card';
 import { cn } from '../../lib/utils';
 
 interface MatchHistoryCardProps {
     tournamentName: string;
     hubName?: string;
+    userName?: string;
+    userAvatarUrl?: string;
     opponentName: string;
+    opponentAvatarUrl?: string;
     result: "win" | "loss" | "draw";
     date: string;
     userScore?: number;
@@ -19,7 +22,10 @@ interface MatchHistoryCardProps {
 export function MatchHistoryCard({
     tournamentName,
     hubName,
+    userName = "Me",
+    userAvatarUrl,
     opponentName,
+    opponentAvatarUrl,
     result,
     date,
     userScore,
@@ -29,57 +35,70 @@ export function MatchHistoryCard({
 }: MatchHistoryCardProps) {
     const isWin = result === "win";
     const isDraw = result === "draw";
-    const displayName = hubName ? `${tournamentName}` : tournamentName;
 
     return (
-        <Card onPress={onPress} className={className}>
-            <View className="flex-row items-center gap-4">
-                <View
-                    className={cn(
-                        "w-12 h-12 rounded-2xl items-center justify-center",
-                        isWin ? "bg-primary/10" : isDraw ? "bg-blue-400/10" : "bg-destructive/10"
-                    )}
-                >
-                    <Ionicons
-                        name={isWin ? "trophy" : isDraw ? "remove-circle" : "close-circle"}
-                        size={24}
-                        color={isWin ? "#10B981" : isDraw ? "#60A5FA" : "#EF4444"}
-                    />
+        <Card onPress={onPress} className={cn("overflow-hidden", className)}>
+            <View className="flex-1">
+                {/* Header Row: Hub/Tournament + Date */}
+                <View className="flex-row justify-between items-start mb-6 pb-2 border-b border-white/5">
+                    <View className="flex-row items-start flex-1 pr-4">
+                        <View className={cn("w-1.5 h-1.5 rounded-full mr-2 mt-1.5", isWin ? "bg-primary" : (result === 'draw' ? "bg-blue-400" : "bg-destructive"))} />
+                        <View className="flex-1">
+                            {hubName && (
+                                <Text className="text-[11px] font-bold text-white uppercase tracking-widest mb-0.5" numberOfLines={1}>
+                                    {hubName}
+                                </Text>
+                            )}
+                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" numberOfLines={1}>
+                                {tournamentName}
+                            </Text>
+                        </View>
+                    </View>
+                    <Text className="text-[10px] font-bold text-slate-500 uppercase mt-1">{date}</Text>
                 </View>
 
-                <View className="flex-1 min-w-0">
-                    <View className="flex-row justify-between items-center mb-0.5">
-                        <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-widest" numberOfLines={1}>
-                            {displayName}
+                {/* Versus Content */}
+                <View className="flex-row items-center justify-between px-2">
+                    {/* User side */}
+                    <View className="items-center w-[30%]">
+                        <PlayerAvatar src={userAvatarUrl} name={userName} size="md" className="rounded-2xl mb-2" />
+                        <Text className="text-[11px] font-bold text-white text-center" numberOfLines={1}>
+                            {userName}
                         </Text>
-                        <Text className="text-[10px] font-medium text-slate-500 uppercase">{date}</Text>
                     </View>
 
-                    <Text className="text-lg font-bold text-white" numberOfLines={1}>
-                        vs {opponentName}
-                    </Text>
-
-                    <View className="flex-row items-center mt-1">
+                    {/* Score section */}
+                    <View className="items-center flex-1">
+                        {userScore !== undefined && opponentScore !== undefined ? (
+                            <Text className="text-2xl font-black text-white mb-2 tracking-widest">
+                                {userScore} : {opponentScore}
+                            </Text>
+                        ) : (
+                            <Text className="text-lg font-black text-slate-500 mb-2 uppercase italic">VS</Text>
+                        )}
                         <View className={cn(
-                            "px-2 py-0.5 rounded-md flex-row items-center",
-                            isWin ? "bg-primary/10" : isDraw ? "bg-blue-400/10" : "bg-destructive/10"
+                            "px-4 py-1 rounded-full",
+                            isWin ? "bg-primary/20 border border-primary/30" :
+                                isDraw ? "bg-blue-400/20 border border-blue-400/30" :
+                                    "bg-destructive/20 border border-destructive/30"
                         )}>
                             <Text className={cn(
-                                "text-[10px] font-black uppercase tracking-tighter",
+                                "text-[10px] font-black uppercase tracking-tight",
                                 isWin ? "text-primary" : isDraw ? "text-blue-400" : "text-destructive"
                             )}>
                                 {isWin ? "Victory" : isDraw ? "Draw" : "Defeat"}
                             </Text>
                         </View>
-                        {userScore !== undefined && opponentScore !== undefined && (
-                            <Text className="ml-3 text-sm font-bold text-slate-400">
-                                {userScore} <Text className="text-slate-600">-</Text> {opponentScore}
-                            </Text>
-                        )}
+                    </View>
+
+                    {/* Opponent side */}
+                    <View className="items-center w-[30%]">
+                        <PlayerAvatar src={opponentAvatarUrl} name={opponentName} size="md" className="rounded-2xl mb-2" />
+                        <Text className="text-xs font-bold text-white text-center" numberOfLines={1}>
+                            {opponentName}
+                        </Text>
                     </View>
                 </View>
-
-                <Ionicons name="chevron-forward" size={16} color="#334155" />
             </View>
         </Card>
     );

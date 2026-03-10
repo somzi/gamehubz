@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, RefreshControl, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { FeedCard } from '../components/cards/FeedCard';
 import { MatchScheduleCard } from '../components/match/MatchScheduleCard';
-import { PageHeader } from '../components/layout/PageHeader';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { authenticatedFetch, ENDPOINTS } from '../lib/api';
@@ -16,8 +15,6 @@ import { HighlightsModal } from '../components/modals/HighlightsModal';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
-
-
 interface MatchOverviewDto {
     id?: string;
     matchId?: string;
@@ -26,6 +23,7 @@ interface MatchOverviewDto {
     hubName: string;
     scheduledTime: string | null;
     opponentName: string;
+    opponentAvatarUrl?: string;
     status: number;
 }
 
@@ -36,20 +34,7 @@ export default function HomeScreen() {
     const [myMatches, setMyMatches] = useState<MatchOverviewDto[]>([]);
     const [hubActivities, setHubActivities] = useState<DashboardActivityDto[]>([]);
     const [loading, setLoading] = useState(true);
-
-    const [expandedSections, setExpandedSections] = useState({
-        actionRequired: true,
-        communityFeed: true,
-        myMatches: true
-    });
     const [showHighlightsModal, setShowHighlightsModal] = useState(false);
-
-    const toggleSection = (section: keyof typeof expandedSections) => {
-        setExpandedSections(prev => ({
-            ...prev,
-            [section]: !prev[section]
-        }));
-    };
 
     const fetchMatches = async () => {
         if (!user?.id) return;
@@ -57,8 +42,6 @@ export default function HomeScreen() {
             const response = await authenticatedFetch(ENDPOINTS.GET_USER_HOME_MATCHES(user.id));
             if (response.ok) {
                 const data: any[] = await response.json();
-
-                // Normalize data to handle PascalCase vs camelCase
                 const normalizedData: MatchOverviewDto[] = data.map(m => ({
                     id: m.id || m.Id,
                     matchId: m.matchId || m.MatchId,
@@ -67,9 +50,9 @@ export default function HomeScreen() {
                     hubName: m.hubName || m.HubName,
                     scheduledTime: m.scheduledTime || m.ScheduledTime || null,
                     opponentName: m.opponentName || m.OpponentName,
+                    opponentAvatarUrl: m.opponentAvatarUrl || m.OpponentAvatarUrl,
                     status: m.status !== undefined ? m.status : m.Status
                 }));
-
                 setActionRequiredMatches(normalizedData.filter(m => !m.scheduledTime));
                 setMyMatches(normalizedData.filter(m => m.scheduledTime));
             }
@@ -83,7 +66,6 @@ export default function HomeScreen() {
             const response = await authenticatedFetch(ENDPOINTS.GET_HUB_ACTIVITY_HOME);
             if (response.ok) {
                 const data: any[] = await response.json();
-                // Normalize data if necessary, though DTO should match
                 const activities: DashboardActivityDto[] = data.map(a => ({
                     hubName: a.hubName || a.HubName,
                     message: a.message || a.Message,
@@ -113,128 +95,168 @@ export default function HomeScreen() {
         }, [user?.id])
     );
 
-    const renderSectionHeader = (title: string, icon: any, color: string, sectionKey: keyof typeof expandedSections, badge?: number, onSeeAll?: () => void) => (
-        <View className="flex-row items-center justify-between mb-4">
-            <Pressable
-                onPress={() => toggleSection(sectionKey)}
-                className="flex-row items-center gap-2"
-            >
-                <View className="p-1 px-1.5 bg-white/5 rounded-lg border border-white/10">
-                    <Ionicons name={icon} size={16} color={color} />
-                </View>
-                <Text className="text-sm font-black text-slate-400 uppercase tracking-[2px]">{title}</Text>
-                {badge !== undefined && badge > 0 && (
-                    <View className="bg-primary/20 border border-primary/30 px-1.5 py-0.5 rounded-md ml-1">
-                        <Text className="text-[10px] font-black text-primary">{badge}</Text>
-                    </View>
-                )}
-                <Ionicons
-                    name={expandedSections[sectionKey] ? "chevron-up" : "chevron-down"}
-                    size={14}
-                    color="#64748B"
-                    className="ml-1"
-                />
-            </Pressable>
+    const totalMatches = actionRequiredMatches.length + myMatches.length;
 
-            {onSeeAll && (
-                <Pressable onPress={onSeeAll} className="flex-row items-center gap-1 bg-white/5 px-2.5 py-1.5 rounded-xl border border-white/10">
-                    <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">See All</Text>
-                    <Ionicons name="arrow-forward" size={12} color="#94A3B8" />
-                </Pressable>
-            )}
-        </View>
-    );
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 17) return 'Good afternoon';
+        return 'Good evening';
+    };
 
     return (
         <SafeAreaView className="flex-1 bg-background">
-            <PageHeader title="Dashboard" showNotifications={false} className="border-b-0" />
-
             <ScrollView
                 className="flex-1"
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} tintColor="#10B981" />}
-                contentContainerStyle={{ paddingBottom: 100 }}
+                contentContainerStyle={{ paddingBottom: 110 }}
+                showsVerticalScrollIndicator={false}
             >
-                <View className="px-4 py-4 space-y-8">
+                {/* ── Hero Header ── */}
+                <View className="px-5 pt-5 pb-6">
+                    <View className="flex-row items-center justify-between">
+                        <View className="flex-1">
+                            <Text className="text-slate-400 text-sm font-medium mb-0.5">{getGreeting()}</Text>
+                            <Text className="text-white text-2xl font-black tracking-tight" numberOfLines={1}>
+                                {user?.username || 'Player'} 👋
+                            </Text>
+                        </View>
+                        <PlayerAvatar
+                            src={user?.avatarUrl || undefined}
+                            name={user?.username || 'P'}
+                            size="lg"
+                        />
+                    </View>
+                </View>
 
-                    {/* Action Required */}
+                <View className="px-5 gap-8">
+
+                    {/* ── Action Required ── */}
                     {actionRequiredMatches.length > 0 && (
                         <View>
-                            {renderSectionHeader('Attention', 'alert-circle', '#EAB308', 'actionRequired', actionRequiredMatches.length, () => navigation.navigate('MyMatches'))}
-                            {expandedSections.actionRequired && (
-                                <View className="gap-3 mt-1">
-                                    {actionRequiredMatches.slice(0, 3).map((match, index) => (
-                                        <MatchScheduleCard
-                                            key={match.matchId || `pending-${index}`}
-                                            matchId={match.id || match.matchId || ''}
-                                            tournamentId={match.tournamentId || ''}
-                                            tournamentName={match.tournamentName}
-                                            roundName={match.hubName}
-                                            opponentName={match.opponentName}
-                                            status="pending_availability"
-                                            onMatchUpdate={fetchMatches}
-                                        />
-                                    ))}
+                            {/* Section Header */}
+                            <View className="flex-row items-center justify-between mb-3">
+                                <View className="flex-row items-center gap-2">
+                                    <View className="w-1 h-5 rounded-full bg-yellow-500" />
+                                    <Text className="text-white font-black text-base tracking-tight">Needs Attention</Text>
+                                    <View className="bg-yellow-500/20 px-2 py-0.5 rounded-full">
+                                        <Text className="text-[11px] font-black text-yellow-400">{actionRequiredMatches.length}</Text>
+                                    </View>
                                 </View>
-                            )}
+                                <Pressable
+                                    onPress={() => navigation.navigate('MyMatches')}
+                                    className="flex-row items-center gap-1"
+                                >
+                                    <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">See All</Text>
+                                    <Ionicons name="chevron-forward" size={12} color="#64748B" />
+                                </Pressable>
+                            </View>
+
+                            <View className="gap-2.5">
+                                {actionRequiredMatches.slice(0, 3).map((match, index) => (
+                                    <MatchScheduleCard
+                                        key={match.matchId || `pending-${index}`}
+                                        matchId={match.id || match.matchId || ''}
+                                        tournamentId={match.tournamentId || ''}
+                                        tournamentName={match.tournamentName}
+                                        roundName={match.hubName}
+                                        opponentName={match.opponentName}
+                                        opponentAvatarUrl={match.opponentAvatarUrl}
+                                        status="pending_availability"
+                                        onMatchUpdate={fetchMatches}
+                                    />
+                                ))}
+                            </View>
                         </View>
                     )}
 
-                    {/* Community News Feed */}
-                    <View className="mt-8">
-                        {renderSectionHeader('Highlights', 'planet-outline', '#10B981', 'communityFeed', undefined, () => setShowHighlightsModal(true))}
+                    {/* ── Active Matches ── */}
+                    <View>
+                        <View className="flex-row items-center justify-between mb-3">
+                            <View className="flex-row items-center gap-2">
+                                <View className="w-1 h-5 rounded-full bg-primary" />
+                                <Text className="text-white font-black text-base tracking-tight">Active Matches</Text>
+                            </View>
+                            <Pressable
+                                onPress={() => navigation.navigate('MyMatches')}
+                                className="flex-row items-center gap-1"
+                            >
+                                <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">See All</Text>
+                                <Ionicons name="chevron-forward" size={12} color="#64748B" />
+                            </Pressable>
+                        </View>
 
-                        {expandedSections.communityFeed && (
-                            <View className="gap-3 mt-1">
-                                {hubActivities.length > 0 ? (
-                                    hubActivities.slice(0, 3).map((item, index) => (
-                                        <FeedCard
-                                            key={index}
-                                            hubName={item.hubName}
-                                            hubAvatar={item.hubAvatarUrl || item.hubAvatar}
-                                            message={item.message}
-                                            tournamentName={item.tournamentName}
-                                            timestamp={item.timeAgo}
-                                            onClick={() => { }}
-                                        />
-                                    ))
-                                ) : (
-                                    <View className="py-8 items-center justify-center border border-dashed border-white/5 rounded-3xl">
-                                        <Text className="text-slate-500 text-xs font-medium">No recent activity</Text>
-                                    </View>
-                                )}
+                        {myMatches.length > 0 ? (
+                            <View className="gap-2.5">
+                                {myMatches.slice(0, 3).map((match, index) => (
+                                    <MatchScheduleCard
+                                        key={match.matchId || `scheduled-${index}`}
+                                        matchId={match.id || ''}
+                                        tournamentId={match.tournamentId || ''}
+                                        tournamentName={match.tournamentName}
+                                        roundName={match.hubName}
+                                        opponentName={match.opponentName}
+                                        opponentAvatarUrl={match.opponentAvatarUrl}
+                                        status="scheduled"
+                                        scheduledTime={match.scheduledTime
+                                            ? new Date(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                            : 'TBD'}
+                                        onMatchUpdate={fetchMatches}
+                                    />
+                                ))}
+                            </View>
+                        ) : (
+                            <View className="py-10 items-center justify-center bg-white/[0.02] rounded-3xl border border-white/5">
+                                <View className="w-14 h-14 rounded-2xl bg-primary/10 items-center justify-center mb-3">
+                                    <Ionicons name="game-controller-outline" size={28} color="#10B981" />
+                                </View>
+                                <Text className="text-white font-bold text-sm">No active matches</Text>
+                                <Text className="text-slate-500 text-xs mt-1">Join a tournament to get started</Text>
                             </View>
                         )}
                     </View>
 
-                    {/* My Matches */}
-                    <View className="mt-8">
-                        {renderSectionHeader('Active Matches', 'game-controller-outline', '#6366F1', 'myMatches', undefined, () => navigation.navigate('MyMatches'))}
+                    {/* ── Community Highlights ── */}
+                    <View>
+                        <View className="flex-row items-center justify-between mb-3">
+                            <View className="flex-row items-center gap-2">
+                                <View className="w-1 h-5 rounded-full bg-indigo-500" />
+                                <Text className="text-white font-black text-base tracking-tight">Highlights</Text>
+                            </View>
+                            <Pressable
+                                onPress={() => setShowHighlightsModal(true)}
+                                className="flex-row items-center gap-1"
+                            >
+                                <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">See All</Text>
+                                <Ionicons name="chevron-forward" size={12} color="#64748B" />
+                            </Pressable>
+                        </View>
 
-                        {expandedSections.myMatches && (
-                            <View className="gap-3 mt-1">
-                                {myMatches.length > 0 ? (
-                                    myMatches.slice(0, 3).map((match, index) => (
-                                        <MatchScheduleCard
-                                            key={match.matchId || `scheduled-${index}`}
-                                            matchId={match.id || ''}
-                                            tournamentId={match.tournamentId || ''}
-                                            tournamentName={match.tournamentName}
-                                            roundName={match.hubName}
-                                            opponentName={match.opponentName}
-                                            status="scheduled"
-                                            scheduledTime={match.scheduledTime ? new Date(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'TBD'}
-                                            onMatchUpdate={fetchMatches}
-                                        />
-                                    ))
-                                ) : (
-                                    <View className="py-10 items-center justify-center border border-dashed border-white/5 rounded-3xl">
-                                        <Ionicons name="calendar-outline" size={24} color="#334155" />
-                                        <Text className="text-slate-500 text-xs font-medium mt-3">No upcoming matches</Text>
-                                    </View>
-                                )}
+                        {hubActivities.length > 0 ? (
+                            <View className="gap-2.5">
+                                {hubActivities.slice(0, 3).map((item, index) => (
+                                    <FeedCard
+                                        key={index}
+                                        hubName={item.hubName}
+                                        hubAvatar={item.hubAvatarUrl || item.hubAvatar}
+                                        message={item.message}
+                                        tournamentName={item.tournamentName}
+                                        timestamp={item.timeAgo}
+                                        onClick={() => { }}
+                                    />
+                                ))}
+                            </View>
+                        ) : (
+                            <View className="py-10 items-center justify-center bg-white/[0.02] rounded-3xl border border-white/5">
+                                <View className="w-14 h-14 rounded-2xl bg-indigo-500/10 items-center justify-center mb-3">
+                                    <Ionicons name="planet-outline" size={28} color="#6366F1" />
+                                </View>
+                                <Text className="text-white font-bold text-sm">No highlights yet</Text>
+                                <Text className="text-slate-500 text-xs mt-1">Activity from your hubs will appear here</Text>
                             </View>
                         )}
                     </View>
+
                 </View>
             </ScrollView>
 
@@ -244,6 +266,4 @@ export default function HomeScreen() {
             />
         </SafeAreaView>
     );
-
 }
-

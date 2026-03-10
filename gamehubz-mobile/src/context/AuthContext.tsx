@@ -45,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: apiUser.Username || apiUser.username,
             nickName: apiUser.Nickname || apiUser.nickName || apiUser.nickname,
             region: apiUser.Region !== undefined ? apiUser.Region : apiUser.region,
+            avatarUrl: apiUser.avatarUrl || apiUser.AvatarUrl || apiUser.Avatar || apiUser.avatar || undefined,
             userSocials: (apiUser.UserSocials || apiUser.userSocials || []).map((s: any) => ({
                 ...s,
                 id: s.Id || s.id,

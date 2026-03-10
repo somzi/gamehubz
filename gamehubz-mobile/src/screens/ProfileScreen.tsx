@@ -438,12 +438,16 @@ export default function ProfileScreen() {
                                         {userMatches.map((match, idx) => (
                                             <MatchHistoryCard
                                                 key={idx}
-                                                tournamentName={match.tournamentName || match.hubName || 'Match'}
-                                                opponentName={match.opponentName}
-                                                result={match.isWin === true ? 'win' : match.isWin === false ? 'loss' : 'draw'}
-                                                userScore={match.userScore ?? undefined}
-                                                opponentScore={match.opponentScore ?? undefined}
-                                                date={match.scheduledTime ? new Date(match.scheduledTime).toLocaleDateString() : 'N/A'}
+                                                tournamentName={match.tournamentName || match.TournamentName || 'Match'}
+                                                hubName={match.hubName || match.HubName || match.hub || match.Hub}
+                                                userName={match.username || match.userName || match.Username || match.UserName || displayData.username}
+                                                userAvatarUrl={match.userAvatarUrl || match.userAvatar || match.UserAvatarUrl || match.UserAvatar || user?.avatarUrl}
+                                                opponentName={match.opponentName || match.OpponentName || 'Opponent'}
+                                                opponentAvatarUrl={match.opponentAvatarUrl || match.opponentAvatar || match.OpponentAvatarUrl || match.OpponentAvatar}
+                                                result={match.isWin === true || match.IsWin === true ? 'win' : match.isWin === false || match.IsWin === false ? 'loss' : 'draw'}
+                                                userScore={match.userScore ?? match.UserScore ?? undefined}
+                                                opponentScore={match.opponentScore ?? match.OpponentScore ?? undefined}
+                                                date={match.scheduledTime || match.ScheduledTime ? new Date(match.scheduledTime || match.ScheduledTime).toLocaleDateString() : 'N/A'}
                                             />
                                         ))}
                                         {hasMoreMatches && isLoadingMoreMatches && (

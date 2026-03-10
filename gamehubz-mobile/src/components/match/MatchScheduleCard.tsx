@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, Modal, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '../ui/Card';
 import { HourlyAvailabilityPicker } from './HourlyAvailabilityPicker';
 import { Button } from '../ui/Button';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
@@ -21,6 +20,7 @@ interface MatchScheduleCardProps {
     tournamentName: string;
     roundName: string;
     opponentName: string;
+    opponentAvatarUrl?: string;
     status: MatchStatus;
     deadline?: string;
     scheduledTime?: string;
@@ -36,6 +36,7 @@ export function MatchScheduleCard({
     tournamentName,
     roundName,
     opponentName,
+    opponentAvatarUrl,
     status: initialStatus,
     deadline = 'Jan 22, 2024',
     scheduledTime: initialScheduledTime,
@@ -363,23 +364,23 @@ export function MatchScheduleCard({
         switch (currentStatus) {
             case 'pending_availability':
                 return (
-                    <View className="flex-row items-center gap-2 mt-2 bg-yellow-500/10 self-start px-2.5 py-1.5 rounded-lg border border-yellow-500/20">
-                        <Ionicons name="calendar-outline" size={14} color="#EAB308" />
-                        <Text className="text-[12px] font-bold text-yellow-500 uppercase tracking-tight">Set Availability</Text>
+                    <View className="flex-row items-center gap-1.5 bg-yellow-500/10 self-start px-2 py-0.5 rounded-md border border-yellow-500/20">
+                        <Ionicons name="calendar-outline" size={12} color="#EAB308" />
+                        <Text className="text-[10px] font-black text-yellow-500 uppercase tracking-tighter">Set Availability</Text>
                     </View>
                 );
             case 'scheduled':
                 return (
-                    <View className="flex-row items-center gap-2 mt-2 bg-primary/10 self-start px-2.5 py-1.5 rounded-lg border border-primary/20">
-                        <Ionicons name="time-outline" size={14} color="#10B981" />
-                        <Text className="text-[12px] font-bold text-primary uppercase tracking-tight">{matchTime}</Text>
+                    <View className="flex-row items-center gap-1.5 bg-primary/10 self-start px-2 py-0.5 rounded-md border border-primary/20">
+                        <Ionicons name="time-outline" size={12} color="#10B981" />
+                        <Text className="text-[10px] font-black text-primary uppercase tracking-tighter">{matchTime}</Text>
                     </View>
                 );
             case 'ready_phase':
                 return (
-                    <View className="flex-row items-center gap-2 mt-2 bg-indigo-500/10 self-start px-2.5 py-1.5 rounded-lg border border-indigo-500/20">
-                        <Ionicons name="flash-outline" size={14} color="#6366F1" />
-                        <Text className="text-[12px] font-bold text-indigo-500 uppercase tracking-tight">Ready Check</Text>
+                    <View className="flex-row items-center gap-1.5 bg-indigo-500/10 self-start px-2 py-0.5 rounded-md border border-indigo-500/20">
+                        <Ionicons name="flash-outline" size={12} color="#6366F1" />
+                        <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">Ready Check</Text>
                     </View>
                 );
             default:
@@ -454,41 +455,61 @@ export function MatchScheduleCard({
         );
     }
 
+    const statusColor = currentStatus === 'pending_availability' ? '#EAB308'
+        : currentStatus === 'scheduled' ? '#10B981' : '#6366F1';
+
     return (
         <>
-            <Card
+            <Pressable
                 onPress={() => setModalVisible(true)}
                 className={cn(
-                    "mb-2",
-                    currentStatus === 'ready_phase' && "border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                    "mb-2 rounded-[24px] border border-white/5 bg-white/[0.03] p-5",
+                    currentStatus === 'ready_phase' && "border-indigo-500/30"
                 )}
+                style={({ pressed }) => ({
+                    opacity: pressed ? 0.7 : 1,
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                })}
             >
                 <View className="flex-row items-center gap-4">
-                    <View className={cn(
-                        "w-12 h-12 rounded-2xl items-center justify-center",
-                        currentStatus === 'pending_availability' ? "bg-yellow-500/10" :
-                            currentStatus === 'scheduled' ? "bg-primary/10" : "bg-indigo-500/10"
-                    )}>
-                        <Ionicons
-                            name={currentStatus === 'pending_availability' ? "alert-circle" : "game-controller"}
-                            size={24}
-                            color={currentStatus === 'pending_availability' ? "#EAB308" :
-                                currentStatus === 'scheduled' ? "#10B981" : "#6366F1"}
-                        />
+                    {/* Left side: Avatar */}
+                    <View className="w-12 h-12 items-center justify-center">
+                        <PlayerAvatar src={opponentAvatarUrl} name={opponentName} size="md" className="rounded-2xl" />
                     </View>
 
-                    <View className="flex-1">
-                        <View className="flex-row items-center justify-between">
-                            <Text className="text-sm font-bold text-slate-400 uppercase tracking-wider">{tournamentName}</Text>
-                            <Text className="text-[10px] font-medium text-slate-500">{roundName}</Text>
+                    <View className="flex-1 min-w-0">
+                        {/* Header Row: Hub + Time */}
+                        <View className="flex-row justify-between items-center mb-0.5">
+                            <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-widest" numberOfLines={1}>
+                                {roundName}
+                            </Text>
+                            {matchTime && currentStatus !== 'scheduled' && (
+                                <Text className="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">
+                                    {matchTime}
+                                </Text>
+                            )}
                         </View>
-                        <Text className="text-lg font-bold text-white mt-0.5" numberOfLines={1}>
+
+                        {/* Tournament Row */}
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5" numberOfLines={1}>
+                            {tournamentName}
+                        </Text>
+
+                        {/* Main Title Row */}
+                        <Text className="text-lg font-bold text-white tracking-tight" numberOfLines={1}>
                             vs {opponentName}
                         </Text>
-                        {getStatusContent()}
+
+                        {/* Status badge */}
+                        <View className="flex-row items-center mt-1">
+                            {getStatusContent()}
+                        </View>
                     </View>
+
+                    {/* Right side: Chevron */}
+                    <Ionicons name="chevron-forward" size={16} color="#334155" />
                 </View>
-            </Card>
+            </Pressable>
 
             {renderModal()}
         </>
