@@ -15,6 +15,8 @@ interface DateTimePickerModalProps {
     onConfirm: (date: string) => void;
     title: string;
     initialValue?: string; // YYYY-MM-DD HH:mm
+    onClear?: () => void;
+    clearText?: string;
 }
 
 const months = [
@@ -22,7 +24,7 @@ const months = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-export function DateTimePickerModal({ visible, onClose, onConfirm, title, initialValue }: DateTimePickerModalProps) {
+export function DateTimePickerModal({ visible, onClose, onConfirm, title, initialValue, onClear, clearText }: DateTimePickerModalProps) {
     const now = new Date();
 
     // Parse initial value or use now
@@ -204,13 +206,25 @@ export function DateTimePickerModal({ visible, onClose, onConfirm, title, initia
                         </View>
                     </ScrollView>
 
-                    <View className="p-6 bg-[#131B2E] border-t border-white/5">
+                    <View className="p-6 bg-[#131B2E] border-t border-white/5 space-y-3">
                         <TouchableOpacity
                             onPress={handleConfirm}
                             className="w-full py-4 rounded-2xl bg-primary items-center shadow-lg shadow-primary/30"
                         >
                             <Text className="text-background font-bold text-lg">Confirm Schedule</Text>
                         </TouchableOpacity>
+                        
+                        {onClear && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    onClear();
+                                    onClose();
+                                }}
+                                className="w-full py-3 rounded-2xl bg-destructive/10 border border-destructive/20 items-center mt-3"
+                            >
+                                <Text className="text-destructive font-bold text-base">{clearText || 'Clear Schedule'}</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </Pressable>
             </Pressable>

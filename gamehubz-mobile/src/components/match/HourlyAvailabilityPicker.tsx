@@ -5,7 +5,7 @@ import { cn } from '../../lib/utils';
 
 interface HourlyAvailabilityPickerProps {
     matchId: string;
-    deadline: string;
+    deadline: string; // ISO String
     opponentName: string;
     opponentAvailability?: string[];
     initialSlots?: string[];
@@ -63,6 +63,19 @@ export function HourlyAvailabilityPicker({
     const [submitted, setSubmitted] = useState(false);
     const [selectedDateIndex, setSelectedDateIndex] = useState(0);
 
+    const deadlineDate = useMemo(() => {
+        if (!deadline || deadline === 'TBD') return null;
+        const d = new Date(deadline);
+        return isNaN(d.getTime()) ? null : d;
+    }, [deadline]);
+
+    const displayDeadline = useMemo(() => {
+        if (!deadlineDate) return deadline;
+        return deadlineDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) +
+            ', ' +
+            deadlineDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+    }, [deadlineDate, deadline]);
+
     useEffect(() => {
         setSelectedSlots(initialKeys);
     }, [initialKeys]);
@@ -85,21 +98,30 @@ export function HourlyAvailabilityPicker({
     const days = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return Array.from({ length: 7 }, (_, i) => {
+        const availableDays = [];
+        for (let i = 0; i < 7; i++) {
             const date = addDays(today, i);
-            return {
+            if (deadlineDate && date > deadlineDate) break;
+            availableDays.push({
                 date,
                 label: formatDate(date, 'EEE'),
                 fullLabel: formatDate(date, 'MMM d'),
                 key: formatDate(date, 'yyyy-MM-dd'),
-            };
-        });
-    }, []);
+            });
+        }
+        return availableDays;
+    }, [deadlineDate]);
 
     const selectedDay = days[selectedDateIndex];
 
     const toggleSlot = (dayKey: string, hour: number) => {
         if (submitted) return;
+        const slotDate = new Date(dayKey);
+        slotDate.setHours(hour, 0, 0, 0);
+        const isExpired = deadlineDate && slotDate.getTime() > deadlineDate.getTime();
+        const isPast = slotDate.getTime() < new Date().getTime();
+        if (isExpired || isPast) return;
+
         const slotId = `${dayKey}-${hour}`;
         setSelectedSlots((prev) => {
             const next = new Set(prev);
@@ -132,12 +154,22 @@ export function HourlyAvailabilityPicker({
         return processedOpponentKeys.has(`${dayKey}-${hour}`);
     };
 
+    if (days.length === 0) {
+        return (
+            <View className="flex-1 items-center justify-center p-8 bg-slate-900/40 rounded-3xl border border-slate-800/20">
+                <Ionicons name="time-outline" size={48} color="#475569" />
+                <Text className="text-slate-400 font-bold text-center mt-4">
+                    Availability selection is closed (Deadline Passed).
+                </Text>
+            </View>
+        );
+    }
+
     return (
-        // DODAT flex-1 KAKO BI KOMPONENTA MOGLA DA SE ŠIRI
         <View className="flex-1 space-y-4">
             <View className="flex-row items-center gap-2 mb-2">
                 <Ionicons name="calendar-outline" size={16} color="#94A3B8" />
-                <Text className="text-sm text-slate-400 font-medium">Deadline: {deadline}</Text>
+                <Text className="text-sm text-slate-400 font-medium">Deadline: {displayDeadline}</Text>
             </View>
 
             <Text className="text-sm text-slate-300">
@@ -205,20 +237,28 @@ export function HourlyAvailabilityPicker({
                             const opponentAvail = isOpponentAvailable(dayKey, hour);
                             const isMutual = isSelected && opponentAvail;
 
+                            const slotDate = new Date(selectedDay.date);
+                            slotDate.setHours(hour, 0, 0, 0);
+                            const isAfterDeadline = deadlineDate && slotDate.getTime() > deadlineDate.getTime();
+                            const isPast = slotDate.getTime() < new Date().getTime();
+                            const isDisabled = submitted || isAfterDeadline || isPast;
+
                             return (
                                 <Pressable
                                     key={slotId}
                                     onPress={() => toggleSlot(dayKey, hour)}
-                                    disabled={submitted}
+                                    disabled={isDisabled}
                                     className={cn(
                                         "w-[23%] h-12 mb-2 rounded-xl items-center justify-center border",
-                                        isMutual
-                                            ? "bg-primary border-primary"
-                                            : isSelected
-                                                ? "bg-primary/20 border-primary"
-                                                : opponentAvail
-                                                    ? "bg-indigo-500/10 border-indigo-500/30"
-                                                    : "bg-slate-800/30 border-slate-700/30",
+                                        isDisabled
+                                            ? "bg-slate-800/10 border-slate-700/10 opacity-20"
+                                            : isMutual
+                                                ? "bg-primary border-primary"
+                                                : isSelected
+                                                    ? "bg-primary/20 border-primary"
+                                                    : opponentAvail
+                                                        ? "bg-indigo-500/10 border-indigo-500/30"
+                                                        : "bg-slate-800/30 border-slate-700/30",
                                         submitted && "opacity-50"
                                     )}
                                 >

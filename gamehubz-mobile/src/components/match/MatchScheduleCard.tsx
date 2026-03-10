@@ -38,7 +38,7 @@ export function MatchScheduleCard({
     opponentName,
     opponentAvatarUrl,
     status: initialStatus,
-    deadline = 'Jan 22, 2024',
+    deadline = 'TBD',
     scheduledTime: initialScheduledTime,
     opponentAvailability: initialOpponentAvailability = [],
     onMatchUpdate,
@@ -49,6 +49,7 @@ export function MatchScheduleCard({
     const [modalVisible, setModalVisible] = useState(false);
     const [currentStatus, setCurrentStatus] = useState<MatchStatus>(initialStatus);
     const [matchTime, setMatchTime] = useState(initialScheduledTime);
+    const [localDeadline, setLocalDeadline] = useState<string>(deadline);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Slots state
@@ -86,6 +87,9 @@ export function MatchScheduleCard({
                 const data = await response.json();
                 if (data.mySlots) setMySlots(data.mySlots);
                 if (data.opponentSlots) setOpponentSlots(data.opponentSlots);
+                if (data.matchDeadline) {
+                    setLocalDeadline(data.matchDeadline);
+                }
                 if (data.confirmedTime) {
                     const confirmedDate = new Date(data.confirmedTime);
                     setMatchTime(confirmedDate.toLocaleString());
@@ -635,7 +639,7 @@ export function MatchScheduleCard({
                                             <View className="mb-4">
                                                 <HourlyAvailabilityPicker
                                                     matchId={matchId}
-                                                    deadline={deadline}
+                                                    deadline={localDeadline}
                                                     opponentName={opponentName}
                                                     opponentAvailability={opponentSlots}
                                                     initialSlots={mySlots}

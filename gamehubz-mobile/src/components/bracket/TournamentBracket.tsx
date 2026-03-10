@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { BracketMatch } from './BracketMatch';
 
 interface Participant {
@@ -24,6 +24,7 @@ interface Match {
 interface Round {
     roundNumber: number;
     name: string;
+    roundDeadline?: string | null;
     matches: Match[];
 }
 
@@ -33,17 +34,35 @@ interface TournamentBracketProps {
     currentUserId?: string;
     currentUsername?: string;
     isAdmin?: boolean;
+    onEditDeadline?: (round: Round) => void;
 }
 
-export function TournamentBracket({ rounds, onMatchPress, currentUserId, currentUsername, isAdmin }: TournamentBracketProps) {
+export function TournamentBracket({ rounds, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline }: TournamentBracketProps) {
     return (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-8 p-4">
                 {rounds.map((round) => (
                     <View key={round.roundNumber} className="flex-col">
-                        <Text className="text-sm font-semibold text-muted-foreground mb-4 text-center">
-                            {round.name}
-                        </Text>
+                        <View className="items-center mb-4 text-center">
+                            <Text className="text-sm font-semibold text-muted-foreground">
+                                {round.name}
+                            </Text>
+                            {round.roundDeadline && (
+                                <Text className="text-[10px] text-red-400 mt-1">
+                                    End: {new Date(round.roundDeadline).toLocaleDateString()} {new Date(round.roundDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                </Text>
+                            )}
+                            {isAdmin && (
+                                <Pressable
+                                    onPress={() => onEditDeadline?.(round)}
+                                    className="mt-2 bg-primary/20 px-3 py-1 rounded-md border border-primary/30"
+                                >
+                                    <Text className="text-primary text-[10px] uppercase font-bold tracking-wider">
+                                        {round.roundDeadline ? 'Edit Deadline' : 'Set Deadline'}
+                                    </Text>
+                                </Pressable>
+                            )}
+                        </View>
                         <View className="flex-col justify-around flex-1 gap-4">
                             {round.matches.map((match) => (
                                 <View key={match.id} className="flex-row items-center">

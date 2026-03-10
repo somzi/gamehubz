@@ -18,6 +18,7 @@ import { MatchDetailsModal } from '../components/modals/MatchDetailsModal';
 import { TournamentRegion } from '../types/tournament';
 import { StatusModal } from '../components/modals/StatusModal';
 import { EditTournamentModal } from '../components/modals/EditTournamentModal';
+import { DateTimePickerModal } from '../components/modals/DateTimePickerModal';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
@@ -54,6 +55,9 @@ export default function TournamentDetailsScreen() {
         message: string;
     }>({ type: 'success', title: '', message: '' });
     const [hubOwnerId, setHubOwnerId] = useState<string | undefined>(undefined);
+    
+    const [showDeadlineModal, setShowDeadlineModal] = useState(false);
+    const [selectedRoundForDeadline, setSelectedRoundForDeadline] = useState<{ roundNumber: number, currentDeadline?: string | null } | null>(null);
 
     const handleJoin = async () => {
         if (!id || !user?.id) return;
@@ -404,6 +408,58 @@ export default function TournamentDetailsScreen() {
         }
     };
 
+    const handleEditDeadline = (roundOrMatchday: any) => {
+        const roundNumber = typeof roundOrMatchday === 'number' ? roundOrMatchday : roundOrMatchday.roundNumber;
+        const currentDeadline = typeof roundOrMatchday === 'object' ? roundOrMatchday.roundDeadline : null;
+        
+        setSelectedRoundForDeadline({ roundNumber, currentDeadline });
+        setShowDeadlineModal(true);
+    };
+
+    const handleSaveDeadline = async (dateStr: string | null) => {
+        if (!id || !selectedRoundForDeadline) return;
+        
+        setShowDeadlineModal(false);
+        setIsLoading(true);
+        
+        try {
+            const payload = {
+                RoundNumber: selectedRoundForDeadline.roundNumber,
+                Deadline: dateStr ? new Date(dateStr.replace(' ', 'T')).toISOString() : null
+            };
+            
+            const response = await authenticatedFetch(ENDPOINTS.SET_ROUND_DEADLINE(id), {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No response body');
+                throw new Error(`Failed to update deadline: ${text}`);
+            }
+
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Success',
+                message: dateStr ? 'Round deadline updated successfully!' : 'Round deadline removed.'
+            });
+            setShowStatusModal(true);
+            
+            fetchBracket();
+        } catch (err: any) {
+            console.error('[SetDeadline] Error:', err);
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to set deadline'
+            });
+            setShowStatusModal(true);
+        } finally {
+            setIsLoading(false);
+            setSelectedRoundForDeadline(null);
+        }
+    };
+
     useEffect(() => {
         fetchTournamentDetails();
         fetchParticipants(); // Fetch participants on mount to check join status
@@ -523,6 +579,7 @@ export default function TournamentDetailsScreen() {
                         currentUserId={user?.id}
                         currentUsername={user?.username}
                         isAdmin={tournament?.createdBy === user?.id}
+                        onEditDeadline={handleEditDeadline}
                     />
                 ) : currentStage.groups && currentStage.groups.length > 0 ? (
                     <View>
@@ -560,6 +617,7 @@ export default function TournamentDetailsScreen() {
                                 currentUserId={user?.id}
                                 currentUsername={user?.username}
                                 isAdmin={tournament?.createdBy === user?.id}
+                                onEditDeadline={handleEditDeadline}
                             />
                         )}
                     </View>
@@ -804,141 +862,116 @@ export default function TournamentDetailsScreen() {
                     )}
 
                     {activeTab === 'bracket' && (
-                        <View className="py-2 bg-[#0F172A] min-h-[400px]">
-                            {loadingBracket ? (
-                                <View className="py-20 items-center justify-center">
-                                    <ActivityIndicator size="large" color="#10B981" />
-                                    <Text className="text-zinc-500 mt-4 font-bold">Loading bracket...</Text>
-                                </View>
-                            ) : bracketError ? (
-                                <View className="py-20 items-center justify-center px-4">
-                                    <View className="w-16 h-16 rounded-full bg-red-500/10 items-center justify-center mb-4">
-                                        <Ionicons name="alert-circle-outline" size={32} color="#EF4444" />
-                                    </View>
-                                    <Text className="text-red-500 font-bold text-center mb-6">{bracketError}</Text>
-                                    <Button onPress={fetchBracket} variant="outline" size="sm">
-                                        Retry
-                                    </Button>
-                                </View>
-                            ) : (
-                                <View className="flex-1">
-                                    {renderStages()}
-                                </View>
-                            )}
+                        <View className="py-4 pb-12">
+                            {renderStages()}
                         </View>
                     )}
 
-                    {activeTab === 'players' && (
-                        <View className="px-4 py-2 gap-4 pb-8">
-                            {isLoadingParticipants ? (
-                                <View className="py-20 items-center justify-center">
-                                    <ActivityIndicator size="large" color="#10B981" />
+                    {/* Pending Registrations Admin Tab */}
+                    {activeTab === 'registrations' && (
+                        <View className="px-4 py-4 space-y-4 pb-12">
+                            <View className="flex-row justify-between items-center mb-4">
+                                <View className="flex-row items-center gap-2">
+                                    <Ionicons name="time-outline" size={20} color="#F59E0B" />
+                                    <Text className="text-lg font-bold text-white">
+                                        Pending Requests
+                                    </Text>
                                 </View>
-                            ) : participants.length === 0 ? (
-                                <View className="py-10 items-center">
-                                    <Text className="text-muted-foreground">No players registered yet</Text>
+                                {pendingRegistrations.length > 0 && (
+                                    <Button
+                                        size="sm"
+                                        onPress={handleApproveAll}
+                                        loading={isLoadingPending}
+                                        className="bg-[#10B981]"
+                                    >
+                                        Approve All
+                                    </Button>
+                                )}
+                            </View>
+
+                            {isLoadingPending ? (
+                                <ActivityIndicator size="small" color="#10B981" />
+                            ) : pendingRegistrations.length === 0 ? (
+                                <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
+                                    <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" />
+                                    <Text className="text-slate-400 mt-4 text-center">No pending registrations.</Text>
                                 </View>
                             ) : (
-                                participants.map((participant: any, index: number) => (
-                                    <Pressable
-                                        key={index}
-                                        onPress={() => {
-                                            const uId = participant.id || participant.userId || participant.UserId;
-                                            if (uId) {
-                                                navigation.navigate('PlayerProfile', { id: uId });
-                                            } else {
-                                                console.warn('[TournamentDetails] Participant missing id:', participant);
-                                            }
-                                        }}
-                                        className="flex-row items-center gap-4 p-4 rounded-xl bg-card border border-border/30"
-                                        style={({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.7 : 1 })}
-                                    >
-                                        <Text className="w-6 text-center text-sm font-bold text-muted-foreground">
-                                            {index + 1}
-                                        </Text>
-                                        <PlayerAvatar name={participant.username || participant.Username || participant.name || `Player ${index + 1}`} size="sm" className="w-10 h-10" />
-                                        <Text className="font-bold text-foreground flex-1">{participant.username || participant.Username || participant.name || `Player ${index + 1}`}</Text>
-                                        <Ionicons name="chevron-forward" size={16} color="#3F3F46" />
-                                    </Pressable>
+                                pendingRegistrations.map((reg) => (
+                                    <View key={reg.id || reg.registrationId || Math.random().toString()} className="bg-[#131B2E]/50 p-4 rounded-3xl border border-white/5 flex-row items-center gap-4">
+                                        <PlayerAvatar name={reg.username || reg.Username || 'Unknown'} size="sm" />
+                                        <View className="flex-1">
+                                            <Text className="font-bold text-white">{reg.username || reg.Username}</Text>
+                                            <Text className="text-xs text-slate-400">Wants to join</Text>
+                                        </View>
+                                        <View className="flex-row gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-red-500/20 w-10 h-10 p-0 items-center justify-center"
+                                                onPress={() => handleReject(reg.id || reg.registrationId || reg.Id)}
+                                                disabled={processingId !== null}
+                                            >
+                                                {processingId === (reg.id || reg.registrationId || reg.Id) ? (
+                                                    <ActivityIndicator size="small" color="#EF4444" />
+                                                ) : (
+                                                    <Ionicons name="close" size={20} color="#EF4444" />
+                                                )}
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                className="bg-[#10B981] w-10 h-10 p-0 items-center justify-center"
+                                                onPress={() => handleApprove(reg.id || reg.registrationId || reg.Id)}
+                                                disabled={processingId !== null}
+                                            >
+                                                {processingId === (reg.id || reg.registrationId || reg.Id) ? (
+                                                    <ActivityIndicator size="small" color="#131B2E" />
+                                                ) : (
+                                                    <Ionicons name="checkmark" size={20} color="#131B2E" />
+                                                )}
+                                            </Button>
+                                        </View>
+                                    </View>
                                 ))
                             )}
                         </View>
                     )}
 
-                    {activeTab === 'registrations' && (
-                        <View className="px-4 py-2 space-y-3 pb-8">
-                            {isLoadingPending ? (
-                                <View className="py-20 items-center justify-center">
-                                    <ActivityIndicator size="large" color="#10B981" />
-                                </View>
-                            ) : pendingRegistrations.length === 0 ? (
-                                <View className="py-10 items-center">
-                                    <Text className="text-muted-foreground">No pending registrations</Text>
+                    {activeTab === 'players' && (
+                        <View className="px-4 py-4 space-y-3 pb-12">
+                            <View className="flex-row items-center gap-2 mb-4">
+                                <Ionicons name="people-outline" size={20} color="#3B82F6" />
+                                <Text className="text-lg font-bold text-white">Participants List</Text>
+                            </View>
+                            {isLoadingParticipants ? (
+                                <ActivityIndicator size="small" color="#10B981" />
+                            ) : participants.length === 0 ? (
+                                <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
+                                    <Ionicons name="people-outline" size={48} color="#3B82F6" />
+                                    <Text className="text-slate-400 mt-4 text-center">No participants yet.</Text>
                                 </View>
                             ) : (
-                                <>
-                                    <View className="mb-2">
-                                        <Button
-                                            onPress={handleApproveAll}
-                                            loading={isLoadingPending}
-                                            className="bg-primary/20 border border-primary/30"
-                                        >
-                                            <View className="flex-row items-center gap-2">
-                                                <Ionicons name="checkmark-done" size={18} color="#10B981" />
-                                                <Text className="text-primary font-bold">Approve All ({pendingRegistrations.length})</Text>
-                                            </View>
-                                        </Button>
-                                    </View>
-
-                                    {pendingRegistrations.map((reg: any, index: number) => (
-                                        <View
-                                            key={reg.Id || reg.id || reg.userId || reg.UserId || index}
-                                            className="flex-row items-center gap-4 p-4 rounded-xl bg-card border border-border/30"
-                                        >
-                                            <Pressable
-                                                onPress={() => {
-                                                    const uId = reg.id || reg.UserId || reg.userId;
-                                                    if (uId) {
-                                                        navigation.navigate('PlayerProfile', { id: uId });
-                                                    }
-                                                }}
-                                                className="flex-row items-center gap-4 flex-1"
-                                                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-                                            >
-                                                <PlayerAvatar name={reg.username || reg.Username} size="sm" className="w-10 h-10" />
-                                                <View className="flex-1">
-                                                    <Text className="font-bold text-foreground">{reg.username || reg.Username}</Text>
-                                                    <Text className="text-xs text-muted-foreground">Pending Approval</Text>
-                                                </View>
-                                            </Pressable>
-                                            <View className="flex-row gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="px-3 border-destructive/50"
-                                                    onPress={() => {
-                                                        const rId = reg.Id || reg.id || reg.registrationId;
-                                                        handleReject(rId);
-                                                    }}
-                                                    loading={processingId === (reg.Id || reg.id || reg.registrationId)}
-                                                >
-                                                    <Text className="text-destructive text-xs font-bold">Reject</Text>
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    className="px-3 bg-primary"
-                                                    onPress={() => {
-                                                        const rId = reg.Id || reg.id || reg.registrationId;
-                                                        handleApprove(rId);
-                                                    }}
-                                                    loading={processingId === (reg.Id || reg.id || reg.registrationId)}
-                                                >
-                                                    Accept
-                                                </Button>
-                                            </View>
+                                participants.map((p, i) => (
+                                    <Pressable
+                                        key={p.participantId || p.id || p.UserId || i}
+                                        onPress={() => {
+                                            const uId = p.userId || p.UserId || p.id;
+                                            if (uId) {
+                                                navigation.navigate('PlayerProfile', { id: uId });
+                                            }
+                                        }}
+                                        className="bg-[#131B2E]/50 p-4 rounded-3xl border border-white/5 flex-row items-center gap-4"
+                                    >
+                                        <View className="w-8 items-center">
+                                            <Text className="text-slate-500 font-bold text-xs">{i + 1}</Text>
                                         </View>
-                                    ))}
-                                </>
+                                        <PlayerAvatar name={p.username || p.Username || 'Player'} size="sm" />
+                                        <View className="flex-1">
+                                            <Text className="font-bold text-white">{p.username || p.Username}</Text>
+                                        </View>
+                                        <Ionicons name="chevron-forward" size={20} color="#475569" />
+                                    </Pressable>
+                                ))
                             )}
                         </View>
                     )}
@@ -989,6 +1022,7 @@ export default function TournamentDetailsScreen() {
                     tournament={tournament}
                     onClose={() => setShowEditModal(false)}
                     onSaveSuccess={() => {
+                        setShowEditModal(false);
                         fetchTournamentDetails();
                         setStatusModalConfig({
                             type: 'success',
@@ -999,6 +1033,17 @@ export default function TournamentDetailsScreen() {
                     }}
                 />
             )}
+            
+            <DateTimePickerModal
+                visible={showDeadlineModal}
+                onClose={() => setShowDeadlineModal(false)}
+                onConfirm={(date) => handleSaveDeadline(date)}
+                onClear={() => handleSaveDeadline(null)}
+                title={`Set Deadline for Round ${selectedRoundForDeadline?.roundNumber || ''}`}
+                initialValue={selectedRoundForDeadline?.currentDeadline || undefined}
+                clearText="Remove Deadline"
+            />
         </SafeAreaView>
     );
 }
+

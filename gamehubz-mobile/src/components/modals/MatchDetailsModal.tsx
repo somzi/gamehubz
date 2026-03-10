@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Modal, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { HourlyAvailabilityPicker } from '../match/HourlyAvailabilityPicker';
 import { Button } from '../ui/Button';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
@@ -54,7 +55,7 @@ export function MatchDetailsModal({
     roundName,
     opponentName,
     status,
-    deadline = 'Jan 22, 2024',
+    deadline = 'TBD',
     scheduledTime,
     opponentAvailability = [],
     myAvailability = [],
@@ -74,6 +75,7 @@ export function MatchDetailsModal({
     const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
     const [confirmedTime, setConfirmedTime] = useState<string | undefined>(scheduledTime);
     const [currentStatus, setCurrentStatus] = useState<MatchStatus>(status);
+    const [localDeadline, setLocalDeadline] = useState<string>(deadline);
 
     // Reporting state
     const [homeScore, setHomeScore] = useState('');
@@ -160,6 +162,9 @@ export function MatchDetailsModal({
                 const data = await response.json();
                 if (data.mySlots) setMySlots(data.mySlots);
                 if (data.opponentSlots) setOpponentSlots(data.opponentSlots);
+                if (data.matchDeadline) {
+                    setLocalDeadline(data.matchDeadline);
+                }
                 if (data.confirmedTime) {
                     const confirmedDate = new Date(data.confirmedTime);
                     setConfirmedTime(confirmedDate.toLocaleString());
@@ -539,8 +544,48 @@ export function MatchDetailsModal({
                                 </View>
                             </View>
                         ) : (
-                            <View className="py-10 items-center justify-center">
-                                <Text className="text-muted-foreground italic">Scheduling Not Supported Here</Text>
+                            <View className="flex-1">
+                                {currentStatus === 'pending_availability' ? (
+                                    <View className="flex-1">
+                                        <HourlyAvailabilityPicker
+                                            matchId={matchId}
+                                            deadline={localDeadline}
+                                            opponentName={opponentName}
+                                            opponentAvailability={opponentSlots}
+                                            initialSlots={mySlots}
+                                            onSubmit={async (slots: string[], dateTimeSlots: string[]) => {
+                                                try {
+                                                    setIsSubmitting(true);
+                                                    const payload = {
+                                                        matchId: matchId,
+                                                        selectedSlots: dateTimeSlots,
+                                                    };
+                                                    const response = await authenticatedFetch(ENDPOINTS.SUBMIT_MATCH_AVAILABILITY, {
+                                                        method: 'POST',
+                                                        body: JSON.stringify(payload),
+                                                    });
+                                                    if (response.ok) {
+                                                        const result = await response.json();
+                                                        if (result.data?.confirmedTime) {
+                                                            const confirmedDate = new Date(result.data.confirmedTime);
+                                                            setConfirmedTime(confirmedDate.toLocaleString());
+                                                            setCurrentStatus('scheduled');
+                                                        }
+                                                        if (onMatchUpdate) onMatchUpdate();
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error submitting availability:', error);
+                                                } finally {
+                                                    setIsSubmitting(false);
+                                                }
+                                            }}
+                                        />
+                                    </View>
+                                ) : (
+                                    <View className="py-10 items-center justify-center">
+                                        <Text className="text-muted-foreground italic">Scheduling Not Supported Here</Text>
+                                    </View>
+                                )}
                             </View>
                         )}
                     </ScrollView>

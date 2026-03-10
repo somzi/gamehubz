@@ -35,6 +35,7 @@ interface Match {
     order: number;
     status: number;
     startTime: string | null;
+    roundDeadline?: string | null;
     nextMatchId: string | null;
     home: Participant | null;
     away: Participant | null;
@@ -53,9 +54,10 @@ interface TournamentGroupsProps {
     currentUserId?: string;
     currentUsername?: string;
     isAdmin?: boolean;
+    onEditDeadline?: (roundInfo: { roundNumber: number; roundDeadline?: string | null }) => void;
 }
 
-export function TournamentGroups({ groups, onMatchPress, currentUserId, currentUsername, isAdmin }: TournamentGroupsProps) {
+export function TournamentGroups({ groups, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline }: TournamentGroupsProps) {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
     const handlePlayerPress = (participant: any) => {
@@ -129,19 +131,51 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                     <View>
                         <Text className="text-sm font-semibold text-muted-foreground mb-4">Matches</Text>
                         <View className="flex-col gap-3">
-                            {group.matches.map((match) => (
-                                <View key={match.id} className="items-center">
-                                    <BracketMatch
-                                        home={match.home}
-                                        away={match.away}
-                                        startTime={match.startTime}
-                                        status={match.status}
-                                        className="w-full"
-                                        onPress={() => onMatchPress?.(match)}
-                                        currentUserId={currentUserId}
-                                        currentUsername={currentUsername}
-                                        isAdmin={isAdmin}
-                                    />
+                            {Object.entries(
+                                group.matches.reduce((acc, match) => {
+                                    const matchday = match.order || 1;
+                                    if (!acc[matchday]) acc[matchday] = [];
+                                    acc[matchday].push(match);
+                                    return acc;
+                                }, {} as Record<number, Match[]>)
+                            ).map(([matchday, matches]) => (
+                                <View key={matchday} className="mb-4">
+                                    <View className="flex-row items-center justify-between px-2 mb-2">
+                                        <View>
+                                            <Text className="text-xs font-bold text-muted-foreground">Matchday {matchday}</Text>
+                                            {matches[0]?.roundDeadline && (
+                                                <Text className="text-[10px] text-red-400 mt-0.5">
+                                                    End: {new Date(matches[0].roundDeadline).toLocaleDateString()} {new Date(matches[0].roundDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                                </Text>
+                                            )}
+                                        </View>
+                                        {isAdmin && (
+                                            <Pressable
+                                                onPress={() => onEditDeadline?.({ roundNumber: Number(matchday), roundDeadline: matches[0]?.roundDeadline })}
+                                                className="bg-primary/20 px-3 py-1 rounded-md border border-primary/30"
+                                            >
+                                                <Text className="text-primary text-[10px] uppercase font-bold tracking-wider">
+                                                    {matches[0]?.roundDeadline ? 'Edit Deadline' : 'Set Deadline'}
+                                                </Text>
+                                            </Pressable>
+                                        )}
+                                    </View>
+                                    <View className="flex-col gap-3 items-center">
+                                        {matches.map((match) => (
+                                            <BracketMatch
+                                                key={match.id}
+                                                home={match.home}
+                                                away={match.away}
+                                                startTime={match.startTime}
+                                                status={match.status}
+                                                className="w-full"
+                                                onPress={() => onMatchPress?.(match)}
+                                                currentUserId={currentUserId}
+                                                currentUsername={currentUsername}
+                                                isAdmin={isAdmin}
+                                            />
+                                        ))}
+                                    </View>
                                 </View>
                             ))}
                         </View>
