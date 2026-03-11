@@ -72,11 +72,8 @@ export function HubCard({
                 </View>
 
                 <View className="flex-1 min-w-0">
-                    <Text className="text-lg font-black text-white leading-tight mb-0.5" numberOfLines={1}>
+                    <Text className="text-lg font-black text-white leading-tight mb-0.5" numberOfLines={3}>
                         {name}
-                    </Text>
-                    <Text className="text-[#10B981] text-xs font-bold uppercase tracking-wider">
-                        Official Hub
                     </Text>
                 </View>
 

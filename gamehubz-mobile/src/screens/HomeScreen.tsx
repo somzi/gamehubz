@@ -35,6 +35,9 @@ export default function HomeScreen() {
     const [hubActivities, setHubActivities] = useState<DashboardActivityDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [showHighlightsModal, setShowHighlightsModal] = useState(false);
+    const [isActionRequiredCollapsed, setIsActionRequiredCollapsed] = useState(false);
+    const [isActiveMatchesCollapsed, setIsActiveMatchesCollapsed] = useState(false);
+    const [isHighlightsCollapsed, setIsHighlightsCollapsed] = useState(false);
 
     const fetchMatches = async () => {
         if (!user?.id) return;
@@ -136,13 +139,21 @@ export default function HomeScreen() {
                         <View>
                             {/* Section Header */}
                             <View className="flex-row items-center justify-between mb-3">
-                                <View className="flex-row items-center gap-2">
+                                <Pressable 
+                                    onPress={() => setIsActionRequiredCollapsed(!isActionRequiredCollapsed)}
+                                    className="flex-row items-center gap-2"
+                                >
                                     <View className="w-1 h-5 rounded-full bg-yellow-500" />
                                     <Text className="text-white font-black text-base tracking-tight">Needs Attention</Text>
                                     <View className="bg-yellow-500/20 px-2 py-0.5 rounded-full">
                                         <Text className="text-[11px] font-black text-yellow-400">{actionRequiredMatches.length}</Text>
                                     </View>
-                                </View>
+                                    <Ionicons 
+                                        name={isActionRequiredCollapsed ? "chevron-down" : "chevron-up"} 
+                                        size={14} 
+                                        color="#EAB308" 
+                                    />
+                                </Pressable>
                                 <Pressable
                                     onPress={() => navigation.navigate('MyMatches')}
                                     className="flex-row items-center gap-1"
@@ -152,31 +163,41 @@ export default function HomeScreen() {
                                 </Pressable>
                             </View>
 
-                            <View className="gap-2.5">
-                                {actionRequiredMatches.slice(0, 3).map((match, index) => (
-                                    <MatchScheduleCard
-                                        key={match.matchId || `pending-${index}`}
-                                        matchId={match.id || match.matchId || ''}
-                                        tournamentId={match.tournamentId || ''}
-                                        tournamentName={match.tournamentName}
-                                        roundName={match.hubName}
-                                        opponentName={match.opponentName}
-                                        opponentAvatarUrl={match.opponentAvatarUrl}
-                                        status="pending_availability"
-                                        onMatchUpdate={fetchMatches}
-                                    />
-                                ))}
-                            </View>
+                            {!isActionRequiredCollapsed && (
+                                <View className="gap-2.5">
+                                    {actionRequiredMatches.slice(0, 3).map((match, index) => (
+                                        <MatchScheduleCard
+                                            key={match.matchId || `pending-${index}`}
+                                            matchId={match.id || match.matchId || ''}
+                                            tournamentId={match.tournamentId || ''}
+                                            tournamentName={match.tournamentName}
+                                            roundName={match.hubName}
+                                            opponentName={match.opponentName}
+                                            opponentAvatarUrl={match.opponentAvatarUrl}
+                                            status="pending_availability"
+                                            onMatchUpdate={fetchMatches}
+                                        />
+                                    ))}
+                                </View>
+                            )}
                         </View>
                     )}
 
                     {/* ── Active Matches ── */}
                     <View>
                         <View className="flex-row items-center justify-between mb-3">
-                            <View className="flex-row items-center gap-2">
-                                <View className="w-1 h-5 rounded-full bg-primary" />
-                                <Text className="text-white font-black text-base tracking-tight">Active Matches</Text>
-                            </View>
+                        <Pressable 
+                            onPress={() => setIsActiveMatchesCollapsed(!isActiveMatchesCollapsed)}
+                            className="flex-row items-center gap-2"
+                        >
+                            <View className="w-1 h-5 rounded-full bg-primary" />
+                            <Text className="text-white font-black text-base tracking-tight">Active Matches</Text>
+                            <Ionicons 
+                                name={isActiveMatchesCollapsed ? "chevron-down" : "chevron-up"} 
+                                size={14} 
+                                color="#10B981" 
+                            />
+                        </Pressable>
                             <Pressable
                                 onPress={() => navigation.navigate('MyMatches')}
                                 className="flex-row items-center gap-1"
@@ -186,43 +207,53 @@ export default function HomeScreen() {
                             </Pressable>
                         </View>
 
-                        {myMatches.length > 0 ? (
-                            <View className="gap-2.5">
-                                {myMatches.slice(0, 3).map((match, index) => (
-                                    <MatchScheduleCard
-                                        key={match.matchId || `scheduled-${index}`}
-                                        matchId={match.id || ''}
-                                        tournamentId={match.tournamentId || ''}
-                                        tournamentName={match.tournamentName}
-                                        roundName={match.hubName}
-                                        opponentName={match.opponentName}
-                                        opponentAvatarUrl={match.opponentAvatarUrl}
-                                        status="scheduled"
-                                        scheduledTime={match.scheduledTime
-                                            ? new Date(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                                            : 'TBD'}
-                                        onMatchUpdate={fetchMatches}
-                                    />
-                                ))}
-                            </View>
-                        ) : (
-                            <View className="py-10 items-center justify-center bg-white/[0.02] rounded-3xl border border-white/5">
-                                <View className="w-14 h-14 rounded-2xl bg-primary/10 items-center justify-center mb-3">
-                                    <Ionicons name="game-controller-outline" size={28} color="#10B981" />
+                        {!isActiveMatchesCollapsed && (
+                            myMatches.length > 0 ? (
+                                <View className="gap-2.5">
+                                    {myMatches.slice(0, 3).map((match, index) => (
+                                        <MatchScheduleCard
+                                            key={match.matchId || `scheduled-${index}`}
+                                            matchId={match.id || ''}
+                                            tournamentId={match.tournamentId || ''}
+                                            tournamentName={match.tournamentName}
+                                            roundName={match.hubName}
+                                            opponentName={match.opponentName}
+                                            opponentAvatarUrl={match.opponentAvatarUrl}
+                                            status="scheduled"
+                                            scheduledTime={match.scheduledTime
+                                                ? new Date(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                                : 'TBD'}
+                                            onMatchUpdate={fetchMatches}
+                                        />
+                                    ))}
                                 </View>
-                                <Text className="text-white font-bold text-sm">No active matches</Text>
-                                <Text className="text-slate-500 text-xs mt-1">Join a tournament to get started</Text>
-                            </View>
+                            ) : (
+                                <View className="py-10 items-center justify-center bg-white/[0.02] rounded-3xl border border-white/5">
+                                    <View className="w-14 h-14 rounded-2xl bg-primary/10 items-center justify-center mb-3">
+                                        <Ionicons name="game-controller-outline" size={28} color="#10B981" />
+                                    </View>
+                                    <Text className="text-white font-bold text-sm">No active matches</Text>
+                                    <Text className="text-slate-500 text-xs mt-1">Join a tournament to get started</Text>
+                                </View>
+                            )
                         )}
                     </View>
 
                     {/* ── Community Highlights ── */}
                     <View>
                         <View className="flex-row items-center justify-between mb-3">
-                            <View className="flex-row items-center gap-2">
-                                <View className="w-1 h-5 rounded-full bg-indigo-500" />
-                                <Text className="text-white font-black text-base tracking-tight">Highlights</Text>
-                            </View>
+                        <Pressable 
+                            onPress={() => setIsHighlightsCollapsed(!isHighlightsCollapsed)}
+                            className="flex-row items-center gap-2"
+                        >
+                            <View className="w-1 h-5 rounded-full bg-indigo-500" />
+                            <Text className="text-white font-black text-base tracking-tight">Highlights</Text>
+                            <Ionicons 
+                                name={isHighlightsCollapsed ? "chevron-down" : "chevron-up"} 
+                                size={14} 
+                                color="#6366F1" 
+                            />
+                        </Pressable>
                             <Pressable
                                 onPress={() => setShowHighlightsModal(true)}
                                 className="flex-row items-center gap-1"
@@ -232,28 +263,30 @@ export default function HomeScreen() {
                             </Pressable>
                         </View>
 
-                        {hubActivities.length > 0 ? (
-                            <View className="gap-2.5">
-                                {hubActivities.slice(0, 3).map((item, index) => (
-                                    <FeedCard
-                                        key={index}
-                                        hubName={item.hubName}
-                                        hubAvatar={item.hubAvatarUrl || item.hubAvatar}
-                                        message={item.message}
-                                        tournamentName={item.tournamentName}
-                                        timestamp={item.timeAgo}
-                                        onClick={() => { }}
-                                    />
-                                ))}
-                            </View>
-                        ) : (
-                            <View className="py-10 items-center justify-center bg-white/[0.02] rounded-3xl border border-white/5">
-                                <View className="w-14 h-14 rounded-2xl bg-indigo-500/10 items-center justify-center mb-3">
-                                    <Ionicons name="planet-outline" size={28} color="#6366F1" />
+                        {!isHighlightsCollapsed && (
+                            hubActivities.length > 0 ? (
+                                <View className="gap-2.5">
+                                    {hubActivities.slice(0, 3).map((item, index) => (
+                                        <FeedCard
+                                            key={index}
+                                            hubName={item.hubName}
+                                            hubAvatar={item.hubAvatarUrl || item.hubAvatar}
+                                            message={item.message}
+                                            tournamentName={item.tournamentName}
+                                            timestamp={item.timeAgo}
+                                            onClick={() => { }}
+                                        />
+                                    ))}
                                 </View>
-                                <Text className="text-white font-bold text-sm">No highlights yet</Text>
-                                <Text className="text-slate-500 text-xs mt-1">Activity from your hubs will appear here</Text>
-                            </View>
+                            ) : (
+                                <View className="py-10 items-center justify-center bg-white/[0.02] rounded-3xl border border-white/5">
+                                    <View className="w-14 h-14 rounded-2xl bg-indigo-500/10 items-center justify-center mb-3">
+                                        <Ionicons name="planet-outline" size={28} color="#6366F1" />
+                                    </View>
+                                    <Text className="text-white font-bold text-sm">No highlights yet</Text>
+                                    <Text className="text-slate-500 text-xs mt-1">Activity from your hubs will appear here</Text>
+                                </View>
+                            )
                         )}
                     </View>
 
