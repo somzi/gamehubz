@@ -255,7 +255,6 @@ export default function TournamentsScreen() {
                         tabs={tabs}
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
-                        variant="pills"
                     />
 
                     {renderContent()}

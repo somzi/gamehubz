@@ -16,6 +16,7 @@ import { SocialType } from '../types/auth';
 import { cn } from '../lib/utils';
 import { getSocialUrl } from '../lib/social';
 import { TournamentCard } from '../components/cards/TournamentCard';
+import { Tabs } from '../components/ui/Tabs';
 
 const tabs = [
     { label: 'Stats', value: 'stats' },
@@ -295,24 +296,8 @@ export default function ProfileScreen() {
 
                 {/* Tabs Section */}
                 <View className="mt-8 flex-1 min-h-[500px]">
-                    <View className="flex-row px-6 mb-8 justify-between">
-                        {tabs.map((tab) => (
-                            <Pressable
-                                key={tab.value}
-                                onPress={() => setActiveTab(tab.value)}
-                                className={cn(
-                                    "px-2 py-2.5 rounded-full flex-1 items-center mx-0.5",
-                                    activeTab === tab.value ? "border border-[#10B981] bg-[#10B981]/10" : "bg-transparent"
-                                )}
-                            >
-                                <Text className={cn(
-                                    "font-black text-[9px] tracking-wider uppercase",
-                                    activeTab === tab.value ? "text-[#10B981]" : "text-gray-500"
-                                )}>
-                                    {tab.label}
-                                </Text>
-                            </Pressable>
-                        ))}
+                    <View className="px-6 mb-8 mt-2">
+                        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
                     </View>
 
                     <View className="px-6 pb-12 pt-4 bg-transparent flex-1">

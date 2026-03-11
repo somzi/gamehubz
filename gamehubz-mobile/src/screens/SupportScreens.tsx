@@ -72,9 +72,7 @@ export function HelpCenterScreen() {
                 {/* Dodatna sekcija za podršku */}
                 <View className="mt-8 mb-12">
                     <Text className="text-white font-bold mb-4">Still need help?</Text>
-                    <TouchableOpacity className="bg-primary p-4 rounded-xl items-center">
-                        <Text className="text-black font-bold">Contact Support</Text>
-                    </TouchableOpacity>
+                    <Text className="text-white font-bold mb-4">Reach us on Discord!</Text>
                 </View>
             </ScrollView>
         </SafeAreaView>
