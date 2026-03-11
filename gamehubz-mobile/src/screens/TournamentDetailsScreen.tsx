@@ -675,48 +675,48 @@ export default function TournamentDetailsScreen() {
                 <View className="animate-slide-up">
                     {/* Hero Section */}
                     <View className="px-4 py-8 bg-[#0F172A]">
-                        <View className="flex-row justify-between items-start mb-4">
-                            <View className="flex-1 mr-4">
-                                <Text className="text-3xl font-black text-white mb-2">{tournament.name}</Text>
-                                <View className="flex-row items-center gap-2">
-                                    <Ionicons name="people-outline" size={16} color="#71717A" />
-                                    <Text className="text-sm font-bold text-zinc-500">{tournament.numberOfParticipants || 0} Participants</Text>
-                                </View>
+                        <View className="mb-4">
+                            <View className="flex-row items-center mb-3">
+                                {(() => {
+                                    const s = Number(tournament.status);
+                                    if (s === 3) return (
+                                        <View className="bg-[#064E3B] px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#10B981]/20">
+                                            <View className="w-2 h-2 rounded-full bg-[#10B981]" />
+                                            <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-tighter">LIVE</Text>
+                                        </View>
+                                    );
+                                    if (s === 4) return (
+                                        <View className="bg-slate-800 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-slate-700/50">
+                                            <View className="w-2 h-2 rounded-full bg-slate-500" />
+                                            <Text className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Completed</Text>
+                                        </View>
+                                    );
+                                    if (s === 2) return (
+                                        <View className="bg-yellow-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-yellow-500/20">
+                                            <View className="w-2 h-2 rounded-full bg-yellow-400" />
+                                            <Text className="text-[10px] font-black text-yellow-400 uppercase tracking-tighter">Reg. Closed</Text>
+                                        </View>
+                                    );
+                                    if (s === 1) return (
+                                        <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
+                                            <View className="w-2 h-2 rounded-full bg-indigo-400" />
+                                            <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Upcoming</Text>
+                                        </View>
+                                    );
+                                    if (s === 0) return (
+                                        <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
+                                            <View className="w-2 h-2 rounded-full bg-indigo-400" />
+                                            <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Open</Text>
+                                        </View>
+                                    );
+                                    return null;
+                                })()}
                             </View>
-                            {(() => {
-                                const s = Number(tournament.status);
-                                if (s === 3) return (
-                                    <View className="bg-[#064E3B] px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#10B981]/20">
-                                        <View className="w-2 h-2 rounded-full bg-[#10B981]" />
-                                        <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-tighter">LIVE</Text>
-                                    </View>
-                                );
-                                if (s === 4) return (
-                                    <View className="bg-slate-800 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-slate-700/50">
-                                        <View className="w-2 h-2 rounded-full bg-slate-500" />
-                                        <Text className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Completed</Text>
-                                    </View>
-                                );
-                                if (s === 2) return (
-                                    <View className="bg-yellow-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-yellow-500/20">
-                                        <View className="w-2 h-2 rounded-full bg-yellow-400" />
-                                        <Text className="text-[10px] font-black text-yellow-400 uppercase tracking-tighter">Reg. Closed</Text>
-                                    </View>
-                                );
-                                if (s === 1) return (
-                                    <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
-                                        <View className="w-2 h-2 rounded-full bg-indigo-400" />
-                                        <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Upcoming</Text>
-                                    </View>
-                                );
-                                if (s === 0) return (
-                                    <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
-                                        <View className="w-2 h-2 rounded-full bg-indigo-400" />
-                                        <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Open</Text>
-                                    </View>
-                                );
-                                return null;
-                            })()}
+                            <Text className="text-3xl font-black text-white mb-2 leading-tight">{tournament.name}</Text>
+                            <View className="flex-row items-center gap-2">
+                                <Ionicons name="people-outline" size={16} color="#71717A" />
+                                <Text className="text-sm font-bold text-zinc-500">{tournament.numberOfParticipants || 0} Participants</Text>
+                            </View>
                         </View>
 
                         {(() => {
@@ -898,11 +898,11 @@ export default function TournamentDetailsScreen() {
                                 </View>
                             ) : (
                                 pendingRegistrations.map((reg) => (
-                                    <View key={reg.id || reg.registrationId || Math.random().toString()} className="bg-[#131B2E]/50 p-4 rounded-3xl border border-white/5 flex-row items-center gap-4">
-                                        <PlayerAvatar name={reg.username || reg.Username || 'Unknown'} size="sm" />
-                                        <View className="flex-1">
-                                            <Text className="font-bold text-white">{reg.username || reg.Username}</Text>
-                                            <Text className="text-xs text-slate-400">Wants to join</Text>
+                                    <View key={reg.id || reg.registrationId || Math.random().toString()} className="bg-[#131B2E]/50 p-5 mb-2 rounded-[28px] border border-white/5 flex-row items-center gap-4">
+                                        <PlayerAvatar src={reg.avatarUrl || reg.AvatarUrl} name={reg.username || reg.Username || 'Unknown'} size="md" />
+                                        <View className="flex-1 justify-center">
+                                            <Text className="font-bold text-lg text-white">{reg.username || reg.Username}</Text>
+                                            <Text className="text-sm text-slate-400 mt-0.5">Wants to join</Text>
                                         </View>
                                         <View className="flex-row gap-2">
                                             <Button
@@ -938,8 +938,8 @@ export default function TournamentDetailsScreen() {
                     )}
 
                     {activeTab === 'players' && (
-                        <View className="px-4 py-4 space-y-3 pb-12">
-                            <View className="flex-row items-center gap-2 mb-4">
+                        <View className="px-4 py-4 gap-3 pb-12">
+                            <View className="flex-row items-center gap-2 mb-2">
                                 <Ionicons name="people-outline" size={20} color="#3B82F6" />
                                 <Text className="text-lg font-bold text-white">Participants List</Text>
                             </View>
@@ -960,16 +960,16 @@ export default function TournamentDetailsScreen() {
                                                 navigation.navigate('PlayerProfile', { id: uId });
                                             }
                                         }}
-                                        className="bg-[#131B2E]/50 p-4 rounded-3xl border border-white/5 flex-row items-center gap-4"
+                                        className="bg-[#131B2E]/50 p-5 mb-1 rounded-[28px] border border-white/5 flex-row items-center gap-4"
                                     >
-                                        <View className="w-8 items-center">
-                                            <Text className="text-slate-500 font-bold text-xs">{i + 1}</Text>
+                                        <View className="w-8 items-center justify-center">
+                                            <Text className="text-slate-500 font-bold text-sm">{i + 1}</Text>
                                         </View>
-                                        <PlayerAvatar name={p.username || p.Username || 'Player'} size="sm" />
-                                        <View className="flex-1">
-                                            <Text className="font-bold text-white">{p.username || p.Username}</Text>
+                                        <PlayerAvatar src={p.avatarUrl || p.AvatarUrl} name={p.username || p.Username || 'Player'} size="md" />
+                                        <View className="flex-1 justify-center">
+                                            <Text className="font-bold text-lg text-white">{p.username || p.Username}</Text>
                                         </View>
-                                        <Ionicons name="chevron-forward" size={20} color="#475569" />
+                                        <Ionicons name="chevron-forward" size={24} color="#475569" />
                                     </Pressable>
                                 ))
                             )}

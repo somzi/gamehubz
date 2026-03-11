@@ -305,14 +305,14 @@ export default function PlayerProfileScreen() {
                                 </View>
                             </View>
                             <View className="flex-1 justify-center">
-                                <Text className="text-2xl font-black text-white">{displayData.username}</Text>
-                                <View className="flex-row items-center mt-1">
-                                    <Ionicons name="game-controller" size={14} color="#10B981" />
-                                    <Text className="text-[#10B981] font-bold text-sm ml-1">{displayData.nickName}</Text>
+                                <Text className="text-3xl font-black text-white">{displayData.username}</Text>
+                                <View className="flex-row items-center mt-1.5">
+                                    <Ionicons name="game-controller" size={16} color="#10B981" />
+                                    <Text className="text-[#10B981] font-bold text-base ml-1.5">{displayData.nickName}</Text>
                                 </View>
-                                <View className="flex-row items-center mt-1">
-                                    <Ionicons name="globe-outline" size={14} color="#94A3B8" />
-                                    <Text className="text-gray-400 font-bold text-[10px] ml-1 uppercase tracking-widest">{displayData.region}</Text>
+                                <View className="flex-row items-center mt-1.5">
+                                    <Ionicons name="globe-outline" size={16} color="#94A3B8" />
+                                    <Text className="text-gray-400 font-bold text-xs ml-1.5 uppercase tracking-widest">{displayData.region}</Text>
                                 </View>
                             </View>
                         </View>
@@ -349,12 +349,12 @@ export default function PlayerProfileScreen() {
                                 key={tab.value}
                                 onPress={() => setActiveTab(tab.value)}
                                 className={cn(
-                                    "px-4 py-3 rounded-full flex-1 items-center mx-1",
+                                    "px-2 py-2.5 rounded-full flex-1 items-center mx-0.5",
                                     activeTab === tab.value ? "border border-[#10B981] bg-[#10B981]/10" : "bg-transparent"
                                 )}
                             >
                                 <Text className={cn(
-                                    "font-black text-[10px] tracking-widest uppercase",
+                                    "font-black text-[9px] tracking-wider uppercase",
                                     activeTab === tab.value ? "text-[#10B981]" : "text-gray-500"
                                 )}>
                                     {tab.label}
