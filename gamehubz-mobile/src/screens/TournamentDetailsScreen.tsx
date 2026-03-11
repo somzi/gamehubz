@@ -335,6 +335,41 @@ export default function TournamentDetailsScreen() {
         }
     };
 
+    const handleRemoveParticipant = async (participantUserId: string) => {
+        if (!id) return;
+        setProcessingId(participantUserId);
+        try {
+            console.log(`[RemoveParticipant] Removing User ID: ${participantUserId} from Tournament ID: ${id}`);
+            const response = await authenticatedFetch(ENDPOINTS.REMOVE_PARTICIPANT(id, participantUserId), {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No response body');
+                throw new Error(`Failed to remove participant: ${text}`);
+            }
+
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Success',
+                message: 'Participant removed successfully!'
+            });
+            setShowStatusModal(true);
+            fetchParticipants(); // Refresh list
+            fetchTournamentDetails(); // Update participant count
+        } catch (err: any) {
+            console.error('[RemoveParticipant] Error:', err);
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to remove participant'
+            });
+            setShowStatusModal(true);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const handleReject = async (registrationId: string) => {
         setProcessingId(registrationId);
         try {
@@ -951,27 +986,46 @@ export default function TournamentDetailsScreen() {
                                     <Text className="text-slate-400 mt-4 text-center">No participants yet.</Text>
                                 </View>
                             ) : (
-                                participants.map((p, i) => (
-                                    <Pressable
-                                        key={p.participantId || p.id || p.UserId || i}
-                                        onPress={() => {
-                                            const uId = p.userId || p.UserId || p.id;
-                                            if (uId) {
-                                                navigation.navigate('PlayerProfile', { id: uId });
-                                            }
-                                        }}
-                                        className="bg-[#131B2E]/50 p-5 mb-1 rounded-[28px] border border-white/5 flex-row items-center gap-4"
-                                    >
-                                        <View className="w-8 items-center justify-center">
-                                            <Text className="text-slate-500 font-bold text-sm">{i + 1}</Text>
+                                participants.map((p, i) => {
+                                    const pUserId = p.userId || p.UserId || p.id;
+                                    const isCreator = tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase();
+                                    
+                                    return (
+                                        <View key={p.participantId || p.id || pUserId || i} className="flex-row items-center gap-2">
+                                            <Pressable
+                                                onPress={() => {
+                                                    if (pUserId) {
+                                                        navigation.navigate('PlayerProfile', { id: pUserId });
+                                                    }
+                                                }}
+                                                className="bg-[#131B2E]/50 p-5 mb-1 rounded-[28px] border border-white/5 flex-row items-center gap-4 flex-1"
+                                            >
+                                                <View className="w-8 items-center justify-center">
+                                                    <Text className="text-slate-500 font-bold text-sm">{i + 1}</Text>
+                                                </View>
+                                                <PlayerAvatar src={p.avatarUrl || p.AvatarUrl} name={p.username || p.Username || 'Player'} size="md" />
+                                                <View className="flex-1 justify-center">
+                                                    <Text className="font-bold text-lg text-white">{p.username || p.Username}</Text>
+                                                </View>
+                                                <Ionicons name="chevron-forward" size={24} color="#475569" />
+                                            </Pressable>
+                                            
+                                            {isCreator && (
+                                                <Pressable
+                                                    onPress={() => handleRemoveParticipant(pUserId)}
+                                                    disabled={processingId !== null}
+                                                    className="w-12 h-12 rounded-2xl bg-red-500/10 items-center justify-center border border-red-500/20"
+                                                >
+                                                    {processingId === pUserId ? (
+                                                        <ActivityIndicator size="small" color="#EF4444" />
+                                                    ) : (
+                                                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                                                    )}
+                                                </Pressable>
+                                            )}
                                         </View>
-                                        <PlayerAvatar src={p.avatarUrl || p.AvatarUrl} name={p.username || p.Username || 'Player'} size="md" />
-                                        <View className="flex-1 justify-center">
-                                            <Text className="font-bold text-lg text-white">{p.username || p.Username}</Text>
-                                        </View>
-                                        <Ionicons name="chevron-forward" size={24} color="#475569" />
-                                    </Pressable>
-                                ))
+                                    );
+                                })
                             )}
                         </View>
                     )}

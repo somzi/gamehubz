@@ -39,6 +39,7 @@ export const ENDPOINTS = {
     APPROVE_ALL_REGISTRATIONS: `${API_BASE_URL}/api/tournamentRegistration/approveAll`,
     REJECT_REGISTRATION: `${API_BASE_URL}/api/tournamentRegistration/reject`,
     GET_TOURNAMENT_PARTICIPANTS: (tournamentId: string) => `${API_BASE_URL}/api/TournamentParticipant/tournament/${tournamentId}`,
+    REMOVE_PARTICIPANT: (tournamentId: string, userId: string) => `${API_BASE_URL}/api/TournamentParticipant/tournament/${tournamentId}/user/${userId}`,
     CREATE_BRACKET: `${API_BASE_URL}/api/tournament/createBracket`,
     CLOSE_REGISTRATION: (id: string) => `${API_BASE_URL}/api/tournament/${id}/closeRegistration`,
     REPORT_MATCH_RESULT: `${API_BASE_URL}/api/tournament/matchResult`,
