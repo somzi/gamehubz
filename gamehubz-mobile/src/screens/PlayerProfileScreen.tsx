@@ -254,6 +254,7 @@ export default function PlayerProfileScreen() {
 
     const displayData = {
         username: userInfo.username || 'Unknown',
+        nickname: userInfo.nickName || '',
         region: getRegionName(userInfo.region),
         totalMatches: playerMatches?.stats?.totalMatches || 0,
         winPercentage: playerMatches?.stats?.winRate || 0,
@@ -261,7 +262,8 @@ export default function PlayerProfileScreen() {
         losses: playerMatches?.stats?.losses || 0,
         draws: 20, // Mocked to match design
         trophies: 48, // Mocked to match design
-        socials: userInfo.userSocials || []
+        socials: userInfo.userSocials || [],
+        avatarUrl: userInfo.avatarUrl
     };
 
     const performanceList = playerMatches?.performance || [];
@@ -294,46 +296,69 @@ export default function PlayerProfileScreen() {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
             >
-                {/* Profile Header Section */}
-                <View className="items-center mt-4">
-                    <View className="relative">
-                        <View className="p-1 rounded-full border-2 border-primary">
-                            <PlayerAvatar name={displayData.username} size="xl" className="border-0" />
+                {/* Profile Header Card */}
+                <View className="mx-5 mt-4 p-5 bg-card-elevated rounded-3xl border border-white/5">
+                    <View className="flex-row items-center">
+                        <View className="p-[3px] rounded-full border-2 border-primary mr-4 bg-background/50">
+                            <PlayerAvatar src={displayData.avatarUrl} name={displayData.username} size="lg" className="border-0" />
+                        </View>
+                        <View className="flex-1 justify-center items-start">
+                            <Text className="text-2xl font-black text-white tracking-tight leading-none mb-1 text-left">{displayData.username}</Text>
+                            {displayData.nickname ? (
+                                <View className="flex-row items-center mt-1">
+                                    <Ionicons name="game-controller" size={14} color="#10B981" />
+                                    <Text className="text-primary font-bold text-[13px] ml-1">{displayData.nickname}</Text>
+                                </View>
+                            ) : null}
+                            <View className="flex-row items-center mt-1.5">
+                                <Ionicons name="globe-outline" size={12} color="#94A3B8" />
+                                <Text className="text-slate-400 text-[10px] uppercase font-black tracking-widest ml-1">{displayData.region}</Text>
+                            </View>
                         </View>
                     </View>
-                    <Text className="text-2xl font-bold mt-4 text-white">{displayData.username}</Text>
-                    <View className="flex-row items-center mt-1">
-                        <Ionicons name="globe-outline" size={14} color="#94A3B8" />
-                        <Text className="text-gray-400 text-sm ml-1">{displayData.region}</Text>
-                    </View>
+                    {displayData.socials.length > 0 && (
+                        <View className="mt-5 border-t border-white/5 pt-4">
+                            <SocialLinks links={mapSocialsToLinks(displayData.socials)} className="justify-center gap-3" />
+                        </View>
+                    )}
+                </View>
 
-                    {/* Socials in Header */}
-                    <View className="mt-4">
-                        <SocialLinks links={mapSocialsToLinks(displayData.socials)} className="justify-center" />
+                {/* Quick Stats Row */}
+                <View className="flex-row justify-between px-5 mt-5 gap-3">
+                    <View className="flex-1 bg-card-elevated rounded-[20px] py-4 items-center border border-white/5 justify-center shadow-sm">
+                        <Ionicons name="game-controller" size={18} color="#818CF8" />
+                        <Text className="text-white text-lg font-black mt-2 leading-none">{displayData.totalMatches}</Text>
+                        <Text className="text-slate-500 text-[9px] uppercase font-black tracking-widest mt-1">Matches</Text>
                     </View>
-
+                    <View className="flex-1 bg-card-elevated rounded-[20px] py-4 items-center border border-white/5 justify-center shadow-sm">
+                        <Ionicons name="star" size={18} color="#EAB308" />
+                        <Text className="text-white text-lg font-black mt-2 leading-none">{displayData.wins}</Text>
+                        <Text className="text-slate-500 text-[9px] uppercase font-black tracking-widest mt-1">Wins</Text>
+                    </View>
+                    <View className="flex-1 bg-card-elevated rounded-[20px] py-4 items-center border border-white/5 justify-center shadow-sm">
+                        <Ionicons name="trophy" size={18} color="#10B981" />
+                        <Text className="text-white text-lg font-black mt-2 leading-none">{displayData.trophies || 0}</Text>
+                        <Text className="text-slate-500 text-[9px] uppercase font-black tracking-widest mt-1">Trophies</Text>
+                    </View>
                 </View>
 
                 {/* Tabs Section */}
-                <View className="mt-8 bg-card rounded-t-[40px] flex-1 min-h-[500px] border-t border-white/5">
-                    <View className="flex-row px-4 py-4 justify-around">
+                <View className="mt-8 bg-card rounded-t-[40px] flex-1 min-h-[500px] border-t border-white/5 pt-6">
+                    <View className="flex-row px-8 pb-4 justify-between border-b border-white/[0.03] mb-6">
                         {tabs.map((tab) => (
                             <Pressable
                                 key={tab.value}
                                 onPress={() => setActiveTab(tab.value)}
                                 className={cn(
-                                    "flex-row items-center px-4 py-2 rounded-xl",
-                                    activeTab === tab.value ? "bg-card-elevated border border-white/10" : "border border-transparent"
+                                    "items-center px-4 py-2.5 rounded-full border",
+                                    activeTab === tab.value 
+                                        ? "bg-primary/20 border-primary/50 shadow-sm shadow-primary/20" 
+                                        : "bg-transparent border-transparent"
                                 )}
                             >
-                                <Ionicons
-                                    name={tab.value === 'stats' ? 'stats-chart' : tab.value === 'tournaments' ? 'trophy' : 'time'}
-                                    size={16}
-                                    color={activeTab === tab.value ? "#10B981" : "#64748B"}
-                                />
                                 <Text className={cn(
-                                    "ml-2 font-semibold text-sm",
-                                    activeTab === tab.value ? "text-white" : "text-gray-500"
+                                    "font-black text-[10px] tracking-widest uppercase",
+                                    activeTab === tab.value ? "text-primary" : "text-slate-500"
                                 )}>
                                     {tab.label}
                                 </Text>
@@ -344,105 +369,65 @@ export default function PlayerProfileScreen() {
                     <View className="px-6 pb-12">
                         {activeTab === 'stats' && (
                             <View>
-                                <Text className="text-lg font-bold text-white mb-2">Performance Trend</Text>
-                                <Text className="text-gray-500 text-xs mb-4">Last {Math.min(performanceList.length, 10)} Games Overview</Text>
-                                <View className="bg-card-elevated rounded-3xl p-6 border border-white/5">
+                                {/* Performance Form (Trend) */}
+                                <Text className="text-[10px] font-black tracking-widest uppercase text-white mb-4 mt-2">Performance Form</Text>
+                                <View className="flex-row items-center gap-1.5 mb-8">
                                     {performanceList.length > 0 ? (
-                                        <>
-                                            <View className="flex-row items-center justify-between mb-4 px-2">
-                                                {performanceList.slice(0, 10).reverse().map((match, i) => (
-                                                    <View key={i} className="items-center">
-                                                        <View
-                                                            className={cn(
-                                                                "w-8 h-8 rounded-full items-center justify-center",
-                                                                match.isWin ? "bg-accent/20" : "bg-destructive/20"
-                                                            )}
-                                                        >
-                                                            <Text className={cn(
-                                                                "font-bold text-sm",
-                                                                match.isWin ? "text-accent" : "text-destructive"
-                                                            )}>
-                                                                {match.isWin ? 'W' : 'L'}
-                                                            </Text>
-                                                        </View>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                            <View className="flex-row justify-between border-t border-white/5 pt-4 px-2">
-                                                {performanceList.slice(0, 10).map((_, i) => (
-                                                    <View key={i} className="w-8 items-center">
-                                                        <Text className="text-[10px] text-gray-500 font-bold">{i + 1}</Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        </>
+                                        performanceList.slice(0, 10).reverse().map((match, i) => (
+                                            <View
+                                                key={i}
+                                                className={cn(
+                                                    "h-1.5 flex-1 rounded-full",
+                                                    match.isWin ? "bg-primary shadow-sm shadow-primary/30" : "bg-red-500 shadow-sm shadow-red-500/30"
+                                                )}
+                                            />
+                                        ))
                                     ) : (
-                                        <Text className="text-gray-500 text-center py-8">No performance data available</Text>
+                                        <View className="h-1.5 flex-1 rounded-full bg-white/5" />
                                     )}
                                 </View>
 
-                                <Text className="text-lg font-bold text-white mt-6 mb-4">Statistics</Text>
-
-                                {/* New Modern Stats Grid */}
-                                <View className="flex-row flex-wrap justify-between gap-y-4">
-                                    {/* Win Rate Card - Featured */}
-                                    <View className="w-full bg-card-elevated rounded-3xl p-6 flex-row items-center border border-white/5">
-                                        <View className="mr-8 relative">
-                                            <CircularProgress
-                                                percentage={Math.round(displayData.winPercentage)}
-                                                size={100}
-                                                strokeWidth={12}
-                                                color="#10B981"
-                                                showText={false}
-                                            />
-                                            <View className="absolute inset-0 items-center justify-center">
-                                                <Text className="text-white text-xl font-black">{Math.round(displayData.winPercentage)}%</Text>
-                                                <Text className="text-gray-500 text-[10px] uppercase font-bold">Win Rate</Text>
-                                            </View>
+                                {/* Win consistency & Circle */}
+                                <View className="bg-card-elevated rounded-[28px] p-6 border border-white/5 flex-row items-center justify-between">
+                                    {/* Left Side: W/D/L */}
+                                    <View className="flex-1 pr-6 gap-5">
+                                        <View className="flex-row items-center">
+                                            <View className="w-1.5 h-6 rounded-full bg-emerald-500 mr-3 shadow-sm shadow-emerald-500/50" />
+                                            <Text className="text-white text-[11px] uppercase font-black tracking-widest flex-1">Wins</Text>
+                                            <Text className="text-emerald-500 text-xl font-black">{displayData.wins}</Text>
                                         </View>
-                                        <View className="flex-1">
-                                            <Text className="text-white text-lg font-bold mb-1">Performance</Text>
-                                            <Text className="text-gray-400 text-xs leading-4">Overall winning consistency across all tournaments.</Text>
-                                            <View className="flex-row items-center mt-3">
-                                                <View className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
-                                            </View>
+                                        <View className="flex-row items-center">
+                                            <View className="w-1.5 h-6 rounded-full bg-amber-400 mr-3 shadow-sm shadow-amber-400/50" />
+                                            <Text className="text-white text-[11px] uppercase font-black tracking-widest flex-1">Draws</Text>
+                                            <Text className="text-amber-400 text-xl font-black">{displayData.draws}</Text>
+                                        </View>
+                                        <View className="flex-row items-center">
+                                            <View className="w-1.5 h-6 rounded-full bg-rose-500 mr-3 shadow-sm shadow-rose-500/50" />
+                                            <Text className="text-white text-[11px] uppercase font-black tracking-widest flex-1">Losses</Text>
+                                            <Text className="text-rose-500 text-xl font-black">{displayData.losses}</Text>
                                         </View>
                                     </View>
-
-                                    {/* Stats Grid 2x1 for main stats */}
-                                    <View className="w-[48%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
-                                        <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center mb-2">
-                                            <Ionicons name="game-controller" size={20} color="#10B981" />
+                                    
+                                    {/* Right Side: Circle with Win Rate */}
+                                    <View className="relative items-center justify-center">
+                                        <CircularProgress
+                                            data={[
+                                                { value: displayData.wins, color: '#10B981' },
+                                                { value: displayData.draws, color: '#FBBF24' },
+                                                { value: displayData.losses, color: '#F43F5E' }
+                                            ]}
+                                            percentage={Math.round(displayData.winPercentage)}
+                                            size={120}
+                                            strokeWidth={14}
+                                            backgroundColor="rgba(255, 255, 255, 0.05)"
+                                            showText={false}
+                                        />
+                                        <View className="absolute inset-0 items-center justify-center">
+                                            <Text className="text-emerald-500/80 text-[9px] uppercase font-black tracking-widest mb-0.5">Win Rate</Text>
+                                            <Text className="text-white text-3xl font-black tracking-tighter">{Math.round(displayData.winPercentage)}%</Text>
                                         </View>
-                                        <Text className="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Total Matches</Text>
-                                        <Text className="text-white text-xl font-black">{displayData.totalMatches}</Text>
-                                    </View>
-
-                                    <View className="w-[48%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
-                                        <View className="w-10 h-10 rounded-full bg-yellow-500/10 items-center justify-center mb-2">
-                                            <Ionicons name="trophy" size={20} color="#EAB308" />
-                                        </View>
-                                        <Text className="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Tournaments</Text>
-                                        <Text className="text-yellow-500 text-xl font-black">{displayData.trophies || 0}</Text>
-                                    </View>
-
-                                    {/* Detailed Stats Row */}
-                                    <View className="w-[31%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
-                                        <Text className="text-emerald-500 text-lg font-black">{displayData.wins}</Text>
-                                        <Text className="text-gray-500 text-[9px] uppercase font-bold mt-1">Wins</Text>
-                                    </View>
-
-                                    <View className="w-[31%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
-                                        <Text className="text-blue-400 text-lg font-black">{displayData.draws}</Text>
-                                        <Text className="text-gray-500 text-[9px] uppercase font-bold mt-1">Draws</Text>
-                                    </View>
-
-                                    <View className="w-[31%] bg-card-elevated rounded-2xl p-4 border border-white/5 items-center">
-                                        <Text className="text-rose-500 text-lg font-black">{displayData.losses}</Text>
-                                        <Text className="text-gray-500 text-[9px] uppercase font-bold mt-1">Losses</Text>
                                     </View>
                                 </View>
-
                             </View>
                         )}
 
