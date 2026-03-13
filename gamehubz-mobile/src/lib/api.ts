@@ -1,19 +1,17 @@
-import { Platform } from 'react-native';
+// Environment configuration
+const IS_PROD = !__DEV__;
+const PROD_URL = 'https://gamehubz.duckdns.org';
 
-// For Android emulators, localhost is 10.0.2.2
-// For iOS simulators and Web, localhost is localhost
-// For physical devices, you MUST use your computer's local IP address (e.g., 192.168.1.5)
-const getApiHost = () => {
-    if (Platform.OS === 'android') {
-        return '192.168.0.3';
-    }
-    // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
-    return '192.168.0.3';
-};
+// For local development on physical devices, use your computer's local IP
+const LOCAL_IP = '192.168.0.3';
+const LOCAL_PORT = '5057';
+const LOCAL_URL = `http://${LOCAL_IP}:${LOCAL_PORT}`;
 
-export const API_HOST = getApiHost();
-export const API_PORT = '5057';
-export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
+// export const API_BASE_URL = IS_PROD ? PROD_URL : LOCAL_URL;
+export const API_BASE_URL = PROD_URL; // Forsiraš Hetzner čak i u dev modu
+
+console.log(`[API] Environment: ${IS_PROD ? 'Production' : 'Development'}`);
+console.log(`[API] Base URL: ${API_BASE_URL}`);
 
 export const ENDPOINTS = {
     SET_PASSWORD: `${API_BASE_URL}/api/Auth/setPassword`,
