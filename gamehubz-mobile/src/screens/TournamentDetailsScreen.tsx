@@ -57,6 +57,11 @@ export default function TournamentDetailsScreen() {
     const [showDeadlineModal, setShowDeadlineModal] = useState(false);
     const [selectedRoundForDeadline, setSelectedRoundForDeadline] = useState<{ roundNumber: number, currentDeadline?: string | null } | null>(null);
 
+    // Collapsible section states
+    const [isGeneralInfoOpen, setIsGeneralInfoOpen] = useState(true);
+    const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+    const [isRulesOpen, setIsRulesOpen] = useState(false);
+
     const handleJoin = async () => {
         if (!id || !user?.id) return;
 
@@ -711,37 +716,38 @@ export default function TournamentDetailsScreen() {
             <ScrollView className="flex-1 bg-[#0F172A]">
                 <View className="animate-slide-up">
                     {/* Hero Section */}
-                    <View className="px-4 py-8 bg-[#0F172A]">
+                    <View className="px-4 py-6 bg-[#0F172A]">
                         <View className="mb-4">
-                            <View className="flex-row items-center mb-3">
+                            <View className="flex-row items-start justify-between mb-2">
+                                <Text className="text-3xl font-black text-white leading-tight flex-1 mr-3">{tournament.name}</Text>
                                 {(() => {
                                     const s = Number(tournament.status);
                                     if (s === 3) return (
-                                        <View className="bg-[#064E3B] px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#10B981]/20">
+                                        <View className="bg-[#064E3B] px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#10B981]/20 mt-1">
                                             <View className="w-2 h-2 rounded-full bg-[#10B981]" />
                                             <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-tighter">LIVE</Text>
                                         </View>
                                     );
                                     if (s === 4) return (
-                                        <View className="bg-slate-800 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-slate-700/50">
+                                        <View className="bg-slate-800 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-slate-700/50 mt-1">
                                             <View className="w-2 h-2 rounded-full bg-slate-500" />
                                             <Text className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Completed</Text>
                                         </View>
                                     );
                                     if (s === 2) return (
-                                        <View className="bg-yellow-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-yellow-500/20">
+                                        <View className="bg-yellow-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-yellow-500/20 mt-1">
                                             <View className="w-2 h-2 rounded-full bg-yellow-400" />
                                             <Text className="text-[10px] font-black text-yellow-400 uppercase tracking-tighter">Reg. Closed</Text>
                                         </View>
                                     );
                                     if (s === 1) return (
-                                        <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
+                                        <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20 mt-1">
                                             <View className="w-2 h-2 rounded-full bg-indigo-400" />
                                             <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Upcoming</Text>
                                         </View>
                                     );
                                     if (s === 0) return (
-                                        <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20">
+                                        <View className="bg-indigo-500/10 px-3 py-1.5 rounded-full flex-row items-center gap-1.5 border border-indigo-500/20 mt-1">
                                             <View className="w-2 h-2 rounded-full bg-indigo-400" />
                                             <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">Open</Text>
                                         </View>
@@ -749,7 +755,6 @@ export default function TournamentDetailsScreen() {
                                     return null;
                                 })()}
                             </View>
-                            <Text className="text-3xl font-black text-white mb-2 leading-tight">{tournament.name}</Text>
                             <View className="flex-row items-center gap-2">
                                 <Ionicons name="people-outline" size={16} color="#71717A" />
                                 <Text className="text-sm font-bold text-zinc-500">{tournament.numberOfParticipants || 0} Participants</Text>
@@ -791,99 +796,152 @@ export default function TournamentDetailsScreen() {
                     </View>
 
                     {activeTab === 'overview' && (
-                        <View className="px-4 py-4 space-y-4 pb-12">
-                            {/* Stats Grid */}
-                            <View className="flex-row flex-wrap gap-3">
-                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
-                                    <View className="w-10 h-10 rounded-2xl bg-[#F59E0B]/10 items-center justify-center mb-4">
-                                        <Ionicons name="trophy-outline" size={20} color="#F59E0B" />
-                                    </View>
-                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Prize Pool</Text>
-                                    <Text className="text-xl font-black text-white">
-                                        {tournament.prize} {tournament.prizeCurrency === 1 ? 'EUR' : 'USD'}
-                                    </Text>
-                                </View>
-
-                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
-                                    <View className="w-10 h-10 rounded-2xl bg-[#4F46E5]/10 items-center justify-center mb-4">
-                                        <Ionicons name="people-outline" size={20} color="#4F46E5" />
-                                    </View>
-                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Max Players</Text>
-                                    <Text className="text-xl font-black text-white">
-                                        {tournament.maxPlayers || 'No Limit'}
-                                    </Text>
-                                </View>
-
-                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
-                                    <View className="w-10 h-10 rounded-2xl bg-[#3B82F6]/10 items-center justify-center mb-4">
-                                        <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
-                                    </View>
-                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Date</Text>
-                                    <Text className="text-xl font-black text-white">
-                                        {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}
-                                    </Text>
-                                </View>
-
-                                <View className="flex-1 min-w-[45%] bg-[#131B2E] p-5 rounded-3xl border border-white/5">
-                                    <View className="w-10 h-10 rounded-2xl bg-[#10B981]/10 items-center justify-center mb-4">
-                                        <Ionicons name="globe-outline" size={20} color="#10B981" />
-                                    </View>
-                                    <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Region</Text>
-                                    <Text className="text-xl font-black text-white uppercase">
-                                        {tournament.region === TournamentRegion.Europe ? 'EU'
-                                            : tournament.region === TournamentRegion.NorthAmerica ? 'NA'
-                                                : tournament.region === TournamentRegion.Asia ? 'Asia'
-                                                    : tournament.region === TournamentRegion.SouthAmerica ? 'SA'
-                                                        : tournament.region === TournamentRegion.Africa ? 'AFR'
-                                                            : tournament.region === TournamentRegion.Oceania ? 'OCE'
-                                                                : 'Global'}
-                                    </Text>
-                                </View>
-                            </View>
-
+                        <View className="px-4 py-4 pb-12">
                             {/* Registration Deadline Alert */}
-                            {tournament.registrationDeadline && (
-                                <Pressable className="w-full bg-[#181010]/80 p-5 rounded-3xl border border-red-500/10 flex-row items-center gap-4 mt-2">
-                                    <View className="w-12 h-12 rounded-2xl bg-red-500/10 items-center justify-center">
-                                        <Ionicons name="time-outline" size={24} color="#EF4444" />
+                            {tournament.registrationDeadline && [0, 1, 2].includes(Number(tournament.status)) && (
+                                <View className="w-full bg-[#181010]/80 p-4 rounded-2xl border border-red-500/10 flex-row items-center gap-3 mb-4">
+                                    <View className="w-10 h-10 rounded-xl bg-red-500/10 items-center justify-center">
+                                        <Ionicons name="time-outline" size={20} color="#EF4444" />
                                     </View>
-                                    <View className="flex-1 gap-1">
-                                        <Text className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Reg. Deadline</Text>
-                                        <Text className="text-lg font-black text-white">
+                                    <View className="flex-1 gap-0.5">
+                                        <Text className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Registration Deadline</Text>
+                                        <Text className="text-base font-black text-white">
                                             {(() => {
                                                 const d = new Date(tournament.registrationDeadline);
                                                 return `${d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`;
                                             })()}
                                         </Text>
                                     </View>
-                                    <Ionicons name="chevron-forward" size={20} color="#1E293B" />
-                                </Pressable>
+                                </View>
                             )}
 
-                            {/* Description Section */}
-                            <View className="space-y-4 mt-6">
-                                <View className="flex-row items-center gap-2 px-1">
-                                    <Ionicons name="flash-outline" size={16} color="#F59E0B" />
-                                    <Text className="text-[10px] font-black text-white uppercase tracking-widest">Description</Text>
-                                </View>
-                                <View className="bg-[#131B2E]/50 p-6 rounded-3xl border border-white/5">
-                                    <Text className="text-slate-400 leading-6 text-sm">
-                                        {tournament.description || 'Join this competitive tournament and prove your skills to climb the leaderboard.'}
-                                    </Text>
-                                </View>
+                            {/* General Info - Collapsible */}
+                            <View className="bg-[#131B2E] rounded-2xl border border-white/5 mb-3 overflow-hidden">
+                                <Pressable
+                                    onPress={() => setIsGeneralInfoOpen(!isGeneralInfoOpen)}
+                                    className="flex-row items-center justify-between p-4"
+                                >
+                                    <View className="flex-row items-center gap-2.5">
+                                        <View className="w-8 h-8 rounded-xl bg-[#F59E0B]/10 items-center justify-center">
+                                            <Ionicons name="information-circle-outline" size={18} color="#F59E0B" />
+                                        </View>
+                                        <Text className="text-[11px] font-black text-white uppercase tracking-widest">General Info</Text>
+                                    </View>
+                                    <Ionicons name={isGeneralInfoOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#475569" />
+                                </Pressable>
+                                {isGeneralInfoOpen && (
+                                    <View className="px-4 pb-4">
+                                        <View className="border-t border-white/5 pt-4">
+                                            {/* Prize Pool */}
+                                            <View className="flex-row items-center justify-between py-3">
+                                                <View className="flex-row items-center gap-3">
+                                                    <View className="w-8 h-8 rounded-xl bg-[#F59E0B]/10 items-center justify-center">
+                                                        <Ionicons name="trophy-outline" size={16} color="#F59E0B" />
+                                                    </View>
+                                                    <Text className="text-sm text-slate-400 font-bold">Prize Pool</Text>
+                                                </View>
+                                                <Text className="text-base font-black text-white">
+                                                    {tournament.prize} {tournament.prizeCurrency === 1 ? 'EUR' : 'USD'}
+                                                </Text>
+                                            </View>
+                                            <View className="h-[1px] bg-white/5" />
+                                            {/* Max Players */}
+                                            <View className="flex-row items-center justify-between py-3">
+                                                <View className="flex-row items-center gap-3">
+                                                    <View className="w-8 h-8 rounded-xl bg-[#4F46E5]/10 items-center justify-center">
+                                                        <Ionicons name="people-outline" size={16} color="#4F46E5" />
+                                                    </View>
+                                                    <Text className="text-sm text-slate-400 font-bold">Max Players</Text>
+                                                </View>
+                                                <Text className="text-base font-black text-white">
+                                                    {tournament.maxPlayers || 'No Limit'}
+                                                </Text>
+                                            </View>
+                                            <View className="h-[1px] bg-white/5" />
+                                            {/* Date */}
+                                            <View className="flex-row items-center justify-between py-3">
+                                                <View className="flex-row items-center gap-3">
+                                                    <View className="w-8 h-8 rounded-xl bg-[#3B82F6]/10 items-center justify-center">
+                                                        <Ionicons name="calendar-outline" size={16} color="#3B82F6" />
+                                                    </View>
+                                                    <Text className="text-sm text-slate-400 font-bold">Date</Text>
+                                                </View>
+                                                <Text className="text-base font-black text-white">
+                                                    {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}
+                                                </Text>
+                                            </View>
+                                            <View className="h-[1px] bg-white/5" />
+                                            {/* Region */}
+                                            <View className="flex-row items-center justify-between py-3">
+                                                <View className="flex-row items-center gap-3">
+                                                    <View className="w-8 h-8 rounded-xl bg-[#10B981]/10 items-center justify-center">
+                                                        <Ionicons name="globe-outline" size={16} color="#10B981" />
+                                                    </View>
+                                                    <Text className="text-sm text-slate-400 font-bold">Region</Text>
+                                                </View>
+                                                <Text className="text-base font-black text-white uppercase">
+                                                    {tournament.region === TournamentRegion.Europe ? 'EU'
+                                                        : tournament.region === TournamentRegion.NorthAmerica ? 'NA'
+                                                            : tournament.region === TournamentRegion.Asia ? 'Asia'
+                                                                : tournament.region === TournamentRegion.SouthAmerica ? 'SA'
+                                                                    : tournament.region === TournamentRegion.Africa ? 'AFR'
+                                                                        : tournament.region === TournamentRegion.Oceania ? 'OCE'
+                                                                            : 'Global'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                )}
                             </View>
 
-                            {/* Rules Section */}
-                            <View className="space-y-4 mt-4">
-                                <View className="flex-row items-center gap-2 px-1">
-                                    <Ionicons name="shield-outline" size={16} color="#4F46E5" />
-                                    <Text className="text-[10px] font-black text-white uppercase tracking-widest">Rules & Regulations</Text>
-                                </View>
-                                <View className="bg-[#131B2E]/50 p-6 rounded-3xl border border-white/5">
-                                    <Text className="text-slate-400 leading-6 text-sm">
-                                        {tournament.rules || '• Fair play is mandatory\n• No toxic behavior\n• Tournament organizers\' decisions are final.'}
-                                    </Text>
-                                </View>
+                            {/* Description - Collapsible */}
+                            <View className="bg-[#131B2E] rounded-2xl border border-white/5 mb-3 overflow-hidden">
+                                <Pressable
+                                    onPress={() => setIsDescriptionOpen(!isDescriptionOpen)}
+                                    className="flex-row items-center justify-between p-4"
+                                >
+                                    <View className="flex-row items-center gap-2.5">
+                                        <View className="w-8 h-8 rounded-xl bg-[#F59E0B]/10 items-center justify-center">
+                                            <Ionicons name="flash-outline" size={18} color="#F59E0B" />
+                                        </View>
+                                        <Text className="text-[11px] font-black text-white uppercase tracking-widest">Description</Text>
+                                    </View>
+                                    <Ionicons name={isDescriptionOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#475569" />
+                                </Pressable>
+                                {isDescriptionOpen && (
+                                    <View className="px-4 pb-4">
+                                        <View className="border-t border-white/5 pt-4">
+                                            <Text className="text-slate-400 leading-6 text-sm">
+                                                {tournament.description || 'Join this competitive tournament and prove your skills to climb the leaderboard.'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Rules & Regulations - Collapsible */}
+                            <View className="bg-[#131B2E] rounded-2xl border border-white/5 mb-3 overflow-hidden">
+                                <Pressable
+                                    onPress={() => setIsRulesOpen(!isRulesOpen)}
+                                    className="flex-row items-center justify-between p-4"
+                                >
+                                    <View className="flex-row items-center gap-2.5">
+                                        <View className="w-8 h-8 rounded-xl bg-[#4F46E5]/10 items-center justify-center">
+                                            <Ionicons name="shield-outline" size={18} color="#4F46E5" />
+                                        </View>
+                                        <Text className="text-[11px] font-black text-white uppercase tracking-widest">Rules & Regulations</Text>
+                                    </View>
+                                    <Ionicons name={isRulesOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#475569" />
+                                </Pressable>
+                                {isRulesOpen && (
+                                    <View className="px-4 pb-4">
+                                        <View className="border-t border-white/5 pt-4">
+                                            <Text className="text-slate-400 leading-6 text-sm">
+                                                {tournament.rules || '• Fair play is mandatory\n• No toxic behavior\n• Tournament organizers\' decisions are final.'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
                             </View>
                         </View>
                     )}
