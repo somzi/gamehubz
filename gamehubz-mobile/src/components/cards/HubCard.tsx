@@ -32,8 +32,8 @@ export function HubCard({
     const getIconStyles = (idx: number) => {
         const types = [
             { bg: "bg-indigo-500/10", border: "border-indigo-500/20", icon: "#818CF8" },
-            { bg: "bg-emerald-500/10", border: "border-emerald-500/20", icon: "#34D399" },
-            { bg: "bg-amber-500/10", border: "border-amber-500/20", icon: "#FBBF24" },
+            { bg: "bg-emerald-500/10", border: "border-emerald-500/20", icon: "#10B981" },
+            { bg: "bg-blue-500/10", border: "border-blue-500/20", icon: "#60A5FA" },
         ];
         return types[idx % types.length];
     };
@@ -60,7 +60,7 @@ export function HubCard({
                             name={name}
                             src={avatarUrl}
                             size="lg"
-                            className="w-full h-full rounded-none border-0"
+                            className="w-full h-full rounded-[20px] border-0"
                         />
                     ) : (
                         <Ionicons
@@ -71,14 +71,16 @@ export function HubCard({
                     )}
                 </View>
 
-                <View className="flex-1 min-w-0">
-                    <Text className="text-lg font-black text-white leading-tight mb-0.5" numberOfLines={3}>
+                <View className="flex-1 min-w-0 pr-2">
+                    <Text className="text-white font-black text-lg tracking-tight leading-tight mb-1" numberOfLines={2}>
                         {name}
                     </Text>
+
                 </View>
 
                 {isJoined && (
-                    <View className="px-4 py-2 rounded-full border bg-[#10B981]/10 border-[#10B981]/30">
+                    <View className="px-3 py-1.5 rounded-xl border bg-primary/10 border-primary/20 flex-row items-center gap-1.5">
+                        <Ionicons name="checkmark-circle" size={12} color="#10B981" />
                         <Text className="text-[10px] font-black uppercase tracking-widest text-[#10B981]">
                             Joined
                         </Text>
@@ -91,22 +93,22 @@ export function HubCard({
 
             {/* Bottom Section: Fans, Tournaments, etc */}
             <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-6">
-                    <View className="flex-row items-center opacity-70">
-                        <Ionicons name="people-outline" size={16} color="#FAFAFA" />
-                        <Text className="text-[12px] font-bold text-slate-300 tracking-tight ml-2">
-                            {numberOfUsers} Fans
+                <View className="flex-row items-center gap-4">
+                    <View className="flex-row items-center bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                        <Ionicons name="people-outline" size={14} color="#10B981" />
+                        <Text className="text-[11px] font-black text-slate-300 tracking-tight ml-2">
+                            {numberOfUsers} <Text className="text-slate-500">Fans</Text>
                         </Text>
                     </View>
-                    <View className="flex-row items-center opacity-70">
-                        <Ionicons name="trophy-outline" size={16} color="#FAFAFA" />
-                        <Text className="text-[12px] font-bold text-slate-300 tracking-tight ml-2">
-                            {numberOfTournaments} Tournaments
+                    <View className="flex-row items-center bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                        <Ionicons name="trophy-outline" size={14} color="#6366F1" />
+                        <Text className="text-[11px] font-black text-slate-300 tracking-tight ml-2">
+                            {numberOfTournaments} <Text className="text-slate-500">Tournaments</Text>
                         </Text>
                     </View>
                 </View>
 
-                <View className="p-2 rounded-xl bg-white/5">
+                <View className="w-10 h-10 rounded-xl bg-white/5 items-center justify-center border border-white/5">
                     <Ionicons name="chevron-forward" size={16} color="#64748B" />
                 </View>
             </View>

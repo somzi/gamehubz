@@ -113,16 +113,16 @@ export function TournamentCard({
 
             {/* Bottom Section: Region, Date, Prize */}
             <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-6">
-                    <View className="flex-row items-center opacity-70">
-                        <Ionicons name="globe-outline" size={16} color="#FAFAFA" />
-                        <Text className="text-[12px] font-bold text-slate-300 tracking-tight ml-2">
+                <View className="flex-row items-center gap-4">
+                    <View className="flex-row items-center bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                        <Ionicons name="earth-outline" size={14} color="#10B981" />
+                        <Text className="text-[11px] font-black text-slate-300 tracking-tight ml-2">
                             {region}
                         </Text>
                     </View>
-                    <View className="flex-row items-center opacity-70">
-                        <Ionicons name="calendar-outline" size={16} color="#FAFAFA" />
-                        <Text className="text-[12px] font-bold text-slate-300 tracking-tight ml-2">
+                    <View className="flex-row items-center bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                        <Ionicons name="calendar-clear-outline" size={14} color="#6366F1" />
+                        <Text className="text-[11px] font-black text-slate-300 tracking-tight ml-2">
                             {date}
                         </Text>
                     </View>

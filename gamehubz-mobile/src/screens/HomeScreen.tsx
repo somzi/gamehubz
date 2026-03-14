@@ -12,6 +12,7 @@ import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { DashboardActivityDto } from '../types/dashboard';
 import { HighlightsModal } from '../components/modals/HighlightsModal';
+import { cn } from '../lib/utils';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -118,60 +119,70 @@ export default function HomeScreen() {
                 contentContainerStyle={{ paddingBottom: 110 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* ── Hero Header ── */}
-                <View className="px-5 pt-5 pb-6">
-                    <View className="flex-row items-center justify-between">
+                {/* ─── Premium Header & Hero ─── */}
+                <View className="px-5 pt-8 pb-6">
+                    <View className="flex-row items-center justify-between mb-8">
                         <View className="flex-1">
-                            <Text className="text-slate-400 text-sm font-medium mb-0.5">{getGreeting()}</Text>
-                            <Text className="text-white text-2xl font-black tracking-tight" numberOfLines={1}>
-                                {user?.username || 'Player'} 👋
+                            <Text className="text-slate-500 text-[10px] font-black uppercase tracking-[3px] mb-1">
+                                {getGreeting()}
+                            </Text>
+                            <Text className="text-white text-3xl font-black tracking-tighter">
+                                {user?.username || user?.nickName || 'Player'}
                             </Text>
                         </View>
-                        <PlayerAvatar
-                            src={user?.avatarUrl || undefined}
-                            name={user?.username || 'P'}
-                            size="lg"
-                        />
+                        <View className="relative">
+                            <View className="absolute -inset-1.5 bg-primary/20 rounded-full" />
+                            <PlayerAvatar
+                                src={user?.avatarUrl || undefined}
+                                name={user?.username || 'P'}
+                                size="lg"
+                                className="border-2 border-primary/20"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Quick Stats Summary Ribbon */}
+                    <View className="flex-row bg-[#131B2E] rounded-3xl p-1.5 border border-white/5 shadow-2xl">
+                        <View className="flex-1 py-3 items-center">
+                            <Text className="text-white text-lg font-black">{totalMatches}</Text>
+                            <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Matches</Text>
+                        </View>
+                        <View className="w-[1px] bg-white/5 my-2.5" />
+                        <View className="flex-1 py-3 items-center">
+                            <Text className="text-white text-lg font-black">{actionRequiredMatches.length}</Text>
+                            <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Alerts</Text>
+                        </View>
                     </View>
                 </View>
 
-                <View className="px-5 gap-8">
+                <View className="px-5 gap-10">
 
-                    {/* ── Action Required ── */}
+                    {/* ── Section: Action Required ── */}
                     {actionRequiredMatches.length > 0 && (
                         <View>
-                            {/* Section Header */}
-                            <View className="flex-row items-center justify-between mb-3">
-                                <Pressable 
+                            <View className="flex-row items-center justify-between mb-4">
+                                <Pressable
                                     onPress={() => setIsActionRequiredCollapsed(!isActionRequiredCollapsed)}
                                     className="flex-row items-center gap-3"
                                 >
-                                    <View className="w-9 h-9 rounded-xl bg-yellow-500/10 items-center justify-center border border-yellow-500/20">
-                                        <Ionicons name="alert-circle" size={18} color="#EAB308" />
+                                    <View className="w-10 h-10 rounded-2xl bg-yellow-500/10 items-center justify-center border border-yellow-500/20">
+                                        <Ionicons name="alert-circle" size={20} color="#EAB308" />
                                     </View>
-                                    <View className="flex-row items-center gap-2">
-                                        <Text className="text-white font-black text-base tracking-tight">Needs Attention</Text>
-                                        <View className="bg-yellow-500/20 px-2 py-0.5 rounded-full">
-                                            <Text className="text-[11px] font-black text-yellow-500">{actionRequiredMatches.length}</Text>
-                                        </View>
-                                        <Ionicons 
-                                            name={isActionRequiredCollapsed ? "chevron-down" : "chevron-up"} 
-                                            size={14} 
-                                            color="#64748B" 
-                                        />
+                                    <View>
+                                        <Text className="text-white font-black text-lg tracking-tight">Needs Attention</Text>
+                                        <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Requires your action</Text>
                                     </View>
                                 </Pressable>
                                 <Pressable
                                     onPress={() => navigation.navigate('MyMatches')}
-                                    className="flex-row items-center gap-1"
+                                    className="bg-white/5 py-2 px-4 rounded-xl border border-white/5"
                                 >
-                                    <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">See All</Text>
-                                    <Ionicons name="chevron-forward" size={12} color="#64748B" />
+                                    <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">See All</Text>
                                 </Pressable>
                             </View>
 
                             {!isActionRequiredCollapsed && (
-                                <View className="gap-2.5">
+                                <View className="gap-3">
                                     {actionRequiredMatches.slice(0, 3).map((match, index) => (
                                         <MatchScheduleCard
                                             key={match.matchId || `pending-${index}`}
@@ -190,37 +201,32 @@ export default function HomeScreen() {
                         </View>
                     )}
 
-                    {/* ── Active Matches ── */}
+                    {/* ── Section: Active Matches ── */}
                     <View>
-                        <View className="flex-row items-center justify-between mb-3">
-                        <Pressable 
-                            onPress={() => setIsActiveMatchesCollapsed(!isActiveMatchesCollapsed)}
-                            className="flex-row items-center gap-3"
-                        >
-                            <View className="w-9 h-9 rounded-xl bg-primary/10 items-center justify-center border border-primary/20">
-                                <Ionicons name="game-controller" size={18} color="#10B981" />
-                            </View>
-                            <View className="flex-row items-center gap-2">
-                                <Text className="text-white font-black text-base tracking-tight">Active Matches</Text>
-                                <Ionicons 
-                                    name={isActiveMatchesCollapsed ? "chevron-down" : "chevron-up"} 
-                                    size={14} 
-                                    color="#64748B" 
-                                />
-                            </View>
-                        </Pressable>
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Pressable
+                                onPress={() => setIsActiveMatchesCollapsed(!isActiveMatchesCollapsed)}
+                                className="flex-row items-center gap-3"
+                            >
+                                <View className="w-10 h-10 rounded-2xl bg-primary/10 items-center justify-center border border-primary/20">
+                                    <Ionicons name="game-controller" size={20} color="#10B981" />
+                                </View>
+                                <View>
+                                    <Text className="text-white font-black text-lg tracking-tight">Active Matches</Text>
+                                    <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">In progress & scheduled</Text>
+                                </View>
+                            </Pressable>
                             <Pressable
                                 onPress={() => navigation.navigate('MyMatches')}
-                                className="flex-row items-center gap-1"
+                                className="bg-white/5 py-2 px-4 rounded-xl border border-white/5"
                             >
-                                <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">See All</Text>
-                                <Ionicons name="chevron-forward" size={12} color="#64748B" />
+                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">See All</Text>
                             </Pressable>
                         </View>
 
                         {!isActiveMatchesCollapsed && (
                             myMatches.length > 0 ? (
-                                <View className="gap-2.5">
+                                <View className="gap-3">
                                     {myMatches.slice(0, 3).map((match, index) => (
                                         <MatchScheduleCard
                                             key={match.matchId || `scheduled-${index}`}
@@ -239,42 +245,37 @@ export default function HomeScreen() {
                                     ))}
                                 </View>
                             ) : (
-                                <View className="py-10 items-center justify-center bg-white/[0.02] rounded-3xl border border-white/5">
-                                    <View className="w-14 h-14 rounded-2xl bg-primary/10 items-center justify-center mb-3">
-                                        <Ionicons name="game-controller-outline" size={28} color="#10B981" />
+                                <View className="py-12 items-center justify-center bg-[#131B2E] rounded-[32px] border border-white/5">
+                                    <View className="w-16 h-16 rounded-[24px] bg-primary/10 items-center justify-center mb-4">
+                                        <Ionicons name="game-controller-outline" size={32} color="#10B981" />
                                     </View>
-                                    <Text className="text-white font-bold text-sm">No active matches</Text>
-                                    <Text className="text-slate-500 text-xs mt-1">Join a tournament to get started</Text>
+                                    <Text className="text-white font-black text-base">No active matches</Text>
+                                    <Text className="text-slate-500 text-xs mt-1 text-center px-10">Your competitive matches will appear here once they start</Text>
                                 </View>
                             )
                         )}
                     </View>
 
-                    {/* ── Community Highlights ── */}
+                    {/* ── Section: Community Highlights ── */}
                     <View>
-                        <View className="flex-row items-center justify-between mb-3">
-                        <Pressable 
-                            onPress={() => setIsHighlightsCollapsed(!isHighlightsCollapsed)}
-                            className="flex-row items-center gap-3"
-                        >
-                            <View className="w-9 h-9 rounded-xl bg-indigo-500/10 items-center justify-center border border-indigo-500/20">
-                                <Ionicons name="flash" size={18} color="#6366F1" />
-                            </View>
-                            <View className="flex-row items-center gap-2">
-                                <Text className="text-white font-black text-base tracking-tight">Highlights</Text>
-                                <Ionicons 
-                                    name={isHighlightsCollapsed ? "chevron-down" : "chevron-up"} 
-                                    size={14} 
-                                    color="#64748B" 
-                                />
-                            </View>
-                        </Pressable>
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Pressable
+                                onPress={() => setIsHighlightsCollapsed(!isHighlightsCollapsed)}
+                                className="flex-row items-center gap-3"
+                            >
+                                <View className="w-10 h-10 rounded-2xl bg-indigo-500/10 items-center justify-center border border-indigo-500/20">
+                                    <Ionicons name="flash" size={20} color="#6366F1" />
+                                </View>
+                                <View>
+                                    <Text className="text-white font-black text-lg tracking-tight">Highlights</Text>
+                                    <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Latest from your hubs</Text>
+                                </View>
+                            </Pressable>
                             <Pressable
                                 onPress={() => setShowHighlightsModal(true)}
-                                className="flex-row items-center gap-1"
+                                className="bg-white/5 py-2 px-4 rounded-xl border border-white/5"
                             >
-                                <Text className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">See All</Text>
-                                <Ionicons name="chevron-forward" size={12} color="#64748B" />
+                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">See All</Text>
                             </Pressable>
                         </View>
 
