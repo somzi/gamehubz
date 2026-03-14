@@ -675,41 +675,78 @@ export function MatchScheduleCard({
                                                     </View>
                                                 )}
 
-                                                <View className="flex-row items-center justify-between gap-4">
-                                                    <View className="flex-1 items-center gap-3">
-                                                        <PlayerAvatar name={user?.username || 'You'} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
-                                                        <Text className={cn("font-black text-center", isPremium ? "text-base text-white" : "text-sm text-foreground")} numberOfLines={1}>{user?.username || 'You'}</Text>
-                                                        <TextInput
-                                                            className={cn(
-                                                                "w-full rounded-2xl text-center font-black border",
-                                                                isPremium ? "bg-white/5 h-16 text-2xl text-primary border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
-                                                            )}
-                                                            placeholder="0"
-                                                            placeholderTextColor={isPremium ? "#475569" : "#71717A"}
-                                                            keyboardType="numeric"
-                                                            value={homeScore}
-                                                            onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
-                                                            onFocus={scrollToBottom}
+                                                <View className="flex-row items-center justify-between pb-2 pt-4">
+                                                    {/* Home Player (You) */}
+                                                    <View className="flex-1 items-center">
+                                                        <PlayerAvatar 
+                                                            src={user?.avatarUrl} 
+                                                            name={user?.username || 'You'} 
+                                                            size={isPremium ? "xl" : "lg"} 
+                                                            className={cn(isPremium ? "border-[3px] border-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "")} 
                                                         />
+                                                        <Text className={cn("font-black text-center mt-3 mb-0.5", isPremium ? "text-base text-white" : "text-sm text-foreground")} numberOfLines={1}>
+                                                            {user?.username || 'You'}
+                                                        </Text>
+                                                        {isPremium && <Text className="text-[10px] font-bold text-[#10B981] uppercase tracking-[0.2em] mb-4">Your Score</Text>}
+                                                        <View className="w-full px-2">
+                                                            <TextInput
+                                                                className={cn(
+                                                                    "w-full text-center font-black",
+                                                                    isPremium 
+                                                                        ? "bg-[#131B2E] h-16 rounded-[20px] text-3xl text-[#10B981] border border-white/5" 
+                                                                        : "bg-muted/30 h-12 rounded-2xl text-lg text-foreground border-border/10"
+                                                                )}
+                                                                placeholder="0"
+                                                                placeholderTextColor={isPremium ? "#334155" : "#71717A"}
+                                                                keyboardType="numeric"
+                                                                value={homeScore}
+                                                                onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
+                                                                onFocus={scrollToBottom}
+                                                            />
+                                                        </View>
                                                     </View>
-                                                    <View className="items-center justify-center h-16 mt-12">
-                                                        <Text className="text-sm font-black text-slate-500 uppercase">VS</Text>
+
+                                                    {/* VS Badge */}
+                                                    <View className="items-center justify-center px-4 -mt-10">
+                                                        <View className={cn(
+                                                            "rounded-full items-center justify-center",
+                                                            isPremium ? "w-10 h-10 bg-white/5 border border-white/10" : "w-8 h-8 bg-muted"
+                                                        )}>
+                                                            <Text className={cn(
+                                                                "font-black italic",
+                                                                isPremium ? "text-xs text-slate-400" : "text-[10px] text-muted-foreground"
+                                                            )}>VS</Text>
+                                                        </View>
                                                     </View>
-                                                    <View className="flex-1 items-center gap-3">
-                                                        <PlayerAvatar name={opponentName} size={isPremium ? "xl" : "lg"} className={isPremium ? "border-4 border-white/10" : ""} />
-                                                        <Text className={cn("font-black text-center", isPremium ? "text-base text-white" : "text-sm text-foreground")} numberOfLines={1}>{opponentName}</Text>
-                                                        <TextInput
-                                                            className={cn(
-                                                                "w-full rounded-2xl text-center font-black border",
-                                                                isPremium ? "bg-white/5 h-16 text-2xl text-white border-white/10" : "bg-muted/30 h-12 text-lg text-foreground border-border/10"
-                                                            )}
-                                                            placeholder="0"
-                                                            placeholderTextColor={isPremium ? "#475569" : "#71717A"}
-                                                            keyboardType="numeric"
-                                                            value={awayScore}
-                                                            onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
-                                                            onFocus={scrollToBottom}
+
+                                                    {/* Away Player (Opponent) */}
+                                                    <View className="flex-1 items-center">
+                                                        <PlayerAvatar 
+                                                            src={opponentAvatarUrl} 
+                                                            name={opponentName} 
+                                                            size={isPremium ? "xl" : "lg"} 
+                                                            className={cn(isPremium ? "border-[3px] border-white/10" : "")} 
                                                         />
+                                                        <Text className={cn("font-black text-center mt-3 mb-0.5", isPremium ? "text-base text-white" : "text-sm text-foreground")} numberOfLines={1}>
+                                                            {opponentName}
+                                                        </Text>
+                                                        {isPremium && <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Opponent</Text>}
+                                                        <View className="w-full px-2">
+                                                            <TextInput
+                                                                className={cn(
+                                                                    "w-full text-center font-black",
+                                                                    isPremium 
+                                                                        ? "bg-[#131B2E] h-16 rounded-[20px] text-3xl text-white border border-white/5" 
+                                                                        : "bg-muted/30 h-12 rounded-2xl text-lg text-foreground border-border/10"
+                                                                )}
+                                                                placeholder="0"
+                                                                placeholderTextColor={isPremium ? "#334155" : "#71717A"}
+                                                                keyboardType="numeric"
+                                                                value={awayScore}
+                                                                onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
+                                                                onFocus={scrollToBottom}
+                                                            />
+                                                        </View>
                                                     </View>
                                                 </View>
 
@@ -804,32 +841,52 @@ export function MatchScheduleCard({
                                                         const isMyComment = comment.userId === user?.id;
                                                         return (
                                                             <View key={comment.id} className={cn(
-                                                                "mb-4 max-w-[85%]",
-                                                                isMyComment ? "self-end items-end" : "self-start items-start"
+                                                                "mb-4 flex-row items-end gap-2 max-w-[85%]",
+                                                                isMyComment ? "self-end" : "self-start"
                                                             )}>
-                                                                <View className="flex-row items-center gap-2 mb-1 px-1">
-                                                                    {!isMyComment && (
-                                                                        <Text className={cn("font-black text-[10px] uppercase tracking-tighter", isPremium ? "text-primary" : "text-primary/70")}>
-                                                                            {comment.userNickname}
+                                                                {!isMyComment && (
+                                                                    <PlayerAvatar 
+                                                                        src={opponentAvatarUrl} 
+                                                                        name={opponentName} 
+                                                                        size="sm" 
+                                                                        className="w-7 h-7 shrink-0" 
+                                                                    />
+                                                                )}
+                                                                
+                                                                <View className={cn(isMyComment ? "items-end" : "items-start", "flex-1")}>
+                                                                    <View className="flex-row items-center gap-2 mb-1 px-1">
+                                                                        {!isMyComment && (
+                                                                            <Text className={cn("font-black text-[10px] uppercase tracking-tighter", isPremium ? "text-primary" : "text-primary/70")}>
+                                                                                {comment.userNickname}
+                                                                            </Text>
+                                                                        )}
+                                                                        <Text className="text-[9px] font-bold text-slate-500">
+                                                                            {formatCommentTime(comment.sentAt)}
                                                                         </Text>
-                                                                    )}
-                                                                    <Text className="text-[9px] font-bold text-slate-500">
-                                                                        {formatCommentTime(comment.sentAt)}
-                                                                    </Text>
-                                                                </View>
-                                                                <View className={cn(
-                                                                    "px-4 py-3 rounded-[20px]",
-                                                                    isMyComment
-                                                                        ? "bg-primary rounded-tr-none"
-                                                                        : "bg-slate-800 rounded-tl-none border border-white/5"
-                                                                )}>
-                                                                    <Text className={cn(
-                                                                        "leading-5 font-medium",
-                                                                        isMyComment ? "text-slate-900" : "text-white"
+                                                                    </View>
+                                                                    <View className={cn(
+                                                                        "px-4 py-3 rounded-[20px]",
+                                                                        isMyComment
+                                                                            ? "bg-primary rounded-br-none"
+                                                                            : "bg-slate-800 rounded-bl-none border border-white/5"
                                                                     )}>
-                                                                        {comment.content}
-                                                                    </Text>
+                                                                        <Text className={cn(
+                                                                            "leading-5 font-medium",
+                                                                            isMyComment ? "text-slate-900" : "text-white"
+                                                                        )}>
+                                                                            {comment.content}
+                                                                        </Text>
+                                                                    </View>
                                                                 </View>
+
+                                                                {isMyComment && (
+                                                                    <PlayerAvatar 
+                                                                        src={user?.avatarUrl} 
+                                                                        name={user?.username || 'You'} 
+                                                                        size="sm" 
+                                                                        className="w-7 h-7 shrink-0" 
+                                                                    />
+                                                                )}
                                                             </View>
                                                         );
                                                     })}
