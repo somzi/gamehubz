@@ -425,18 +425,30 @@ export default function HubProfileScreen() {
                 ) : null}
 
                 {/* ─── Tournament Tabs ─── */}
-                <View className="mt-7 flex-1">
-                    <View className="px-5 mb-6">
-                        <Tabs
-                            tabs={tabs}
-                            activeTab={activeTab}
-                            onTabChange={setActiveTab}
-                        />
+                {isFollowing || isOwner ? (
+                    <View className="mt-7 flex-1">
+                        <View className="px-5 mb-6">
+                            <Tabs
+                                tabs={tabs}
+                                activeTab={activeTab}
+                                onTabChange={setActiveTab}
+                            />
+                        </View>
+                        <View className="px-5">
+                            {renderTournamentList()}
+                        </View>
                     </View>
-                    <View className="px-5">
-                        {renderTournamentList()}
+                ) : (
+                    <View className="px-5 mt-7 mb-10">
+                        <View className="py-12 items-center justify-center bg-[#131B2E]/50 rounded-[28px] border border-white/5">
+                            <View className="w-16 h-16 rounded-2xl bg-[#0F172A] items-center justify-center mb-4 border border-white/5">
+                                <Ionicons name="lock-closed-outline" size={28} color="#334155" />
+                            </View>
+                            <Text className="text-white font-black text-lg text-center">Private Content</Text>
+                            <Text className="text-slate-500 mt-2 text-center text-sm px-6">Follow this hub to see its tournaments and activities</Text>
+                        </View>
                     </View>
-                </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );

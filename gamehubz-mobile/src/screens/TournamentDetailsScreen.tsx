@@ -268,6 +268,40 @@ export default function TournamentDetailsScreen() {
         }
     };
 
+    const handleOpenRegistration = async () => {
+        if (!id) return;
+        setIsLoading(true); // Reuse main loading or add specific one
+        try {
+            const url = ENDPOINTS.OPEN_REGISTRATION(id);
+            const response = await authenticatedFetch(url, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No response body');
+                throw new Error(`Failed to open registration: ${text}`);
+            }
+
+            setStatusModalConfig({
+                type: 'success',
+                title: 'Success',
+                message: 'Registration opened successfully!'
+            });
+            setShowStatusModal(true);
+            fetchTournamentDetails(); // Refresh details
+        } catch (err: any) {
+            console.error('Open registration error:', err);
+            setStatusModalConfig({
+                type: 'error',
+                title: 'Error',
+                message: err.message || 'Failed to open registration'
+            });
+            setShowStatusModal(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const fetchPendingRegistrations = async () => {
         if (!id) return;
         setIsLoadingPending(true);
@@ -797,6 +831,45 @@ export default function TournamentDetailsScreen() {
 
                     {activeTab === 'overview' && (
                         <View className="px-4 py-4 pb-12">
+                            {/* Hub Owner Registration Button */}
+                            {tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
+                             (tournament?.status === 0 || tournament?.status === 1) &&
+                             !participants.some(p => (p.username || p.Username)?.toLowerCase() === user?.username?.toLowerCase()) &&
+                             !isUserRegistered && (
+                                <Button
+                                    className="w-full mb-4"
+                                    onPress={handleJoin}
+                                    loading={isRegistering}
+                                >
+                                    Register for Tournament
+                                </Button>
+                            )}
+
+                            {/* Hub Owner Close Registration Button */}
+                            {tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
+                             (tournament?.status === 0 || tournament?.status === 1) &&
+                             tournament?.numberOfParticipants >= tournament?.maxPlayers && (
+                                <Button
+                                    className="w-full mb-4 bg-[#EF4444]"
+                                    onPress={handleCloseRegistration}
+                                    loading={isLoading}
+                                >
+                                    Close Registration
+                                </Button>
+                            )}
+
+                            {/* Hub Owner Open Registration Button */}
+                            {tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
+                             tournament?.status === 2 && (
+                                <Button
+                                    className="w-full mb-4 bg-[#10B981]"
+                                    onPress={handleOpenRegistration}
+                                    loading={isLoading}
+                                >
+                                    Open Registration
+                                </Button>
+                            )}
+
                             {/* Registration Deadline Alert */}
                             {tournament.registrationDeadline && [0, 1, 2].includes(Number(tournament.status)) && (
                                 <View className="w-full bg-[#181010]/80 p-4 rounded-2xl border border-red-500/10 flex-row items-center gap-3 mb-4">

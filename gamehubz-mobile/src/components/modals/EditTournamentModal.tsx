@@ -65,7 +65,9 @@ const regionReverseMapping: Record<number, string> = Object.entries(regionMappin
 
 export function EditTournamentModal({ visible, onClose, tournament, onSaveSuccess }: EditTournamentModalProps) {
     const insets = useSafeAreaInsets();
-    const canEditAll = (tournament?.status === 1 || tournament?.Status === 1);
+    const tStatus = Number(tournament?.status !== undefined ? tournament.status : tournament?.Status);
+    const canEditAll = tStatus === 0 || tStatus === 1 || tStatus === 2; // Editable while Open, Upcoming, or Reg. Closed
+    const canEditDeadline = tStatus === 0 || tStatus === 1; // Deadline cannot be changed if Reg is Closed (status 2)
 
     const [name, setName] = useState(tournament?.name || '');
     const [description, setDescription] = useState(tournament?.description || '');
@@ -381,8 +383,8 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                     <Text className="text-sm font-bold text-white mb-3">Reg. Deadline</Text>
                                     <TouchableOpacity
                                         onPress={() => setShowRegDeadlinePicker(true)}
-                                        disabled={!canEditAll}
-                                        className={`bg-[#131B2E] px-4 h-14 rounded-xl border border-white/10 justify-center ${!canEditAll ? 'opacity-50' : ''}`}
+                                        disabled={!canEditDeadline}
+                                        className={`bg-[#131B2E] px-4 h-14 rounded-xl border border-white/10 justify-center ${!canEditDeadline ? 'opacity-50' : ''}`}
                                     >
                                         <Text className={`${registrationDeadline ? 'text-white' : 'text-slate-500'} text-sm`} numberOfLines={1}>
                                             {registrationDeadline ? new Date(registrationDeadline).toLocaleString() : 'Select Deadline'}
