@@ -55,9 +55,10 @@ interface TournamentGroupsProps {
     currentUsername?: string;
     isAdmin?: boolean;
     onEditDeadline?: (roundInfo: { roundNumber: number; roundDeadline?: string | null }) => void;
+    tournamentStatus?: number;
 }
 
-export function TournamentGroups({ groups, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline }: TournamentGroupsProps) {
+export function TournamentGroups({ groups, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline, tournamentStatus }: TournamentGroupsProps) {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
     const handlePlayerPress = (participant: any) => {
@@ -149,7 +150,7 @@ export function TournamentGroups({ groups, onMatchPress, currentUserId, currentU
                                                 </Text>
                                             )}
                                         </View>
-                                        {isAdmin && (
+                                        {isAdmin && tournamentStatus !== 4 && !(matches.length > 0 && matches.every(m => m.status === 3 || m.status === 4)) && (
                                             <Pressable
                                                 onPress={() => onEditDeadline?.({ roundNumber: Number(matchday), roundDeadline: matches[0]?.roundDeadline })}
                                                 className="bg-primary/20 px-3 py-1 rounded-md border border-primary/30"

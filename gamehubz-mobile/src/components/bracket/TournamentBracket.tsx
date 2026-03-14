@@ -35,9 +35,10 @@ interface TournamentBracketProps {
     currentUsername?: string;
     isAdmin?: boolean;
     onEditDeadline?: (round: Round) => void;
+    tournamentStatus?: number;
 }
 
-export function TournamentBracket({ rounds, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline }: TournamentBracketProps) {
+export function TournamentBracket({ rounds, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline, tournamentStatus }: TournamentBracketProps) {
     return (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-8 p-4">
@@ -52,7 +53,7 @@ export function TournamentBracket({ rounds, onMatchPress, currentUserId, current
                                     End: {new Date(round.roundDeadline).toLocaleDateString()} {new Date(round.roundDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                 </Text>
                             )}
-                            {isAdmin && (
+                            {isAdmin && tournamentStatus !== 4 && !(round.matches.length > 0 && round.matches.every(m => m.status === 3 || m.status === 4)) && (
                                 <Pressable
                                     onPress={() => onEditDeadline?.(round)}
                                     className="mt-2 bg-primary/20 px-3 py-1 rounded-md border border-primary/30"

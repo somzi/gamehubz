@@ -523,7 +523,9 @@ export default function TournamentDetailsScreen() {
         { label: 'Overview', value: 'overview' },
         { label: 'Bracket', value: 'bracket' },
         { label: 'Players', value: 'players' },
-        ...(tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() ? [{ label: 'Registrations', value: 'registrations' }] : []),
+        ...(tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() && 
+           (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2) 
+           ? [{ label: 'Registrations', value: 'registrations' }] : []),
     ];
 
     const getStatusText = (status: number) => {
@@ -613,6 +615,7 @@ export default function TournamentDetailsScreen() {
                         currentUsername={user?.username}
                         isAdmin={tournament?.createdBy === user?.id}
                         onEditDeadline={handleEditDeadline}
+                        tournamentStatus={tournament?.status}
                     />
                 ) : currentStage.groups && currentStage.groups.length > 0 ? (
                     <View>
@@ -651,6 +654,7 @@ export default function TournamentDetailsScreen() {
                                 currentUsername={user?.username}
                                 isAdmin={tournament?.createdBy === user?.id}
                                 onEditDeadline={handleEditDeadline}
+                                tournamentStatus={tournament?.status}
                             />
                         )}
                     </View>
@@ -978,6 +982,8 @@ export default function TournamentDetailsScreen() {
                                     const pUserId = p.userId || p.UserId || p.id;
                                     const isCreator = tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase();
                                     
+                                    const canRemove = isCreator && (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2);
+                                    
                                     return (
                                         <View key={p.participantId || p.id || pUserId || i} className="flex-row items-center gap-2">
                                             <Pressable
@@ -998,7 +1004,7 @@ export default function TournamentDetailsScreen() {
                                                 <Ionicons name="chevron-forward" size={24} color="#475569" />
                                             </Pressable>
                                             
-                                            {isCreator && (
+                                            {canRemove && (
                                                 <Pressable
                                                     onPress={() => handleRemoveParticipant(pUserId)}
                                                     disabled={processingId !== null}
