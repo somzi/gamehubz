@@ -45,6 +45,12 @@ const tournamentFormats = [
     { value: '5', label: 'Group Stage + Knockout' },
 ];
 
+const durationUnits = [
+    { value: 'Minutes', label: 'Minutes' },
+    { value: 'Hours', label: 'Hours' },
+    { value: 'Days', label: 'Days' },
+];
+
 const regionMapping: Record<string, number> = {
     'global': TournamentRegion.Global,
     'north-america': TournamentRegion.NorthAmerica,
@@ -74,6 +80,10 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
     const [groupsCount, setGroupsCount] = useState('4');
     const [qualifiersPerGroup, setQualifiersPerGroup] = useState('2');
     const [inviteFollowers, setInviteFollowers] = useState(false);
+    
+    // Round Duration
+    const [roundDurationValue, setRoundDurationValue] = useState('');
+    const [roundDurationUnit, setRoundDurationUnit] = useState('Minutes'); // Minutes | Hours | Days
 
     // Data State
     const [hubs, setHubs] = useState<{ id: string; name: string }[]>([]);
@@ -88,6 +98,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
     const [showStartDatePicker, setShowStartDatePicker] = useState(false);
     const [showRegDeadlinePicker, setShowRegDeadlinePicker] = useState(false);
     const [showFormatPicker, setShowFormatPicker] = useState(false);
+    const [showDurationUnitPicker, setShowDurationUnitPicker] = useState(false);
 
     // Fetch Hubs
     useEffect(() => {
@@ -207,6 +218,16 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                     return new Date().toISOString();
                 }
             };
+            
+            let roundDurationMinutes: number | null = null;
+            if ((selectedFormat === '0' || selectedFormat === '5') && roundDurationValue) {
+                const val = parseInt(roundDurationValue);
+                if (!isNaN(val)) {
+                    if (roundDurationUnit === 'Minutes') roundDurationMinutes = val;
+                    else if (roundDurationUnit === 'Hours') roundDurationMinutes = val * 60;
+                    else if (roundDurationUnit === 'Days') roundDurationMinutes = val * 1440;
+                }
+            }
 
             const payload = {
                 hubId: selectedHubId,
@@ -222,7 +243,8 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                 region: regionMapping[selectedRegions[0]] ?? 0,
                 format: parseInt(selectedFormat),
                 GroupsCount: selectedFormat === '5' ? parseInt(groupsCount) : null,
-                QualifiersPerGroup: selectedFormat === '5' ? parseInt(qualifiersPerGroup) : null
+                QualifiersPerGroup: selectedFormat === '5' ? parseInt(qualifiersPerGroup) : null,
+                roundDurationMinutes: roundDurationMinutes
             };
 
             console.log('Creating tournament with payload:', payload);
@@ -445,6 +467,31 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                 </View>
                             )}
 
+                            {(selectedFormat === '0' || selectedFormat === '5') && (
+                                <View>
+                                    <Text className="text-sm font-bold text-white mb-3">How long should each round last? (optional)</Text>
+                                    <View className="flex-row gap-4">
+                                        <View className="flex-1">
+                                            <TextInput
+                                                className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10"
+                                                placeholder="e.g. 2"
+                                                placeholderTextColor="#6b7280"
+                                                keyboardType="numeric"
+                                                value={roundDurationValue}
+                                                onChangeText={setRoundDurationValue}
+                                            />
+                                        </View>
+                                        <TouchableOpacity
+                                            onPress={() => setShowDurationUnitPicker(true)}
+                                            className="flex-1 bg-[#131B2E] px-4 h-12 rounded-xl border border-white/10 flex-row items-center justify-between"
+                                        >
+                                            <Text className="text-white font-medium">{roundDurationUnit}</Text>
+                                            <Ionicons name="chevron-down" size={20} color="#94A3B8" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            )}
+
                             <View className="flex-row gap-4">
                                 <View className="flex-1">
                                     <View className="flex-row items-center mb-3">
@@ -568,6 +615,13 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                         tournamentFormats,
                         selectedFormat,
                         setSelectedFormat
+                    )}
+                    {renderOptionsModal(
+                        showDurationUnitPicker,
+                        () => setShowDurationUnitPicker(false),
+                        durationUnits,
+                        roundDurationUnit,
+                        setRoundDurationUnit
                     )}
                     <DateTimePickerModal
                         visible={showStartDatePicker}

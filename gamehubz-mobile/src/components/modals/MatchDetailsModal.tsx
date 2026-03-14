@@ -44,6 +44,7 @@ interface MatchDetailsModalProps {
     away?: { userId: string; username: string; score: number | null };
     evidences?: string[];
     hubOwnerId?: string;
+    isRoundLocked?: boolean;
 }
 
 export function MatchDetailsModal({
@@ -64,6 +65,7 @@ export function MatchDetailsModal({
     away,
     evidences,
     hubOwnerId,
+    isRoundLocked = false,
 }: MatchDetailsModalProps) {
     const { user } = useAuth();
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -540,7 +542,9 @@ export function MatchDetailsModal({
 
                                 <View className="mt-6 flex-row gap-3">
                                     <Button variant="outline" className="flex-1" onPress={() => { setHomeScore(''); setAwayScore(''); setError(null); setSelectedImages([]); }}>Clear</Button>
-                                    <Button className="flex-1" onPress={handleSubmitResult} loading={isSubmitting}>Submit Result</Button>
+                                    <Button className="flex-1" onPress={handleSubmitResult} loading={isSubmitting} disabled={isRoundLocked}>
+                                        {isRoundLocked ? "Round not open yet" : "Submit Result"}
+                                    </Button>
                                 </View>
                             </View>
                         ) : (

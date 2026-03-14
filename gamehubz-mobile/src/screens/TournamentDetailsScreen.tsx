@@ -17,7 +17,7 @@ import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 import { MatchDetailsModal } from '../components/modals/MatchDetailsModal';
 import { TournamentRegion } from '../types/tournament';
 import { StatusModal } from '../components/modals/StatusModal';
-import { DateTimePickerModal } from '../components/modals/DateTimePickerModal';
+import { RoundScheduleModal } from '../components/modals/RoundScheduleModal';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
 
@@ -55,7 +55,7 @@ export default function TournamentDetailsScreen() {
     const [hubOwnerId, setHubOwnerId] = useState<string | undefined>(undefined);
     
     const [showDeadlineModal, setShowDeadlineModal] = useState(false);
-    const [selectedRoundForDeadline, setSelectedRoundForDeadline] = useState<{ roundNumber: number, currentDeadline?: string | null } | null>(null);
+    const [selectedRoundForDeadline, setSelectedRoundForDeadline] = useState<{ roundNumber: number, currentDeadline?: string | null, roundOpenAt?: string | null } | null>(null);
 
     // Collapsible section states
     const [isGeneralInfoOpen, setIsGeneralInfoOpen] = useState(true);
@@ -484,36 +484,61 @@ export default function TournamentDetailsScreen() {
         const roundNumber = typeof roundOrMatchday === 'number' ? roundOrMatchday : roundOrMatchday.roundNumber;
         const currentDeadline = typeof roundOrMatchday === 'object' ? roundOrMatchday.roundDeadline : null;
         
-        setSelectedRoundForDeadline({ roundNumber, currentDeadline });
+        // Find roundOpenAt
+        let roundOpenAt = null;
+        if (typeof roundOrMatchday === 'object') {
+            if (roundOrMatchday.roundOpenAt) {
+                roundOpenAt = roundOrMatchday.roundOpenAt;
+            } else if (roundOrMatchday.matches && roundOrMatchday.matches.length > 0) {
+                roundOpenAt = roundOrMatchday.matches[0].matchOpensAt || roundOrMatchday.matches[0].roundOpenAt;
+            }
+        }
+        
+        setSelectedRoundForDeadline({ roundNumber, currentDeadline, roundOpenAt });
         setShowDeadlineModal(true);
     };
 
-    const handleSaveDeadline = async (dateStr: string | null) => {
+    const handleSaveSchedule = async (openAtStr: string | null, deadlineStr: string | null) => {
         if (!id || !selectedRoundForDeadline) return;
         
         setShowDeadlineModal(false);
         setIsLoading(true);
         
         try {
-            const payload = {
+            // Call SET_ROUND_DEADLINE
+            const deadlinePayload = {
                 RoundNumber: selectedRoundForDeadline.roundNumber,
-                Deadline: dateStr ? new Date(dateStr.replace(' ', 'T')).toISOString() : null
+                Deadline: deadlineStr ? new Date(deadlineStr.replace(' ', 'T')).toISOString() : null
             };
-            
-            const response = await authenticatedFetch(ENDPOINTS.SET_ROUND_DEADLINE(id), {
+            const deadlineResponse = await authenticatedFetch(ENDPOINTS.SET_ROUND_DEADLINE(id), {
                 method: 'PUT',
-                body: JSON.stringify(payload)
+                body: JSON.stringify(deadlinePayload)
             });
 
-            if (!response.ok) {
-                const text = await response.text().catch(() => 'No response body');
+            if (!deadlineResponse.ok) {
+                const text = await deadlineResponse.text().catch(() => 'No response body');
                 throw new Error(`Failed to update deadline: ${text}`);
+            }
+
+            // Call SET_ROUND_START
+            const startPayload = {
+                RoundNumber: selectedRoundForDeadline.roundNumber,
+                Deadline: openAtStr ? new Date(openAtStr.replace(' ', 'T')).toISOString() : null
+            };
+            const startResponse = await authenticatedFetch(ENDPOINTS.SET_ROUND_START(id), {
+                method: 'PUT',
+                body: JSON.stringify(startPayload)
+            });
+
+            if (!startResponse.ok) {
+                const text = await startResponse.text().catch(() => 'No response body');
+                throw new Error(`Failed to update start time: ${text}`);
             }
 
             setStatusModalConfig({
                 type: 'success',
                 title: 'Success',
-                message: dateStr ? 'Round deadline updated successfully!' : 'Round deadline removed.'
+                message: 'Round schedule updated successfully!'
             });
             setShowStatusModal(true);
             
@@ -538,11 +563,23 @@ export default function TournamentDetailsScreen() {
     }, [id]);
 
     const handleMatchPress = (match: any) => {
+        if (tournament?.status !== 3) {
+            Alert.alert("Tournament Not In Progress", "You can only access matches when the tournament is actively in progress.");
+            return;
+        }
+
         // Only allow if match has participants
         if (!match.home || !match.away) return;
 
         // Allow Pending (1), Live (2) and Completed (3, 4) matches
         if (match.status !== 1 && match.status !== 2 && match.status !== 3 && match.status !== 4) return;
+
+        const isCreator = tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase();
+        
+        if (match.isRoundLocked && !isCreator) {
+            Alert.alert("Round Locked", "Unlocks when all matches in the previous round are completed");
+            return;
+        }
 
         setSelectedMatch(match);
         setShowReportModal(true);
@@ -1199,6 +1236,7 @@ export default function TournamentDetailsScreen() {
                 away={selectedMatch?.away}
                 evidences={selectedMatch?.evidences}
                 hubOwnerId={hubOwnerId}
+                isRoundLocked={selectedMatch?.isRoundLocked}
                 onMatchUpdate={() => {
                     fetchBracket(); // Refresh the bracket/league data
                     // Refresh details if needed
@@ -1215,14 +1253,13 @@ export default function TournamentDetailsScreen() {
                 />
             )}
             
-            <DateTimePickerModal
+            <RoundScheduleModal
                 visible={showDeadlineModal}
                 onClose={() => setShowDeadlineModal(false)}
-                onConfirm={(date) => handleSaveDeadline(date)}
-                onClear={() => handleSaveDeadline(null)}
-                title={`Set Deadline for Round ${selectedRoundForDeadline?.roundNumber || ''}`}
-                initialValue={selectedRoundForDeadline?.currentDeadline || undefined}
-                clearText="Remove Deadline"
+                onSave={handleSaveSchedule}
+                roundNumber={selectedRoundForDeadline?.roundNumber || 0}
+                initialOpenAt={selectedRoundForDeadline?.roundOpenAt || undefined}
+                initialDeadline={selectedRoundForDeadline?.currentDeadline || undefined}
             />
         </SafeAreaView>
     );

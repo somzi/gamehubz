@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     Pressable,
     ScrollView,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,6 +18,7 @@ interface DateTimePickerModalProps {
     initialValue?: string; // YYYY-MM-DD HH:mm
     onClear?: () => void;
     clearText?: string;
+    minDate?: string; // Optional minimum date string in ISO format (or similar Parseable)
 }
 
 const months = [
@@ -24,7 +26,7 @@ const months = [
     'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-export function DateTimePickerModal({ visible, onClose, onConfirm, title, initialValue, onClear, clearText }: DateTimePickerModalProps) {
+export function DateTimePickerModal({ visible, onClose, onConfirm, title, initialValue, onClear, clearText, minDate }: DateTimePickerModalProps) {
     const now = new Date();
 
     // Parse initial value or use now
@@ -50,6 +52,16 @@ export function DateTimePickerModal({ visible, onClose, onConfirm, title, initia
 
     const handleConfirm = () => {
         const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:00`;
+        
+        if (minDate) {
+            const selectedTime = new Date(formattedDate.replace(' ', 'T')).getTime();
+            const minTime = new Date(minDate).getTime();
+            if (selectedTime < minTime) {
+                Alert.alert("Invalid Time", "Deadline cannot be set before the round opens.");
+                return; // Prevent closing and confirming
+            }
+        }
+
         onConfirm(formattedDate);
         onClose();
     };

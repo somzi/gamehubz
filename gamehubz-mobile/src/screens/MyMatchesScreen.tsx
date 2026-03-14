@@ -17,6 +17,7 @@ interface MatchOverviewDto {
     scheduledTime: string | null;
     opponentName: string;
     status: number;
+    isRoundLocked?: boolean;
 }
 
 export default function MyMatchesScreen() {
@@ -40,8 +41,11 @@ export default function MyMatchesScreen() {
                     hubName: m.hubName || m.HubName,
                     scheduledTime: m.scheduledTime || m.ScheduledTime || null,
                     opponentName: m.opponentName || m.OpponentName,
-                    status: m.status !== undefined ? m.status : m.Status
+                    status: m.status !== undefined ? m.status : m.Status,
+                    isRoundLocked: m.isRoundLocked !== undefined ? m.isRoundLocked : m.IsRoundLocked
                 }));
+                // Optionally filter them out completely if the user expects them gone from here too.
+                // The user explicitly requested filtering in "Home panel", but keeping them here with locks is better UI.
                 setMatches(normalizedData);
             }
         } catch (error) {
@@ -116,6 +120,7 @@ export default function MyMatchesScreen() {
                                 status={!match.scheduledTime ? 'pending_availability' : match.status === 3 ? 'completed' : 'scheduled'}
                                 scheduledTime={match.scheduledTime ? new Date(match.scheduledTime).toLocaleString() : undefined}
                                 onMatchUpdate={fetchMatches}
+                                isRoundLocked={match.isRoundLocked}
                             />
                         ))
                     ) : (

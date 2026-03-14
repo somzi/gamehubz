@@ -31,6 +31,12 @@ const tournamentFormats = [
     { value: '5', label: 'Group Stage + Knockout' },
 ];
 
+const durationUnits = [
+    { value: 'Minutes', label: 'Minutes' },
+    { value: 'Hours', label: 'Hours' },
+    { value: 'Days', label: 'Days' },
+];
+
 const regions = [
     { value: 'global', label: 'Global (No Restrictions)' },
     { value: 'europe', label: 'Europe' },
@@ -79,6 +85,24 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
     const [startDate, setStartDate] = useState(tournament?.startDate || '');
     const [registrationDeadline, setRegistrationDeadline] = useState(tournament?.registrationDeadline || '');
 
+    const initialDurationMinutes = tournament?.roundDurationMinutes;
+    let initialDurVal = '';
+    let initialDurUnit = 'Minutes';
+    if (initialDurationMinutes != null) {
+        if (initialDurationMinutes > 0 && initialDurationMinutes % 1440 === 0) {
+            initialDurVal = String(initialDurationMinutes / 1440);
+            initialDurUnit = 'Days';
+        } else if (initialDurationMinutes > 0 && initialDurationMinutes % 60 === 0) {
+            initialDurVal = String(initialDurationMinutes / 60);
+            initialDurUnit = 'Hours';
+        } else {
+            initialDurVal = String(initialDurationMinutes);
+        }
+    }
+    const [roundDurationValue, setRoundDurationValue] = useState(initialDurVal);
+    const [roundDurationUnit, setRoundDurationUnit] = useState(initialDurUnit);
+    const [showDurationUnitPicker, setShowDurationUnitPicker] = useState(false);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showFormatPicker, setShowFormatPicker] = useState(false);
     const [showRegionPicker, setShowRegionPicker] = useState(false);
@@ -126,6 +150,16 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                     return dateStr;
                 }
             };
+            let roundDurationMinutes: number | null = null;
+            if ((selectedFormat === '0' || selectedFormat === '5') && roundDurationValue) {
+                const val = parseInt(roundDurationValue);
+                if (!isNaN(val)) {
+                    if (roundDurationUnit === 'Minutes') roundDurationMinutes = val;
+                    else if (roundDurationUnit === 'Hours') roundDurationMinutes = val * 60;
+                    else if (roundDurationUnit === 'Days') roundDurationMinutes = val * 1440;
+                }
+            }
+
             const payload = {
                 Id: tournament.id,
                 HubId: tournament.hubId || tournament.HubId,
@@ -142,6 +176,7 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                 Prize: parseInt(prize) || 0,
                 PrizeCurrency: parseInt(prizeCurrency) || 1,
                 Region: regionMapping[selectedRegion] ?? 0,
+                RoundDurationMinutes: roundDurationMinutes
             };
 
             const response = await authenticatedFetch(ENDPOINTS.CREATE_TOURNAMENT, {
@@ -363,6 +398,33 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                 </View>
                             )}
 
+                            {(selectedFormat === '0' || selectedFormat === '5') && (
+                                <View className="mb-6">
+                                    <Text className="text-sm font-bold text-white mb-3">How long should each round last? (optional)</Text>
+                                    <View className="flex-row gap-4">
+                                        <View className="flex-1">
+                                            <TextInput
+                                                className={`bg-[#131B2E] px-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
+                                                placeholder="e.g. 2"
+                                                placeholderTextColor="#6b7280"
+                                                keyboardType="numeric"
+                                                value={roundDurationValue}
+                                                onChangeText={setRoundDurationValue}
+                                                editable={canEditAll}
+                                            />
+                                        </View>
+                                        <TouchableOpacity
+                                            onPress={() => { if (canEditAll) setShowDurationUnitPicker(true); }}
+                                            disabled={!canEditAll}
+                                            className={`flex-1 bg-[#131B2E] px-4 h-14 rounded-xl border border-white/10 flex-row items-center justify-between ${!canEditAll ? 'opacity-50' : ''}`}
+                                        >
+                                            <Text className="text-white font-medium">{roundDurationUnit}</Text>
+                                            <Ionicons name="chevron-down" size={20} color="#94A3B8" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            )}
+
                             <View className="flex-row gap-4 mb-6">
                                 <View className="flex-1">
                                     <Text className="text-sm font-bold text-white mb-3">Start Date</Text>
@@ -415,6 +477,14 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                     tournamentFormats,
                     selectedFormat,
                     setSelectedFormat
+                )}
+
+                {renderOptionsModal(
+                    showDurationUnitPicker,
+                    () => setShowDurationUnitPicker(false),
+                    durationUnits,
+                    roundDurationUnit,
+                    setRoundDurationUnit
                 )}
 
                 {renderOptionsModal(

@@ -25,6 +25,7 @@ interface MatchOverviewDto {
     opponentName: string;
     opponentAvatarUrl?: string;
     status: number;
+    isRoundLocked?: boolean;
 }
 
 export default function HomeScreen() {
@@ -54,10 +55,12 @@ export default function HomeScreen() {
                     scheduledTime: m.scheduledTime || m.ScheduledTime || null,
                     opponentName: m.opponentName || m.OpponentName,
                     opponentAvatarUrl: m.opponentAvatarUrl || m.OpponentAvatarUrl,
-                    status: m.status !== undefined ? m.status : m.Status
+                    status: m.status !== undefined ? m.status : m.Status,
+                    isRoundLocked: m.isRoundLocked !== undefined ? m.isRoundLocked : m.IsRoundLocked
                 }));
-                setActionRequiredMatches(normalizedData.filter(m => !m.scheduledTime));
-                setMyMatches(normalizedData.filter(m => m.scheduledTime));
+                const openMatches = normalizedData.filter(m => !m.isRoundLocked);
+                setActionRequiredMatches(openMatches.filter(m => !m.scheduledTime));
+                setMyMatches(openMatches.filter(m => m.scheduledTime));
             }
         } catch (error) {
             console.error('Error fetching home matches:', error);

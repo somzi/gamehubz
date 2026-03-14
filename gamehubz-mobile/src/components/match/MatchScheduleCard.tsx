@@ -28,6 +28,7 @@ interface MatchScheduleCardProps {
     onMatchUpdate?: () => void;
     onPress?: () => void;
     variant?: 'default' | 'compact';
+    isRoundLocked?: boolean;
 }
 
 export function MatchScheduleCard({
@@ -44,6 +45,7 @@ export function MatchScheduleCard({
     onMatchUpdate,
     onPress,
     variant = 'default',
+    isRoundLocked = false,
 }: MatchScheduleCardProps) {
     const { user } = useAuth();
     const [modalVisible, setModalVisible] = useState(false);
@@ -798,8 +800,11 @@ export function MatchScheduleCard({
                                                         className="w-full h-14 rounded-2xl"
                                                         onPress={handleSubmitResult}
                                                         loading={isSubmitting}
+                                                        disabled={isRoundLocked}
                                                     >
-                                                        <Text className={cn("font-black uppercase tracking-widest", isPremium ? "text-slate-900" : "text-white")}>Submit Result</Text>
+                                                        <Text className={cn("font-black uppercase tracking-widest", isPremium ? "text-slate-900" : "text-white")}>
+                                                            {isRoundLocked ? "Round not open yet" : "Submit Result"}
+                                                        </Text>
                                                     </Button>
                                                 </View>
                                             </View>
