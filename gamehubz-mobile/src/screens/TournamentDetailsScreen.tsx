@@ -505,34 +505,20 @@ export default function TournamentDetailsScreen() {
         setIsLoading(true);
         
         try {
-            // Call SET_ROUND_DEADLINE
-            const deadlinePayload = {
+            const payload = {
                 RoundNumber: selectedRoundForDeadline.roundNumber,
-                Deadline: deadlineStr ? new Date(deadlineStr.replace(' ', 'T')).toISOString() : null
+                Deadline: deadlineStr ? new Date(deadlineStr.replace(' ', 'T')).toISOString() : null,
+                RoundStart: openAtStr ? new Date(openAtStr.replace(' ', 'T')).toISOString() : null
             };
-            const deadlineResponse = await authenticatedFetch(ENDPOINTS.SET_ROUND_DEADLINE(id), {
+            
+            const response = await authenticatedFetch(ENDPOINTS.SET_ROUND_SCHEDULE(id), {
                 method: 'PUT',
-                body: JSON.stringify(deadlinePayload)
+                body: JSON.stringify(payload)
             });
 
-            if (!deadlineResponse.ok) {
-                const text = await deadlineResponse.text().catch(() => 'No response body');
-                throw new Error(`Failed to update deadline: ${text}`);
-            }
-
-            // Call SET_ROUND_START
-            const startPayload = {
-                RoundNumber: selectedRoundForDeadline.roundNumber,
-                Deadline: openAtStr ? new Date(openAtStr.replace(' ', 'T')).toISOString() : null
-            };
-            const startResponse = await authenticatedFetch(ENDPOINTS.SET_ROUND_START(id), {
-                method: 'PUT',
-                body: JSON.stringify(startPayload)
-            });
-
-            if (!startResponse.ok) {
-                const text = await startResponse.text().catch(() => 'No response body');
-                throw new Error(`Failed to update start time: ${text}`);
+            if (!response.ok) {
+                const text = await response.text().catch(() => 'No response body');
+                throw new Error(`Failed to update schedule: ${text}`);
             }
 
             setStatusModalConfig({
