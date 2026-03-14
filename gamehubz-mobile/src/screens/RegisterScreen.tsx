@@ -118,20 +118,29 @@ export default function RegisterScreen() {
                     className="px-6"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View className="items-center my-8">
-                        <View className="w-16 h-16 bg-accent/20 rounded-2xl items-center justify-center mb-4 -rotate-3">
-                            <Ionicons name="person-add" size={30} color="hsl(45, 90%, 55%)" />
+                    <View className="items-center mb-10 mt-6">
+                        {/* Premium Hero Icon */}
+                        <View className="relative mb-6">
+                            <View 
+                                className="absolute -inset-4 bg-primary opacity-20 rounded-full" 
+                                style={{ transform: [{ scale: 1.1 }] }}
+                            />
+                            <View className="w-20 h-20 bg-[#131B2E] rounded-[28px] items-center justify-center border border-white/10 shadow-xl shadow-primary/20">
+                                <View className="w-14 h-14 bg-primary/10 rounded-[20px] items-center justify-center">
+                                    <Ionicons name="person-add" size={32} color="#10B981" />
+                                </View>
+                            </View>
                         </View>
 
-                        <Text className="text-3xl font-bold text-foreground mb-1">Create Account</Text>
-                        <Text className="text-muted-foreground text-center">
-                            Join the community and start competing
+                        <Text className="text-3xl font-black text-white mb-2 tracking-tight">Create Account</Text>
+                        <Text className="text-slate-400 text-center px-10 text-sm leading-5">
+                            Join the <Text className="text-primary font-black uppercase tracking-widest text-[10px]">GameHubz</Text> community and start competing at the highest level
                         </Text>
                     </View>
 
                     <View className="gap-4 w-full max-w-sm self-center">
                         <Input
-                            label="Username"
+                            label="USERNAME"
                             placeholder="ProGamer123"
                             value={formData.username}
                             onChangeText={(text) => updateForm('username', text)}
@@ -140,7 +149,7 @@ export default function RegisterScreen() {
                         />
 
                         <Input
-                            label="Nickname"
+                            label="NICKNAME"
                             placeholder="In-game nick"
                             value={formData.nickName}
                             onChangeText={(text) => updateForm('nickName', text)}
@@ -149,7 +158,7 @@ export default function RegisterScreen() {
                         />
 
                         <Input
-                            label="Email Address"
+                            label="EMAIL ADDRESS"
                             placeholder="you@example.com"
                             value={formData.email}
                             onChangeText={(text) => updateForm('email', text)}
@@ -160,7 +169,7 @@ export default function RegisterScreen() {
                         />
 
                         <SelectInput
-                            label="Region"
+                            label="REGION"
                             placeholder="Select your region"
                             options={regionOptions}
                             value={formData.region}
@@ -173,7 +182,7 @@ export default function RegisterScreen() {
                         <View className="flex-row gap-3">
                             <View className="flex-1">
                                 <Input
-                                    label="First Name (Opt)"
+                                    label="FIRST NAME (OPT)"
                                     placeholder="John"
                                     value={formData.firstName}
                                     onChangeText={(text) => updateForm('firstName', text)}
@@ -181,7 +190,7 @@ export default function RegisterScreen() {
                             </View>
                             <View className="flex-1">
                                 <Input
-                                    label="Last Name (Opt)"
+                                    label="LAST NAME (OPT)"
                                     placeholder="Doe"
                                     value={formData.lastName}
                                     onChangeText={(text) => updateForm('lastName', text)}
@@ -190,7 +199,7 @@ export default function RegisterScreen() {
                         </View>
 
                         <Input
-                            label="Password"
+                            label="PASSWORD"
                             placeholder="••••••••"
                             value={formData.password}
                             onChangeText={(text) => updateForm('password', text)}
@@ -202,7 +211,7 @@ export default function RegisterScreen() {
                         />
 
                         <Input
-                            label="Confirm Password"
+                            label="CONFIRM PASSWORD"
                             placeholder="••••••••"
                             value={formData.confirmPassword}
                             onChangeText={(text) => updateForm('confirmPassword', text)}
@@ -214,10 +223,13 @@ export default function RegisterScreen() {
                         <Button
                             onPress={handleRegister}
                             loading={isLoading}
-                            className="mt-4"
+                            className="mt-4 h-16 rounded-2xl shadow-lg shadow-primary/30"
                             size="lg"
                         >
-                            Create Account
+                            <View className="flex-row items-center justify-center gap-2">
+                                <Text className="text-primary-foreground font-black text-lg">Create Account</Text>
+                                <Ionicons name="chevron-forward" size={18} color="#0F172A" />
+                            </View>
                         </Button>
 
                         <View className="flex-row items-center justify-center mt-6 mb-4">

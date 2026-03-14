@@ -62,21 +62,30 @@ export default function LoginScreen() {
                     contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
                     className="px-6"
                 >
-                    <View className="items-center mb-10">
-                        {/* Placeholder for Logo */}
-                        <View className="w-20 h-20 bg-primary/20 rounded-2xl items-center justify-center mb-6 rotate-3">
-                            <Ionicons name="game-controller" size={40} color="hsl(185, 75%, 45%)" />
+                    <View className="items-center mb-12 mt-10">
+                        {/* Premium Logo Design */}
+                        <View className="relative mb-8">
+                            <View 
+                                className="absolute -inset-4 bg-primary opacity-20 rounded-full" 
+                                style={{ transform: [{ scale: 1.2 }] }}
+                            />
+                            <View className="w-24 h-24 bg-[#131B2E] rounded-[32px] items-center justify-center border border-white/10 shadow-2xl shadow-primary/40">
+                                <View className="w-16 h-16 bg-primary/10 rounded-[24px] items-center justify-center">
+                                    <Ionicons name="game-controller" size={42} color="#10B981" />
+                                </View>
+                            </View>
                         </View>
 
-                        <Text className="text-3xl font-bold text-foreground mb-2">Welcome Back!</Text>
-                        <Text className="text-muted-foreground text-center">
-                            Sign in to continue your gaming journey with GameHubz
+                        <Text className="text-3xl font-black text-white mb-2 tracking-tight">Welcome Back!</Text>
+                        <Text className="text-slate-400 text-center px-8 text-sm leading-5">
+                            Sign in to continue your gaming journey with{' '}
+                            <Text className="text-primary font-bold">GameHubz</Text>
                         </Text>
                     </View>
 
                     <View className="gap-4 w-full max-w-sm self-center">
                         <Input
-                            label="Email Address"
+                            label="EMAIL ADDRESS"
                             placeholder="entered@email.com"
                             value={email}
                             onChangeText={setEmail}
@@ -87,7 +96,7 @@ export default function LoginScreen() {
                         />
 
                         <Input
-                            label="Password"
+                            label="PASSWORD"
                             placeholder="••••••••"
                             value={password}
                             onChangeText={setPassword}
@@ -108,10 +117,13 @@ export default function LoginScreen() {
                         <Button
                             onPress={handleLogin}
                             loading={isLoading}
-                            className="mt-2"
+                            className="mt-2 h-16 rounded-2xl shadow-lg shadow-primary/30"
                             size="lg"
                         >
-                            Log In
+                            <View className="flex-row items-center justify-center gap-2">
+                                <Text className="text-primary-foreground font-black text-lg">Log In</Text>
+                                <Ionicons name="chevron-forward" size={18} color="#0F172A" />
+                            </View>
                         </Button>
 
                         <View className="flex-row items-center justify-center mt-6">
