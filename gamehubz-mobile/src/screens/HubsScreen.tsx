@@ -208,7 +208,7 @@ export default function HubsScreen() {
     ];
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-[#0F172A]">
             <PageHeader
                 title="Hubs"
                 rightElement={
@@ -253,7 +253,7 @@ export default function HubsScreen() {
                         onScroll={handleScroll}
                         scrollEventThrottle={16}
                     >
-                        <View className="gap-3 pb-8">
+                        <View className="pb-24 mt-2">
                             {filteredHubs.length === 0 ? (
                                 <View className="items-center py-12 opacity-50">
                                     <Ionicons name="people-outline" size={48} color="#71717A" />
@@ -276,18 +276,18 @@ export default function HubsScreen() {
                             ) : (
                                 <>
                                     {filteredHubs.map((hub, idx) => (
-                                        <HubCard
-                                            key={`${hub.id}-${idx}`}
-                                            name={hub.name}
-                                            description={hub.description}
-                                            numberOfUsers={hub.numberOfUsers}
-                                            numberOfTournaments={hub.numberOfTournaments}
-                                            avatarUrl={hub.avatarUrl || hub.logoUrl}
-                                            index={idx}
-                                            isJoined={activeTab === 'joined'}
-                                            onClick={() => navigation.navigate('HubProfile', { id: hub.id })}
-                                            className="mb-1"
-                                        />
+                                        <View key={`${hub.id}-${idx}`} className="mb-5">
+                                            <HubCard
+                                                name={hub.name}
+                                                description={hub.description}
+                                                numberOfUsers={hub.numberOfUsers}
+                                                numberOfTournaments={hub.numberOfTournaments}
+                                                avatarUrl={hub.avatarUrl || hub.logoUrl}
+                                                index={idx}
+                                                isJoined={activeTab === 'joined'}
+                                                onClick={() => navigation.navigate('HubProfile', { id: hub.id })}
+                                            />
+                                        </View>
                                     ))}
                                     {hasMoreHubs && isLoadingMore && (
                                         <View className="py-4 items-center justify-center">

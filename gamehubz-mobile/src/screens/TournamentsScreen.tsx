@@ -205,7 +205,7 @@ export default function TournamentsScreen() {
         }
 
         return (
-            <View className="pb-24 mt-8">
+            <View className="pb-24 mt-2">
                 {tournaments.map((tournament: any, index: number) => (
                     <View key={tournament.Id || tournament.id || `t-${index}`} className="mb-5">
                         <TournamentCard
@@ -237,7 +237,7 @@ export default function TournamentsScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-[#0F172A]" edges={['top']}>
             <PageHeader
                 title="Tournaments"
                 rightElement={<Ionicons name="trophy" size={24} color="#10B981" />}
@@ -250,7 +250,7 @@ export default function TournamentsScreen() {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
             >
-                <View className="px-4 py-4 gap-6">
+                <View className="px-4 py-4 gap-4">
                     <Tabs
                         tabs={tabs}
                         activeTab={activeTab}

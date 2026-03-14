@@ -3,10 +3,10 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
-import { PageHeader } from '../components/layout/PageHeader';
+
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { TournamentCard } from '../components/cards/TournamentCard';
-import { Button } from '../components/ui/Button';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from '../components/ui/Tabs';
 import { cn } from '../lib/utils';
@@ -34,6 +34,7 @@ export default function HubProfileScreen() {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
     useEffect(() => {
         fetchHubDetails();
@@ -192,40 +193,57 @@ export default function HubProfileScreen() {
     const renderTournamentList = () => {
         if (tournaments.length === 0 && !isListLoading) {
             return (
-                <View className="items-center py-12 opacity-50">
-                    <Ionicons name="trophy-outline" size={48} color="#71717A" />
-                    <Text className="text-muted-foreground mt-4 font-medium">No tournaments found</Text>
+                <View className="bg-[#131B2E] rounded-[24px] p-10 border border-white/5 items-center">
+                    <Ionicons name="trophy-outline" size={48} color="#1E293B" />
+                    <Text className="text-slate-600 mt-4 text-center text-sm">No tournaments found</Text>
                 </View>
             );
         }
 
         return (
-            <View className="gap-3 pb-8">
-                {tournaments.map((tournament: any) => (
-                    <TournamentCard
-                        key={tournament.id}
-                        name={tournament.name}
-                        status={tournament.status === 3 ? 'live' : (tournament.status === 4 ? 'completed' : 'upcoming')}
-                        date={new Date(tournament.startDate).toLocaleDateString()}
-                        region={tournament.region === 1 ? 'North America' : 'Europe'}
-                        prizePool={`${tournament.prizeCurrency === 1 ? '$' : '€'}${tournament.prize}`}
-                        players={new Array(tournament.numberOfParticipants || 0).fill({})}
-                        onClick={() => navigation.navigate('TournamentDetails', { id: tournament.id })}
-                        hubName={hubData.name}
-                        hubAvatarUrl={hubData.avatarUrl || hubData.logoUrl}
-                    />
+            <View className="pb-4 mt-2">
+                {tournaments.map((tournament: any, index: number) => (
+                    <View key={tournament.id || `t-${index}`} className="mb-5">
+                        <TournamentCard
+                            name={tournament.name}
+                            description={tournament.description}
+                            status={tournament.status === 3 ? 'live' : (tournament.status === 4 ? 'completed' : 'upcoming')}
+                            date={new Date(tournament.startDate).toLocaleDateString()}
+                            region={tournament.region === 1 ? 'North America' : 'Europe'}
+                            prizePool={`${tournament.prizeCurrency === 1 ? '$' : '€'}${tournament.prize}`}
+                            players={new Array(tournament.numberOfParticipants || 0).fill({})}
+                            onClick={() => navigation.navigate('TournamentDetails', { id: tournament.id })}
+                            index={index}
+                            hubName={hubData.name}
+                            hubAvatarUrl={hubData.avatarUrl || hubData.logoUrl}
+                        />
+                    </View>
                 ))}
-                {isListLoading && <ActivityIndicator size="small" color="#8B5CF6" className="py-4" />}
+                {isListLoading && (
+                    <View className="py-4 items-center">
+                        <ActivityIndicator size="small" color="#10B981" />
+                    </View>
+                )}
             </View>
         );
     };
 
     if (isLoading) {
         return (
-            <SafeAreaView className="flex-1 bg-background">
-                <PageHeader title="Hub Profile" showBack />
+            <SafeAreaView className="flex-1 bg-[#0F172A]" edges={['top']}>
+                <View className="flex-row items-center justify-between px-6 py-2">
+                    <Pressable
+                        onPress={() => navigation.goBack()}
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                    >
+                        <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
+                    </Pressable>
+                    <Text className="text-lg font-black text-white tracking-tight">Hub</Text>
+                    <View className="w-10" />
+                </View>
                 <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator size="large" color="#8B5CF6" />
+                    <ActivityIndicator size="large" color="#10B981" />
+                    <Text className="text-slate-500 mt-4">Loading hub...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -233,34 +251,58 @@ export default function HubProfileScreen() {
 
     if (error || !hubData) {
         return (
-            <SafeAreaView className="flex-1 bg-background">
-                <PageHeader title="Hub Profile" showBack />
-                <View className="flex-1 items-center justify-center p-6">
+            <SafeAreaView className="flex-1 bg-[#0F172A]" edges={['top']}>
+                <View className="flex-row items-center justify-between px-6 py-2">
+                    <Pressable
+                        onPress={() => navigation.goBack()}
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                    >
+                        <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
+                    </Pressable>
+                    <Text className="text-lg font-black text-white tracking-tight">Hub</Text>
+                    <View className="w-10" />
+                </View>
+                <View className="flex-1 items-center justify-center px-6">
                     <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-                    <Text className="text-destructive mt-4 text-center">{error || 'Hub not found'}</Text>
-                    <Button onPress={fetchHubDetails} className="mt-4">Retry</Button>
+                    <Text className="text-red-400 mt-4 text-center font-medium">{error || 'Hub not found'}</Text>
+                    <Pressable
+                        onPress={fetchHubDetails}
+                        className="mt-6 bg-[#131B2E] px-8 py-3 rounded-2xl border border-white/5"
+                    >
+                        <Text className="text-white font-bold">Retry</Text>
+                    </Pressable>
                 </View>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#0F172A]">
-            <PageHeader
-                title="Hub Profile"
-                showBack
-                rightElement={isOwner ? (
+        <SafeAreaView className="flex-1 bg-[#0F172A]" edges={['top']}>
+            {/* Top Bar */}
+            <View className="flex-row items-center justify-between px-6 py-2">
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                >
+                    <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
+                </Pressable>
+                <Text className="text-lg font-black text-white tracking-tight">Hub</Text>
+                {isOwner ? (
                     <Pressable
                         onPress={() => navigation.navigate('ManageHub', { hubId: id })}
                         className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
                     >
                         <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
                     </Pressable>
-                ) : null}
-            />
+                ) : (
+                    <View className="w-10" />
+                )}
+            </View>
+
             <ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: 100 }}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 150 }}
                 onScroll={({ nativeEvent }) => {
                     const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
                     if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 50) {
@@ -269,100 +311,129 @@ export default function HubProfileScreen() {
                 }}
                 scrollEventThrottle={16}
             >
-                {/* ─── Hero Section ─── */}
-                <View className="px-6 pt-6 pb-8">
-                    {/* Avatar + Name */}
-                    <View className="items-center">
-                        <View className="rounded-[28px] border-[3px] border-[#10B981]/30 p-1 mb-5">
-                            <PlayerAvatar
-                                name={hubData.name}
-                                src={hubData.avatarUrl || hubData.logoUrl}
-                                size="xl"
-                                className="w-24 h-24 rounded-[24px]"
-                            />
+                {/* ─── Hub Header Card ─── */}
+                <View className="px-5 mt-4">
+                    <View className="bg-[#131B2E] rounded-[28px] p-5 border border-white/5">
+                        <View className="flex-row items-center">
+                            <View className="mr-5">
+                                <View className="p-[3px] rounded-[22px] border-2 border-[#10B981]">
+                                    <PlayerAvatar
+                                        name={hubData.name}
+                                        src={hubData.avatarUrl || hubData.logoUrl}
+                                        size="lg"
+                                        className="border-0 rounded-[18px]"
+                                    />
+                                </View>
+                            </View>
+                            <View className="flex-1 justify-center">
+                                <Text className="text-2xl font-black text-white">{hubData.name}</Text>
+
+                            </View>
                         </View>
 
-                        <View className="flex-row items-center gap-2 mb-1">
-                            <Text className="text-2xl font-black text-white tracking-tight">
-                                {hubData.name}
-                            </Text>
-                        </View>
-
-                        {hubData.description ? (
-                            <Text className="text-[13px] text-slate-400 text-center leading-5 mt-1 px-4 max-w-[300px]">
-                                {hubData.description}
-                            </Text>
-                        ) : null}
-
-                        {/* Social Icons Row */}
+                        {/* Social Links */}
                         {hubData.hubSocials && hubData.hubSocials.length > 0 && (
-                            <View className="mt-5">
+                            <View className="mt-5 border-t border-white/5 pt-4 items-center">
                                 <SocialLinks links={mapSocialsToLinks(hubData.hubSocials)} className="justify-center" />
                             </View>
                         )}
-                    </View>
 
-                    {/* Follow / Manage Button */}
-                    {!isOwner && (
+                        {/* Follow Button (inside card) */}
+                        {!isOwner && (
+                            <Pressable
+                                onPress={handleFollowToggle}
+                                className={cn(
+                                    "mt-5 w-full py-3.5 rounded-2xl flex-row items-center justify-center gap-2",
+                                    isFollowing
+                                        ? "bg-white/5 border border-white/10"
+                                        : "bg-[#10B981]"
+                                )}
+                                style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                            >
+                                <Ionicons
+                                    name={isFollowing ? "checkmark-circle" : "add-circle"}
+                                    size={17}
+                                    color={isFollowing ? "#94A3B8" : "#fff"}
+                                />
+                                <Text className={cn(
+                                    "font-black text-sm tracking-wide",
+                                    isFollowing ? "text-slate-400" : "text-white"
+                                )}>
+                                    {isFollowing ? "Following" : "Follow Hub"}
+                                </Text>
+                            </Pressable>
+                        )}
+                    </View>
+                </View>
+
+                {/* ─── Stats Ribbon ─── */}
+                <View className="flex-row mx-5 bg-[#131B2E] rounded-[28px] p-1.5 border border-white/5 mt-4">
+                    <View className="flex-1 py-4 items-center">
+                        <View className="w-9 h-9 rounded-xl bg-indigo-500/10 items-center justify-center mb-2.5 border border-indigo-500/20">
+                            <Ionicons name="people" size={18} color="#818CF8" />
+                        </View>
+                        <Text className="text-white text-xl font-black">{(hubData.numberOfUsers || 0).toLocaleString()}</Text>
+                        <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Followers</Text>
+                    </View>
+                    <View className="w-[1px] bg-white/5 my-3" />
+                    <View className="flex-1 py-4 items-center">
+                        <View className="w-9 h-9 rounded-xl bg-amber-500/10 items-center justify-center mb-2.5 border border-amber-500/20">
+                            <Ionicons name="trophy" size={18} color="#FBBF24" />
+                        </View>
+                        <Text className="text-white text-xl font-black">{hubData.numberOfTournaments || 0}</Text>
+                        <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Tournaments</Text>
+                    </View>
+                </View>
+
+                {/* ─── Hub Description Card (Collapsible) ─── */}
+                {hubData.description ? (
+                    <View className="px-5 mt-4">
                         <Pressable
-                            onPress={handleFollowToggle}
-                            className={cn(
-                                "mt-6 w-full py-4 rounded-2xl flex-row items-center justify-center gap-2 border",
-                                isFollowing
-                                    ? "bg-white/5 border-white/10"
-                                    : "bg-[#10B981] border-[#10B981]/50"
-                            )}
-                            style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                            onPress={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                            className="bg-[#131B2E] rounded-[28px] border border-white/5 overflow-hidden"
                         >
-                            <Ionicons
-                                name={isFollowing ? "checkmark-circle" : "add-circle"}
-                                size={18}
-                                color={isFollowing ? "#94A3B8" : "#fff"}
-                            />
-                            <Text className={cn(
-                                "font-black text-sm tracking-wide",
-                                isFollowing ? "text-slate-400" : "text-white"
-                            )}>
-                                {isFollowing ? "Following" : "Follow Hub"}
-                            </Text>
+                            <View className="p-5">
+                                <View className="flex-row items-center justify-between">
+                                    <View className="flex-row items-center gap-2">
+                                        <View className="w-7 h-7 rounded-lg bg-emerald-500/10 items-center justify-center">
+                                            <Ionicons name="information-circle" size={14} color="#10B981" />
+                                        </View>
+                                        <Text className="text-[11px] font-black text-white uppercase tracking-widest">About Hub</Text>
+                                    </View>
+                                    <View className={cn(
+                                        "w-6 h-6 rounded-full bg-white/5 items-center justify-center",
+                                        isDescriptionExpanded && "bg-emerald-500/10"
+                                    )}>
+                                        <Ionicons
+                                            name={isDescriptionExpanded ? "chevron-up" : "chevron-down"}
+                                            size={14}
+                                            color={isDescriptionExpanded ? "#10B981" : "#64748B"}
+                                        />
+                                    </View>
+                                </View>
+
+                                {isDescriptionExpanded && (
+                                    <View className="mt-4 border-t border-white/5 pt-4">
+                                        <Text className="text-slate-400 text-[14px] leading-6">
+                                            {hubData.description}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                         </Pressable>
-                    )}
-                </View>
-
-                {/* ─── Stats Row ─── */}
-                <View className="flex-row px-4 pt-5 pb-2 gap-3">
-                    <View className="flex-1 bg-[#131B2E] rounded-3xl p-5 border border-white/5 items-center">
-                        <View className="w-11 h-11 rounded-2xl bg-indigo-500/10 items-center justify-center mb-3 border border-indigo-500/20">
-                            <Ionicons name="people" size={22} color="#818CF8" />
-                        </View>
-                        <Text className="text-2xl font-black text-white mb-0.5">
-                            {(hubData.numberOfUsers || 0).toLocaleString()}
-                        </Text>
-                        <Text className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                            Followers
-                        </Text>
                     </View>
-                    <View className="flex-1 bg-[#131B2E] rounded-3xl p-5 border border-white/5 items-center">
-                        <View className="w-11 h-11 rounded-2xl bg-amber-500/10 items-center justify-center mb-3 border border-amber-500/20">
-                            <Ionicons name="trophy" size={22} color="#FBBF24" />
-                        </View>
-                        <Text className="text-2xl font-black text-white mb-0.5">
-                            {hubData.numberOfTournaments || 0}
-                        </Text>
-                        <Text className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                            Tournaments
-                        </Text>
-                    </View>
-                </View>
+                ) : null}
 
-                {/* ─── Tournament Section ─── */}
-                <View className="px-4 pt-4 pb-6">
-                    <Tabs
-                        tabs={tabs}
-                        activeTab={activeTab}
-                        onTabChange={setActiveTab}
-                    />
-                    <View className="mt-4">
+                {/* ─── Tournament Tabs ─── */}
+                <View className="mt-7 flex-1">
+                    <View className="px-5 mb-6">
+                        <Tabs
+                            tabs={tabs}
+                            activeTab={activeTab}
+                            onTabChange={setActiveTab}
+                        />
+                    </View>
+                    <View className="px-5">
                         {renderTournamentList()}
                     </View>
                 </View>
