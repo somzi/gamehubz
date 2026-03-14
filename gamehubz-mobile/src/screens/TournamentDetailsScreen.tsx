@@ -931,6 +931,24 @@ export default function TournamentDetailsScreen() {
                                                 </Text>
                                             </View>
                                             <View className="h-[1px] bg-white/5" />
+                                            {/* Format */}
+                                            <View className="flex-row items-center justify-between py-3">
+                                                <View className="flex-row items-center gap-3">
+                                                    <View className="w-8 h-8 rounded-xl bg-[#8B5CF6]/10 items-center justify-center">
+                                                        <Ionicons name="list-outline" size={16} color="#8B5CF6" />
+                                                    </View>
+                                                    <Text className="text-sm text-slate-400 font-bold">Format</Text>
+                                                </View>
+                                                <Text className="text-base font-black text-white text-right max-w-[60%]">
+                                                    {tournament.format === 0 ? 'League' :
+                                                     tournament.format === 1 ? 'Groups + Single Elimination' :
+                                                     tournament.format === 2 ? 'Groups + Double Elimination' :
+                                                     tournament.format === 3 ? 'Single Elimination' :
+                                                     tournament.format === 4 ? 'Double Elimination' :
+                                                     tournament.format === 5 ? 'Group Stage + Knockout' : 'Unknown'}
+                                                </Text>
+                                            </View>
+                                            <View className="h-[1px] bg-white/5" />
                                             {/* Date */}
                                             <View className="flex-row items-center justify-between py-3">
                                                 <View className="flex-row items-center gap-3">

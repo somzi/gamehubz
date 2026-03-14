@@ -27,10 +27,7 @@ interface EditTournamentModalProps {
 
 const tournamentFormats = [
     { value: '0', label: 'League' },
-    { value: '1', label: 'Groups + Single Elimination' },
-    { value: '2', label: 'Groups + Double Elimination' },
     { value: '3', label: 'Single Elimination' },
-    { value: '4', label: 'Double Elimination' },
     { value: '5', label: 'Group Stage + Knockout' },
 ];
 
@@ -73,7 +70,7 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
     const [description, setDescription] = useState(tournament?.description || '');
     const [rules, setRules] = useState(tournament?.rules || '');
     const [maxPlayers, setMaxPlayers] = useState(String(tournament?.maxPlayers || ''));
-    const [selectedFormat, setSelectedFormat] = useState(String(tournament?.format || '3'));
+    const [selectedFormat, setSelectedFormat] = useState(String(tournament?.format !== undefined ? tournament.format : '3'));
     const [groupsCount, setGroupsCount] = useState(String(tournament?.groupsCount || '4'));
     const [qualifiersPerGroup, setQualifiersPerGroup] = useState(String(tournament?.qualifiersPerGroup || '2'));
     const [prize, setPrize] = useState(String(tournament?.prize || ''));

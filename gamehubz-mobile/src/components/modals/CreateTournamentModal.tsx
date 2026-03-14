@@ -41,10 +41,7 @@ const prizeCurrencies = [
 
 const tournamentFormats = [
     { value: '0', label: 'League' },
-    { value: '1', label: 'Groups + Single Elimination' },
-    { value: '2', label: 'Groups + Double Elimination' },
     { value: '3', label: 'Single Elimination' },
-    { value: '4', label: 'Double Elimination' },
     { value: '5', label: 'Group Stage + Knockout' },
 ];
 
