@@ -636,7 +636,7 @@ export function MatchScheduleCard({
                                         }}
                                     >
                                         {currentStatus === 'pending_availability' && (
-                                            <View className="mb-4">
+                                            <View className="flex-1">
                                                 <HourlyAvailabilityPicker
                                                     matchId={matchId}
                                                     deadline={localDeadline}
@@ -798,7 +798,7 @@ export function MatchScheduleCard({
                                                     nestedScrollEnabled
                                                     showsVerticalScrollIndicator={false}
                                                     contentContainerStyle={{ paddingVertical: 10 }}
-                                                    onContentSizeChange={() => commentsScrollRef.current?.scrollToEnd({ animated: true })}
+                                                    onContentSizeChange={() => commentsScrollRef.current?.scrollToEnd({ animated: false })}
                                                 >
                                                     {comments.map((comment) => {
                                                         const isMyComment = comment.userId === user?.id;

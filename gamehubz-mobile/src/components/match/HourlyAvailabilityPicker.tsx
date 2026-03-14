@@ -166,16 +166,21 @@ export function HourlyAvailabilityPicker({
     }
 
     return (
-        <View className="flex-1 space-y-4">
-            <View className="flex-row items-center gap-2 mb-2">
-                <Ionicons name="calendar-outline" size={16} color="#94A3B8" />
-                <Text className="text-sm text-slate-400 font-medium">Deadline: {displayDeadline}</Text>
+        <View className="flex-1 space-y-2">
+            {/* Deadline & Instruction */}
+            <View className="bg-slate-800/40 rounded-2xl p-3 border border-white/5 mb-1">
+                <View className="flex-row items-center gap-2">
+                    <View className="w-7 h-7 rounded-lg bg-amber-500/10 items-center justify-center border border-amber-500/20">
+                        <Ionicons name="calendar-outline" size={14} color="#FBBF24" />
+                    </View>
+                    <Text className="text-sm text-slate-400 font-bold">Deadline: {displayDeadline}</Text>
+                </View>
+                <View className="h-[1px] bg-white/5 my-2" />
+                <Text className="text-sm text-slate-300 leading-5">
+                    Pick dates and times when you can play vs{' '}
+                    <Text className="font-bold text-primary">{opponentName}</Text>
+                </Text>
             </View>
-
-            <Text className="text-sm text-slate-300">
-                Pick dates and times when you can play vs{' '}
-                <Text className="font-bold text-primary">{opponentName}</Text>
-            </Text>
 
             {/* Date Tabs (ostaje fiksne visine) */}
             <View>
@@ -222,8 +227,15 @@ export function HourlyAvailabilityPicker({
                 </ScrollView>
             </View>
 
-            {/* Hourly List for Selected Date - UMESTO max-h-80 SADA IMA flex-1 */}
-            <View className="flex-1 bg-slate-900/50 rounded-3xl border border-slate-800/50 p-2">
+            {/* Hourly List Section Header */}
+            <View className="flex-row items-center justify-between px-1 mt-1">
+                <Text className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                    Available times for {selectedDay.fullLabel}
+                </Text>
+            </View>
+
+            {/* Hourly List for Selected Date */}
+            <View className="flex-1 bg-slate-900/40 rounded-3xl border border-white/5 p-2">
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     nestedScrollEnabled={true}
@@ -249,7 +261,7 @@ export function HourlyAvailabilityPicker({
                                     onPress={() => toggleSlot(dayKey, hour)}
                                     disabled={isDisabled}
                                     className={cn(
-                                        "w-[23%] h-12 mb-2 rounded-xl items-center justify-center border",
+                                        "w-[23.5%] h-16 mb-2 rounded-xl items-center justify-center border",
                                         isDisabled
                                             ? "bg-slate-800/10 border-slate-700/10 opacity-20"
                                             : isMutual
@@ -265,7 +277,7 @@ export function HourlyAvailabilityPicker({
                                     {isMutual ? (
                                         <View className="items-center justify-center">
                                             <Ionicons name="checkmark-done" size={16} color="#0F172A" />
-                                            <Text className="text-[10px] text-slate-900 uppercase font-black tracking-tighter -mt-0.5">
+                                            <Text className="text-[11px] text-slate-900 uppercase font-black tracking-tighter -mt-0.5">
                                                 Mutual
                                             </Text>
                                         </View>
@@ -273,7 +285,7 @@ export function HourlyAvailabilityPicker({
                                         <>
                                             <View className="flex-row items-center justify-center gap-1">
                                                 <Text className={cn(
-                                                    "text-xs font-bold",
+                                                    "text-sm font-black",
                                                     isSelected ? "text-primary" : opponentAvail ? "text-indigo-400" : "text-slate-300"
                                                 )}>
                                                     {formatHour(hour)}
@@ -283,7 +295,7 @@ export function HourlyAvailabilityPicker({
                                                 )}
                                             </View>
                                             {opponentAvail && (
-                                                <Text className="text-[9px] text-indigo-400/80 absolute bottom-1 uppercase font-bold tracking-tighter">
+                                                <Text className="text-[10px] text-indigo-400/80 absolute bottom-1.5 uppercase font-black tracking-widest">
                                                     Available
                                                 </Text>
                                             )}
