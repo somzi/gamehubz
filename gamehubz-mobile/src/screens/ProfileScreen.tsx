@@ -303,23 +303,65 @@ export default function ProfileScreen() {
                     <View className="px-6 pb-12 pt-4 bg-transparent flex-1">
                         {activeTab === 'stats' && (
                             <View>
-                                <Text className="text-[11px] font-black text-white uppercase tracking-widest mb-4">Performance Form</Text>
-                                <View className="flex-row gap-1.5 mb-8">
-                                    {performanceList.length > 0 ? performanceList.slice(0, 10).map((match, i) => (
-                                        <View
-                                            key={i}
-                                            className={cn(
-                                                "flex-1 h-1.5 rounded-full",
-                                                match.isWin ? "bg-[#10B981]" : "bg-[#EF4444]"
-                                            )}
-                                        />
-                                    )) : (
-                                        <Text className="text-gray-500 text-xs italic">No performance data yet</Text>
+                                <View className="flex-row items-center justify-between mb-3">
+                                    <Text className="text-[11px] font-black text-white uppercase tracking-widest">Recent Form</Text>
+                                    {performanceList.length > 0 && (
+                                        <View className="flex-row items-center gap-3">
+                                            <View className="flex-row items-center gap-1">
+                                                <View className="w-2 h-2 rounded-full bg-[#10B981]" />
+                                                <Text className="text-[9px] text-gray-400 font-bold uppercase">Win</Text>
+                                            </View>
+                                            <View className="flex-row items-center gap-1">
+                                                <View className="w-2 h-2 rounded-full bg-[#EF4444]" />
+                                                <Text className="text-[9px] text-gray-400 font-bold uppercase">Loss</Text>
+                                            </View>
+                                        </View>
                                     )}
-                                    {/* Fill empty with disabled gray if needed */}
-                                    {performanceList.length > 0 && Array.from({ length: Math.max(0, 10 - performanceList.length) }).map((_, i) => (
-                                        <View key={`empty-${i}`} className="flex-1 h-1.5 rounded-full bg-white/10" />
-                                    ))}
+                                </View>
+                                <View className="bg-card-elevated rounded-2xl p-4 mb-8 border border-white/5">
+                                    {performanceList.length > 0 ? (
+                                        <>
+                                            <View className="flex-row items-center justify-center gap-1.5">
+                                                {[...performanceList].reverse().slice(-10).map((match, i, arr) => (
+                                                    <View key={i} className="flex-1 items-center">
+                                                        <View
+                                                            className={cn(
+                                                                "w-7 h-7 rounded-full items-center justify-center",
+                                                                match.isWin ? "bg-[#10B981]/20 border border-[#10B981]/50" : "bg-[#EF4444]/20 border border-[#EF4444]/50"
+                                                            )}
+                                                        >
+                                                            <Text className={cn(
+                                                                "text-[10px] font-black",
+                                                                match.isWin ? "text-[#10B981]" : "text-[#EF4444]"
+                                                            )}>
+                                                                {match.isWin ? 'W' : 'L'}
+                                                            </Text>
+                                                        </View>
+                                                        {i < arr.length - 1 && (
+                                                            <View className="absolute right-[-4px] top-[12px] w-[5px] h-[3px] rounded-full bg-white/10" />
+                                                        )}
+                                                    </View>
+                                                ))}
+                                                {Array.from({ length: Math.max(0, 10 - performanceList.length) }).map((_, i) => (
+                                                    <View key={`empty-${i}`} className="flex-1 items-center">
+                                                        <View className="w-7 h-7 rounded-full items-center justify-center bg-white/5 border border-white/10">
+                                                            <Text className="text-[10px] font-black text-white/20">-</Text>
+                                                        </View>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                            <View className="flex-row items-center justify-between mt-2.5 px-1">
+                                                <Text className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Oldest</Text>
+                                                <View className="flex-1 mx-2 flex-row items-center">
+                                                    <View className="flex-1 h-[1px] bg-white/5" />
+                                                    <Ionicons name="chevron-forward" size={10} color="rgba(255,255,255,0.15)" />
+                                                </View>
+                                                <Text className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Latest</Text>
+                                            </View>
+                                        </>
+                                    ) : (
+                                        <Text className="text-gray-500 text-xs italic text-center py-2">No performance data yet</Text>
+                                    )}
                                 </View>
 
                                 <View className="bg-card-elevated rounded-[32px] p-6 flex-row items-center justify-between border border-white/5">
