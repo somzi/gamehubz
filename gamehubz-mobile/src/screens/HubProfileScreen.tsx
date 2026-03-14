@@ -311,118 +311,113 @@ export default function HubProfileScreen() {
                 }}
                 scrollEventThrottle={16}
             >
-                {/* ─── Hub Header Card ─── */}
+                {/* ─── Unified Hub Hero ─── */}
                 <View className="px-5 mt-4">
-                    <View className="bg-[#131B2E] rounded-[28px] p-5 border border-white/5">
-                        <View className="flex-row items-center">
-                            <View className="mr-5">
-                                <View className="p-[3px] rounded-[22px] border-2 border-[#10B981]">
-                                    <PlayerAvatar
-                                        name={hubData.name}
-                                        src={hubData.avatarUrl || hubData.logoUrl}
-                                        size="lg"
-                                        className="border-0 rounded-[18px]"
-                                    />
-                                </View>
-                            </View>
-                            <View className="flex-1 justify-center">
-                                <Text className="text-2xl font-black text-white">{hubData.name}</Text>
+                    <View className="bg-[#131B2E] rounded-[28px] border border-white/5 overflow-hidden">
+                        {/* Accent gradient bar */}
+                        <View className="h-1.5 bg-[#10B981]" />
 
-                            </View>
-                        </View>
-
-                        {/* Social Links */}
-                        {hubData.hubSocials && hubData.hubSocials.length > 0 && (
-                            <View className="mt-5 border-t border-white/5 pt-4 items-center">
-                                <SocialLinks links={mapSocialsToLinks(hubData.hubSocials)} className="justify-center" />
-                            </View>
-                        )}
-
-                        {/* Follow Button (inside card) */}
-                        {!isOwner && (
-                            <Pressable
-                                onPress={handleFollowToggle}
-                                className={cn(
-                                    "mt-5 w-full py-3.5 rounded-2xl flex-row items-center justify-center gap-2",
-                                    isFollowing
-                                        ? "bg-white/5 border border-white/10"
-                                        : "bg-[#10B981]"
-                                )}
-                                style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
-                            >
-                                <Ionicons
-                                    name={isFollowing ? "checkmark-circle" : "add-circle"}
-                                    size={17}
-                                    color={isFollowing ? "#94A3B8" : "#fff"}
-                                />
-                                <Text className={cn(
-                                    "font-black text-sm tracking-wide",
-                                    isFollowing ? "text-slate-400" : "text-white"
-                                )}>
-                                    {isFollowing ? "Following" : "Follow Hub"}
-                                </Text>
-                            </Pressable>
-                        )}
-                    </View>
-                </View>
-
-                {/* ─── Stats Ribbon ─── */}
-                <View className="flex-row mx-5 bg-[#131B2E] rounded-[28px] p-1.5 border border-white/5 mt-4">
-                    <View className="flex-1 py-4 items-center">
-                        <View className="w-9 h-9 rounded-xl bg-indigo-500/10 items-center justify-center mb-2.5 border border-indigo-500/20">
-                            <Ionicons name="people" size={18} color="#818CF8" />
-                        </View>
-                        <Text className="text-white text-xl font-black">{(hubData.numberOfUsers || 0).toLocaleString()}</Text>
-                        <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Followers</Text>
-                    </View>
-                    <View className="w-[1px] bg-white/5 my-3" />
-                    <View className="flex-1 py-4 items-center">
-                        <View className="w-9 h-9 rounded-xl bg-amber-500/10 items-center justify-center mb-2.5 border border-amber-500/20">
-                            <Ionicons name="trophy" size={18} color="#FBBF24" />
-                        </View>
-                        <Text className="text-white text-xl font-black">{hubData.numberOfTournaments || 0}</Text>
-                        <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Tournaments</Text>
-                    </View>
-                </View>
-
-                {/* ─── Hub Description Card (Collapsible) ─── */}
-                {hubData.description ? (
-                    <View className="px-5 mt-4">
-                        <Pressable
-                            onPress={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                            className="bg-[#131B2E] rounded-[28px] border border-white/5 overflow-hidden"
-                        >
-                            <View className="p-5">
-                                <View className="flex-row items-center justify-between">
-                                    <View className="flex-row items-center gap-2">
-                                        <View className="w-7 h-7 rounded-lg bg-emerald-500/10 items-center justify-center">
-                                            <Ionicons name="information-circle" size={14} color="#10B981" />
-                                        </View>
-                                        <Text className="text-[11px] font-black text-white uppercase tracking-widest">About Hub</Text>
-                                    </View>
-                                    <View className={cn(
-                                        "w-6 h-6 rounded-full bg-white/5 items-center justify-center",
-                                        isDescriptionExpanded && "bg-emerald-500/10"
-                                    )}>
-                                        <Ionicons
-                                            name={isDescriptionExpanded ? "chevron-up" : "chevron-down"}
-                                            size={14}
-                                            color={isDescriptionExpanded ? "#10B981" : "#64748B"}
+                        <View className="p-5">
+                            {/* Avatar + Name + Stats row */}
+                            <View className="flex-row items-center">
+                                <View className="mr-4">
+                                    <View className="p-[3px] rounded-[22px] border-2 border-[#10B981]">
+                                        <PlayerAvatar
+                                            name={hubData.name}
+                                            src={hubData.avatarUrl || hubData.logoUrl}
+                                            size="lg"
+                                            className="border-0 rounded-[18px]"
                                         />
                                     </View>
                                 </View>
-
-                                {isDescriptionExpanded && (
-                                    <View className="mt-4 border-t border-white/5 pt-4">
-                                        <Text className="text-slate-400 text-[14px] leading-6">
-                                            {hubData.description}
-                                        </Text>
+                                <View className="flex-1">
+                                    <Text className="text-2xl font-black text-white" numberOfLines={1}>{hubData.name}</Text>
+                                    {/* Inline stats */}
+                                    <View className="flex-row items-center mt-2 gap-4">
+                                        <View className="flex-row items-center gap-1.5">
+                                            <Ionicons name="people" size={14} color="#818CF8" />
+                                            <Text className="text-white font-bold text-sm">{(hubData.numberOfUsers || 0).toLocaleString()}</Text>
+                                            <Text className="text-slate-500 text-xs">followers</Text>
+                                        </View>
+                                        <View className="w-[1px] h-3.5 bg-white/10" />
+                                        <View className="flex-row items-center gap-1.5">
+                                            <Ionicons name="trophy" size={14} color="#FBBF24" />
+                                            <Text className="text-white font-bold text-sm">{hubData.numberOfTournaments || 0}</Text>
+                                            <Text className="text-slate-500 text-xs">tournaments</Text>
+                                        </View>
                                     </View>
-                                )}
+                                </View>
                             </View>
-                        </Pressable>
+
+                            {/* Social Links */}
+                            {hubData.hubSocials && hubData.hubSocials.length > 0 && (
+                                <View className="mt-4 pt-4 border-t border-white/5 items-center">
+                                    <SocialLinks links={mapSocialsToLinks(hubData.hubSocials)} className="justify-center" />
+                                </View>
+                            )}
+
+                            {/* About Hub (inline collapsible) */}
+                            {hubData.description ? (
+                                <Pressable
+                                    onPress={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                    className="mt-4 pt-4 border-t border-white/5"
+                                >
+                                    <View className="flex-row items-center justify-between">
+                                        <View className="flex-row items-center gap-2">
+                                            <View className="w-6 h-6 rounded-lg bg-emerald-500/10 items-center justify-center">
+                                                <Ionicons name="information-circle" size={13} color="#10B981" />
+                                            </View>
+                                            <Text className="text-[11px] font-black text-white uppercase tracking-widest">About</Text>
+                                        </View>
+                                        <View className={cn(
+                                            "w-6 h-6 rounded-full bg-white/5 items-center justify-center",
+                                            isDescriptionExpanded && "bg-emerald-500/10"
+                                        )}>
+                                            <Ionicons
+                                                name={isDescriptionExpanded ? "chevron-up" : "chevron-down"}
+                                                size={14}
+                                                color={isDescriptionExpanded ? "#10B981" : "#64748B"}
+                                            />
+                                        </View>
+                                    </View>
+                                    {isDescriptionExpanded && (
+                                        <View className="mt-3">
+                                            <Text className="text-slate-400 text-[14px] leading-6">
+                                                {hubData.description}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </Pressable>
+                            ) : null}
+
+                            {/* Follow Button */}
+                            {!isOwner && (
+                                <Pressable
+                                    onPress={handleFollowToggle}
+                                    className={cn(
+                                        "mt-4 w-full py-3.5 rounded-2xl flex-row items-center justify-center gap-2",
+                                        isFollowing
+                                            ? "bg-white/5 border border-white/10"
+                                            : "bg-[#10B981]"
+                                    )}
+                                    style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                                >
+                                    <Ionicons
+                                        name={isFollowing ? "checkmark-circle" : "add-circle"}
+                                        size={17}
+                                        color={isFollowing ? "#94A3B8" : "#fff"}
+                                    />
+                                    <Text className={cn(
+                                        "font-black text-sm tracking-wide",
+                                        isFollowing ? "text-slate-400" : "text-white"
+                                    )}>
+                                        {isFollowing ? "Following" : "Follow Hub"}
+                                    </Text>
+                                </Pressable>
+                            )}
+                        </View>
                     </View>
-                ) : null}
+                </View>
 
                 {/* ─── Tournament Tabs ─── */}
                 {isFollowing || isOwner ? (
