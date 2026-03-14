@@ -1,17 +1,19 @@
-// Environment configuration
-const IS_PROD = !__DEV__;
-const PROD_URL = 'https://gamehubz.duckdns.org';
+import { Platform } from 'react-native';
 
-// For local development on physical devices, use your computer's local IP
-const LOCAL_IP = '192.168.0.3';
-const LOCAL_PORT = '5057';
-const LOCAL_URL = `http://${LOCAL_IP}:${LOCAL_PORT}`;
+// For Android emulators, localhost is 10.0.2.2
+// For iOS simulators and Web, localhost is localhost
+// For physical devices, you MUST use your computer's local IP address (e.g., 192.168.1.5)
+const getApiHost = () => {
+    if (Platform.OS === 'android') {
+        return '192.168.0.3';
+    }
+    // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
+    return '192.168.0.3';
+};
 
-// export const API_BASE_URL = IS_PROD ? PROD_URL : LOCAL_URL;
-export const API_BASE_URL = PROD_URL; // Forsiraš Hetzner čak i u dev modu
-
-console.log(`[API] Environment: ${IS_PROD ? 'Production' : 'Development'}`);
-console.log(`[API] Base URL: ${API_BASE_URL}`);
+export const API_HOST = getApiHost();
+export const API_PORT = '5057';
+export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
 
 export const ENDPOINTS = {
     SET_PASSWORD: `${API_BASE_URL}/api/Auth/setPassword`,
@@ -30,6 +32,8 @@ export const ENDPOINTS = {
     GET_USER_TOURNAMENTS: (userId: string, status: number, page: number, pageSize: number = 10) =>
         `${API_BASE_URL}/api/User/${userId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,
     GET_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}`,
+    CANCEL_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}/cancel`,
+    HARD_DELETE_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}/hardDelete`,
     GET_TOURNAMENT_OVERVIEW: (id: string) => `${API_BASE_URL}/api/tournament/${id}/overview`,
     REGISTER_TOURNAMENT: `${API_BASE_URL}/api/tournamentRegistration`,
     GET_PENDING_REGISTRATIONS: (tournamentId: string) => `${API_BASE_URL}/api/tournamentRegistration/tournament/${tournamentId}/pending`,
