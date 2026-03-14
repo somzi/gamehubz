@@ -144,18 +144,22 @@ export default function HomeScreen() {
                             <View className="flex-row items-center justify-between mb-3">
                                 <Pressable 
                                     onPress={() => setIsActionRequiredCollapsed(!isActionRequiredCollapsed)}
-                                    className="flex-row items-center gap-2"
+                                    className="flex-row items-center gap-3"
                                 >
-                                    <View className="w-1 h-5 rounded-full bg-yellow-500" />
-                                    <Text className="text-white font-black text-base tracking-tight">Needs Attention</Text>
-                                    <View className="bg-yellow-500/20 px-2 py-0.5 rounded-full">
-                                        <Text className="text-[11px] font-black text-yellow-400">{actionRequiredMatches.length}</Text>
+                                    <View className="w-9 h-9 rounded-xl bg-yellow-500/10 items-center justify-center border border-yellow-500/20">
+                                        <Ionicons name="alert-circle" size={18} color="#EAB308" />
                                     </View>
-                                    <Ionicons 
-                                        name={isActionRequiredCollapsed ? "chevron-down" : "chevron-up"} 
-                                        size={14} 
-                                        color="#EAB308" 
-                                    />
+                                    <View className="flex-row items-center gap-2">
+                                        <Text className="text-white font-black text-base tracking-tight">Needs Attention</Text>
+                                        <View className="bg-yellow-500/20 px-2 py-0.5 rounded-full">
+                                            <Text className="text-[11px] font-black text-yellow-500">{actionRequiredMatches.length}</Text>
+                                        </View>
+                                        <Ionicons 
+                                            name={isActionRequiredCollapsed ? "chevron-down" : "chevron-up"} 
+                                            size={14} 
+                                            color="#64748B" 
+                                        />
+                                    </View>
                                 </Pressable>
                                 <Pressable
                                     onPress={() => navigation.navigate('MyMatches')}
@@ -191,15 +195,19 @@ export default function HomeScreen() {
                         <View className="flex-row items-center justify-between mb-3">
                         <Pressable 
                             onPress={() => setIsActiveMatchesCollapsed(!isActiveMatchesCollapsed)}
-                            className="flex-row items-center gap-2"
+                            className="flex-row items-center gap-3"
                         >
-                            <View className="w-1 h-5 rounded-full bg-primary" />
-                            <Text className="text-white font-black text-base tracking-tight">Active Matches</Text>
-                            <Ionicons 
-                                name={isActiveMatchesCollapsed ? "chevron-down" : "chevron-up"} 
-                                size={14} 
-                                color="#10B981" 
-                            />
+                            <View className="w-9 h-9 rounded-xl bg-primary/10 items-center justify-center border border-primary/20">
+                                <Ionicons name="game-controller" size={18} color="#10B981" />
+                            </View>
+                            <View className="flex-row items-center gap-2">
+                                <Text className="text-white font-black text-base tracking-tight">Active Matches</Text>
+                                <Ionicons 
+                                    name={isActiveMatchesCollapsed ? "chevron-down" : "chevron-up"} 
+                                    size={14} 
+                                    color="#64748B" 
+                                />
+                            </View>
                         </Pressable>
                             <Pressable
                                 onPress={() => navigation.navigate('MyMatches')}
@@ -247,15 +255,19 @@ export default function HomeScreen() {
                         <View className="flex-row items-center justify-between mb-3">
                         <Pressable 
                             onPress={() => setIsHighlightsCollapsed(!isHighlightsCollapsed)}
-                            className="flex-row items-center gap-2"
+                            className="flex-row items-center gap-3"
                         >
-                            <View className="w-1 h-5 rounded-full bg-indigo-500" />
-                            <Text className="text-white font-black text-base tracking-tight">Highlights</Text>
-                            <Ionicons 
-                                name={isHighlightsCollapsed ? "chevron-down" : "chevron-up"} 
-                                size={14} 
-                                color="#6366F1" 
-                            />
+                            <View className="w-9 h-9 rounded-xl bg-indigo-500/10 items-center justify-center border border-indigo-500/20">
+                                <Ionicons name="flash" size={18} color="#6366F1" />
+                            </View>
+                            <View className="flex-row items-center gap-2">
+                                <Text className="text-white font-black text-base tracking-tight">Highlights</Text>
+                                <Ionicons 
+                                    name={isHighlightsCollapsed ? "chevron-down" : "chevron-up"} 
+                                    size={14} 
+                                    color="#64748B" 
+                                />
+                            </View>
                         </Pressable>
                             <Pressable
                                 onPress={() => setShowHighlightsModal(true)}
