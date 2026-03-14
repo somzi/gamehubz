@@ -133,11 +133,11 @@ export function ContactUsScreen() {
                         </View>
                         <View>
                             <Text className="text-white font-bold text-base">Email Support</Text>
-                            <Text className="text-gray-400 text-sm">support@gamehubz.com</Text>
+                            <Text className="text-gray-400 text-sm">support@codespheresolutions.dev</Text>
                         </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity className="bg-card p-5 rounded-2xl border border-white/5 flex-row items-center gap-4">
+                    {/* <TouchableOpacity className="bg-card p-5 rounded-2xl border border-white/5 flex-row items-center gap-4">
                         <View className="bg-[#7289DA]/20 p-3 rounded-xl">
                             <Ionicons name="logo-discord" size={24} color="#7289DA" />
                         </View>
@@ -145,7 +145,7 @@ export function ContactUsScreen() {
                             <Text className="text-white font-bold text-base">Join our Discord</Text>
                             <Text className="text-gray-400 text-sm">discord.gg/gamehubz</Text>
                         </View>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 </View>
             </ScrollView>
         </SafeAreaView>

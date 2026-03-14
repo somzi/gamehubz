@@ -286,9 +286,6 @@ export default function HubProfileScreen() {
                             <Text className="text-2xl font-black text-white tracking-tight">
                                 {hubData.name}
                             </Text>
-                            <View className="w-5 h-5 rounded-full bg-[#10B981] items-center justify-center">
-                                <Ionicons name="checkmark" size={12} color="#fff" />
-                            </View>
                         </View>
 
                         {hubData.description ? (

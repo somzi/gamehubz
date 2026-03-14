@@ -281,12 +281,17 @@ export default function PlayerProfileScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-            {/* Header: Back Button only */}
-            <View className="flex-row items-center px-6 py-2">
-                <Pressable onPress={() => navigation.goBack()} className="p-2 -ml-2">
-                    <Ionicons name="arrow-back" size={24} color="white" />
+        <SafeAreaView className="flex-1 bg-[#0F172A]" edges={['top']}>
+            {/* Top Bar with Back Button */}
+            <View className="flex-row items-center justify-between px-6 py-2">
+                <Pressable
+                    onPress={() => navigation.goBack()}
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                >
+                    <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
                 </Pressable>
+                <Text className="text-lg font-black text-white tracking-tight">Player Profile</Text>
+                <View className="w-10" />
             </View>
 
             <ScrollView
@@ -297,8 +302,8 @@ export default function PlayerProfileScreen() {
                 scrollEventThrottle={16}
             >
                 {/* Profile Header Section */}
-                <View className="px-6 mt-2">
-                    <View className="bg-card-elevated rounded-[32px] p-5 border border-white/5">
+                <View className="px-5 mt-4">
+                    <View className="bg-[#131B2E] rounded-[28px] p-5 border border-white/5">
                         <View className="flex-row items-center">
                             <View className="mr-5">
                                 <View className="p-[3px] rounded-full border-2 border-[#10B981]">
@@ -323,59 +328,73 @@ export default function PlayerProfileScreen() {
                     </View>
                 </View>
 
-                {/* Quick Stats Grid */}
-                <View className="flex-row px-6 mt-4 justify-between">
-                    <View className="w-[31%] bg-card-elevated rounded-[24px] py-4 items-center border border-white/5">
-                        <Ionicons name="game-controller" size={20} color="#8B5CF6" className="mb-2" />
+                {/* ─── Stats Ribbon ─── */}
+                <View className="flex-row mx-5 bg-[#131B2E] rounded-[28px] p-1.5 border border-white/5 mt-4">
+                    <View className="flex-1 py-4 items-center">
+                        <View className="w-9 h-9 rounded-xl bg-indigo-500/10 items-center justify-center mb-2.5 border border-indigo-500/20">
+                            <Ionicons name="game-controller" size={18} color="#818CF8" />
+                        </View>
                         <Text className="text-white text-xl font-black">{displayData.totalMatches}</Text>
-                        <Text className="text-gray-500 text-[9px] uppercase font-bold tracking-widest mt-1">Matches</Text>
+                        <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Matches</Text>
                     </View>
-                    <View className="w-[31%] bg-card-elevated rounded-[24px] py-4 items-center border border-white/5">
-                        <Ionicons name="star" size={20} color="#EAB308" className="mb-2" />
+                    <View className="w-[1px] bg-white/5 my-3" />
+                    <View className="flex-1 py-4 items-center">
+                        <View className="w-9 h-9 rounded-xl bg-amber-500/10 items-center justify-center mb-2.5 border border-amber-500/20">
+                            <Ionicons name="star" size={18} color="#FBBF24" />
+                        </View>
                         <Text className="text-white text-xl font-black">{displayData.wins}</Text>
-                        <Text className="text-gray-500 text-[9px] uppercase font-bold tracking-widest mt-1">Wins</Text>
+                        <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Wins</Text>
                     </View>
-                    <View className="w-[31%] bg-card-elevated rounded-[24px] py-4 items-center border border-white/5">
-                        <Ionicons name="trophy" size={20} color="#10B981" className="mb-2" />
+                    <View className="w-[1px] bg-white/5 my-3" />
+                    <View className="flex-1 py-4 items-center">
+                        <View className="w-9 h-9 rounded-xl bg-emerald-500/10 items-center justify-center mb-2.5 border border-emerald-500/20">
+                            <Ionicons name="trophy" size={18} color="#34D399" />
+                        </View>
                         <Text className="text-white text-xl font-black">{displayData.tournamentsWon || 0}</Text>
-                        <Text className="text-gray-500 text-[9px] uppercase font-bold tracking-widest mt-1">Trophies</Text>
+                        <Text className="text-slate-500 text-[8px] uppercase font-black tracking-widest mt-0.5">Trophies</Text>
                     </View>
                 </View>
 
                 {/* Tabs Section */}
-                <View className="mt-8 flex-1 min-h-[500px]">
-                    <View className="px-6 mb-8 mt-2">
+                <View className="mt-7 flex-1 min-h-[500px]">
+                    <View className="px-5 mb-6">
                         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
                     </View>
 
-                    <View className="px-6 pb-12 pt-4 bg-transparent flex-1">
+                    <View className="px-5 pb-12 flex-1">
                         {activeTab === 'stats' && (
-                            <View>
-                                <View className="flex-row items-center justify-between mb-3">
-                                    <Text className="text-[11px] font-black text-white uppercase tracking-widest">Recent Form</Text>
-                                    {performanceList.length > 0 && (
-                                        <View className="flex-row items-center gap-3">
-                                            <View className="flex-row items-center gap-1">
-                                                <View className="w-2 h-2 rounded-full bg-[#10B981]" />
-                                                <Text className="text-[9px] text-gray-400 font-bold uppercase">Win</Text>
+                            <View className="gap-4">
+                                {/* Recent Form */}
+                                <View className="bg-[#131B2E] rounded-[24px] p-5 border border-white/5">
+                                    <View className="flex-row items-center justify-between mb-4">
+                                        <View className="flex-row items-center gap-2">
+                                            <View className="w-7 h-7 rounded-lg bg-indigo-500/10 items-center justify-center">
+                                                <Ionicons name="trending-up" size={14} color="#818CF8" />
                                             </View>
-                                            <View className="flex-row items-center gap-1">
-                                                <View className="w-2 h-2 rounded-full bg-[#EF4444]" />
-                                                <Text className="text-[9px] text-gray-400 font-bold uppercase">Loss</Text>
-                                            </View>
+                                            <Text className="text-[11px] font-black text-white uppercase tracking-widest">Recent Form</Text>
                                         </View>
-                                    )}
-                                </View>
-                                <View className="bg-card-elevated rounded-2xl p-4 mb-8 border border-white/5">
+                                        {performanceList.length > 0 && (
+                                            <View className="flex-row items-center gap-3">
+                                                <View className="flex-row items-center gap-1">
+                                                    <View className="w-2 h-2 rounded-full bg-[#10B981]" />
+                                                    <Text className="text-[9px] text-slate-500 font-bold uppercase">W</Text>
+                                                </View>
+                                                <View className="flex-row items-center gap-1">
+                                                    <View className="w-2 h-2 rounded-full bg-[#EF4444]" />
+                                                    <Text className="text-[9px] text-slate-500 font-bold uppercase">L</Text>
+                                                </View>
+                                            </View>
+                                        )}
+                                    </View>
                                     {performanceList.length > 0 ? (
                                         <>
                                             <View className="flex-row items-center justify-center gap-1.5">
-                                                {[...performanceList].reverse().slice(-10).map((match, i, arr) => (
+                                                {[...performanceList].reverse().slice(-10).map((match, i) => (
                                                     <View key={i} className="flex-1 items-center">
                                                         <View
                                                             className={cn(
-                                                                "w-7 h-7 rounded-full items-center justify-center",
-                                                                match.isWin ? "bg-[#10B981]/20 border border-[#10B981]/50" : "bg-[#EF4444]/20 border border-[#EF4444]/50"
+                                                                "w-8 h-8 rounded-xl items-center justify-center",
+                                                                match.isWin ? "bg-[#10B981]/15 border border-[#10B981]/40" : "bg-[#EF4444]/15 border border-[#EF4444]/40"
                                                             )}
                                                         >
                                                             <Text className={cn(
@@ -385,65 +404,87 @@ export default function PlayerProfileScreen() {
                                                                 {match.isWin ? 'W' : 'L'}
                                                             </Text>
                                                         </View>
-                                                        {i < arr.length - 1 && (
-                                                            <View className="absolute right-[-4px] top-[12px] w-[5px] h-[3px] rounded-full bg-white/10" />
-                                                        )}
                                                     </View>
                                                 ))}
                                                 {Array.from({ length: Math.max(0, 10 - performanceList.length) }).map((_, i) => (
                                                     <View key={`empty-${i}`} className="flex-1 items-center">
-                                                        <View className="w-7 h-7 rounded-full items-center justify-center bg-white/5 border border-white/10">
-                                                            <Text className="text-[10px] font-black text-white/20">-</Text>
+                                                        <View className="w-8 h-8 rounded-xl items-center justify-center bg-white/5 border border-white/5">
+                                                            <Text className="text-[10px] font-black text-white/15">-</Text>
                                                         </View>
                                                     </View>
                                                 ))}
                                             </View>
-                                            <View className="flex-row items-center justify-between mt-2.5 px-1">
-                                                <Text className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Oldest</Text>
+                                            <View className="flex-row items-center justify-between mt-3 px-0.5">
+                                                <Text className="text-[8px] text-slate-600 font-bold uppercase tracking-wider">Oldest</Text>
                                                 <View className="flex-1 mx-2 flex-row items-center">
                                                     <View className="flex-1 h-[1px] bg-white/5" />
-                                                    <Ionicons name="chevron-forward" size={10} color="rgba(255,255,255,0.15)" />
+                                                    <Ionicons name="chevron-forward" size={10} color="rgba(255,255,255,0.1)" />
                                                 </View>
-                                                <Text className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Latest</Text>
+                                                <Text className="text-[8px] text-slate-600 font-bold uppercase tracking-wider">Latest</Text>
                                             </View>
                                         </>
                                     ) : (
-                                        <Text className="text-gray-500 text-xs italic text-center py-2">No performance data yet</Text>
+                                        <View className="items-center py-6">
+                                            <Ionicons name="analytics-outline" size={32} color="#1E293B" />
+                                            <Text className="text-slate-600 text-xs mt-2">No performance data yet</Text>
+                                        </View>
                                     )}
                                 </View>
 
-                                <View className="bg-card-elevated rounded-[32px] p-6 flex-row items-center justify-between border border-white/5">
-                                    {/* Left Side Info */}
-                                    <View className="flex-1 pr-4">
-                                        <View className="flex-row items-center mb-5">
-                                            <View className="w-1.5 h-4 bg-[#10B981] rounded-full mr-3" />
-                                            <Text className="text-white text-xs font-black uppercase tracking-widest w-16">Wins</Text>
-                                            <Text className="text-[#10B981] text-lg font-black ml-auto">{displayData.wins}</Text>
+                                {/* Win Rate Card */}
+                                <View className="bg-[#131B2E] rounded-[24px] p-5 border border-white/5">
+                                    <View className="flex-row items-center gap-2 mb-5">
+                                        <View className="w-7 h-7 rounded-lg bg-emerald-500/10 items-center justify-center">
+                                            <Ionicons name="stats-chart" size={14} color="#34D399" />
                                         </View>
-                                        <View className="flex-row items-center mb-5">
-                                            <View className="w-1.5 h-4 bg-[#EAB308] rounded-full mr-3" />
-                                            <Text className="text-white text-xs font-black uppercase tracking-widest w-16">Draws</Text>
-                                            <Text className="text-[#EAB308] text-lg font-black ml-auto">{displayData.draws}</Text>
-                                        </View>
-                                        <View className="flex-row items-center">
-                                            <View className="w-1.5 h-4 bg-[#EF4444] rounded-full mr-3" />
-                                            <Text className="text-white text-xs font-black uppercase tracking-widest w-16">Losses</Text>
-                                            <Text className="text-[#EF4444] text-lg font-black ml-auto">{displayData.losses}</Text>
-                                        </View>
+                                        <Text className="text-[11px] font-black text-white uppercase tracking-widest">Match Statistics</Text>
                                     </View>
 
-                                    {/* Right Side Chart */}
-                                    <View className="w-[120px] h-[120px] relative items-center justify-center">
-                                        <CircularProgress
-                                            percentage={Math.round(displayData.winPercentage)}
-                                            size={120}
-                                            strokeWidth={14}
-                                            color="#10B981"
-                                            showText={false}
-                                        />
-                                        <View className="absolute inset-0 items-center justify-center">
-                                            <Text className="text-[#10B981] text-[8px] uppercase font-black tracking-widest mb-[-2px]">Win Rate</Text>
-                                            <Text className="text-white text-2xl font-black">{Math.round(displayData.winPercentage)}%</Text>
+                                    <View className="flex-row items-center">
+                                        {/* Left Side - W/D/L */}
+                                        <View className="flex-1 pr-5">
+                                            <View className="bg-[#10B981]/8 rounded-2xl p-4 mb-2 border border-[#10B981]/10">
+                                                <View className="flex-row items-center justify-between">
+                                                    <View className="flex-row items-center gap-2.5">
+                                                        <View className="w-1.5 h-5 bg-[#10B981] rounded-full" />
+                                                        <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider">Wins</Text>
+                                                    </View>
+                                                    <Text className="text-[#10B981] text-xl font-black">{displayData.wins}</Text>
+                                                </View>
+                                            </View>
+                                            <View className="bg-[#EAB308]/8 rounded-2xl p-4 mb-2 border border-[#EAB308]/10">
+                                                <View className="flex-row items-center justify-between">
+                                                    <View className="flex-row items-center gap-2.5">
+                                                        <View className="w-1.5 h-5 bg-[#EAB308] rounded-full" />
+                                                        <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider">Draws</Text>
+                                                    </View>
+                                                    <Text className="text-[#EAB308] text-xl font-black">{displayData.draws}</Text>
+                                                </View>
+                                            </View>
+                                            <View className="bg-[#EF4444]/8 rounded-2xl p-4 border border-[#EF4444]/10">
+                                                <View className="flex-row items-center justify-between">
+                                                    <View className="flex-row items-center gap-2.5">
+                                                        <View className="w-1.5 h-5 bg-[#EF4444] rounded-full" />
+                                                        <Text className="text-slate-400 text-xs font-bold uppercase tracking-wider">Losses</Text>
+                                                    </View>
+                                                    <Text className="text-[#EF4444] text-xl font-black">{displayData.losses}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+
+                                        {/* Right Side - Chart */}
+                                        <View className="w-[110px] h-[110px] relative items-center justify-center">
+                                            <CircularProgress
+                                                percentage={Math.round(displayData.winPercentage)}
+                                                size={110}
+                                                strokeWidth={12}
+                                                color="#10B981"
+                                                showText={false}
+                                            />
+                                            <View className="absolute inset-0 items-center justify-center">
+                                                <Text className="text-slate-500 text-[7px] uppercase font-black tracking-widest mb-[-1px]">Win Rate</Text>
+                                                <Text className="text-white text-2xl font-black">{Math.round(displayData.winPercentage)}%</Text>
+                                            </View>
                                         </View>
                                     </View>
                                 </View>
@@ -460,7 +501,7 @@ export default function PlayerProfileScreen() {
                                                 name={t.name || t.title}
                                                 status={getTournamentStatus(t.status)}
                                                 date={t.startDate ? new Date(t.startDate).toLocaleDateString() : 'N/A'}
-                                                region="Global" // Map properly if available
+                                                region="Global"
                                                 prizePool={`${t.prizeCurrency === 1 ? '$' : t.prizeCurrency === 2 ? '€' : ''}${t.prize}`}
                                                 players={new Array(t.numberOfParticipants || 0).fill({})}
                                                 onClick={() => navigation.navigate('TournamentDetails', { id: t.id })}
@@ -475,9 +516,9 @@ export default function PlayerProfileScreen() {
                                         )}
                                     </>
                                 ) : (
-                                    <View className="items-center py-12">
+                                    <View className="bg-[#131B2E] rounded-[24px] p-10 border border-white/5 items-center">
                                         <Ionicons name="trophy-outline" size={48} color="#1E293B" />
-                                        <Text className="text-gray-500 italic mt-4 text-center">No tournaments found.</Text>
+                                        <Text className="text-slate-600 mt-4 text-center text-sm">No tournaments found.</Text>
                                     </View>
                                 )}
                             </View>
@@ -509,9 +550,9 @@ export default function PlayerProfileScreen() {
                                         )}
                                     </>
                                 ) : (
-                                    <View className="items-center py-12">
+                                    <View className="bg-[#131B2E] rounded-[24px] p-10 border border-white/5 items-center">
                                         <Ionicons name="documents-outline" size={48} color="#1E293B" />
-                                        <Text className="text-gray-500 italic mt-4 text-center">No match history available yet.</Text>
+                                        <Text className="text-slate-600 mt-4 text-center text-sm">No match history available yet.</Text>
                                     </View>
                                 )}
                             </View>
