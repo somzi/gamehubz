@@ -106,6 +106,11 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
             return;
         }
 
+        if (!maxPlayers || isNaN(parseInt(maxPlayers)) || parseInt(maxPlayers) <= 0) {
+            setError('Valid Max Players count is required (must be greater than 0)');
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
 
@@ -288,7 +293,7 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                 <View className="flex-1">
                                     <Text className="text-sm font-bold text-white mb-3">Prize Pool</Text>
                                     <TextInput
-                                        className={`bg-[#131B2E] p-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
+                                        className={`bg-[#131B2E] px-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
                                         placeholder="Amount"
                                         placeholderTextColor="#6b7280"
                                         keyboardType="numeric"
@@ -312,10 +317,10 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
 
                             <View className="flex-row gap-4 mb-6">
                                 <View className="flex-1">
-                                    <Text className="text-sm font-bold text-white mb-3">Max Players</Text>
+                                    <Text className="text-sm font-bold text-white mb-3">Max Players *</Text>
                                     <TextInput
-                                        className={`bg-[#131B2E] p-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
-                                        placeholder="No limit"
+                                        className={`bg-[#131B2E] px-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
+                                        placeholder="e.g. 16"
                                         placeholderTextColor="#6b7280"
                                         keyboardType="numeric"
                                         value={maxPlayers}
@@ -335,7 +340,7 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                     <View className="flex-1">
                                         <Text className="text-sm font-bold text-white mb-3">Groups Count</Text>
                                         <TextInput
-                                            className={`bg-[#131B2E] p-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
+                                            className={`bg-[#131B2E] px-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
                                             placeholder="e.g. 4"
                                             placeholderTextColor="#6b7280"
                                             keyboardType="numeric"
@@ -347,7 +352,7 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                     <View className="flex-1">
                                         <Text className="text-sm font-bold text-white mb-3">Qualifiers / Group</Text>
                                         <TextInput
-                                            className={`bg-[#131B2E] p-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
+                                            className={`bg-[#131B2E] px-4 h-14 rounded-xl text-white border border-white/10 ${!canEditAll ? 'opacity-50' : ''}`}
                                             placeholder="e.g. 2"
                                             placeholderTextColor="#6b7280"
                                             keyboardType="numeric"
@@ -359,13 +364,13 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                 </View>
                             )}
 
-                            <View className="flex-row gap-4">
+                            <View className="flex-row gap-4 mb-6">
                                 <View className="flex-1">
                                     <Text className="text-sm font-bold text-white mb-3">Start Date</Text>
                                     <TouchableOpacity
                                         onPress={() => setShowStartDatePicker(true)}
                                         disabled={!canEditAll}
-                                        className={`bg-[#131B2E] p-4 h-14 rounded-xl border border-white/10 justify-center ${!canEditAll ? 'opacity-50' : ''}`}
+                                        className={`bg-[#131B2E] px-4 h-14 rounded-xl border border-white/10 justify-center ${!canEditAll ? 'opacity-50' : ''}`}
                                     >
                                         <Text className={`${startDate ? 'text-white' : 'text-slate-500'} text-sm`} numberOfLines={1}>
                                             {startDate ? new Date(startDate).toLocaleString() : 'Select Start Date'}
@@ -377,7 +382,7 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                     <TouchableOpacity
                                         onPress={() => setShowRegDeadlinePicker(true)}
                                         disabled={!canEditAll}
-                                        className={`bg-[#131B2E] p-4 h-14 rounded-xl border border-white/10 justify-center ${!canEditAll ? 'opacity-50' : ''}`}
+                                        className={`bg-[#131B2E] px-4 h-14 rounded-xl border border-white/10 justify-center ${!canEditAll ? 'opacity-50' : ''}`}
                                     >
                                         <Text className={`${registrationDeadline ? 'text-white' : 'text-slate-500'} text-sm`} numberOfLines={1}>
                                             {registrationDeadline ? new Date(registrationDeadline).toLocaleString() : 'Select Deadline'}
@@ -385,6 +390,8 @@ export function EditTournamentModal({ visible, onClose, tournament, onSaveSucces
                                     </TouchableOpacity>
                                 </View>
                             </View>
+
+
                         </View>
                     </ScrollView>
 

@@ -172,6 +172,11 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
             return;
         }
 
+        if (!maxPlayers || isNaN(parseInt(maxPlayers)) || parseInt(maxPlayers) <= 0) {
+            setError('Valid Max Players count is required (must be greater than 0)');
+            return;
+        }
+
         if (!startDate || !registrationDeadline) {
             setError('Please set both Registration Deadline and Start Date');
             return;
@@ -391,10 +396,10 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
 
                             <View className="flex-row gap-4">
                                 <View className="flex-1">
-                                    <Text className="text-sm font-bold text-white mb-3">Max Players</Text>
+                                    <Text className="text-sm font-bold text-white mb-3">Max Players *</Text>
                                     <TextInput
-                                        className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
-                                        placeholder="No limit"
+                                        className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10"
+                                        placeholder="e.g. 16"
                                         placeholderTextColor="#6b7280"
                                         keyboardType="numeric"
                                         value={maxPlayers}
@@ -421,7 +426,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                     <View className="flex-1">
                                         <Text className="text-sm font-bold text-white mb-3">Groups Count</Text>
                                         <TextInput
-                                            className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
+                                            className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10"
                                             placeholder="e.g. 4"
                                             placeholderTextColor="#6b7280"
                                             keyboardType="numeric"
@@ -432,7 +437,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                     <View className="flex-1">
                                         <Text className="text-sm font-bold text-white mb-3">Qualifiers / Group</Text>
                                         <TextInput
-                                            className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
+                                            className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10"
                                             placeholder="e.g. 2"
                                             placeholderTextColor="#6b7280"
                                             keyboardType="numeric"
@@ -451,9 +456,9 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                     </View>
                                     <TouchableOpacity
                                         onPress={() => setShowStartDatePicker(true)}
-                                        className="bg-[#131B2E] p-4 h-12 rounded-xl border border-white/10 justify-center"
+                                        className="bg-[#131B2E] px-4 h-12 rounded-xl border border-white/10 justify-center"
                                     >
-                                        <Text className={`${startDate ? 'text-white' : 'text-slate-500'} text-sm`}>
+                                        <Text className={`${startDate ? 'text-white' : 'text-slate-500'} text-sm`} numberOfLines={1}>
                                             {startDate || 'Select Start Date'}
                                         </Text>
                                     </TouchableOpacity>
@@ -465,9 +470,9 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                     </View>
                                     <TouchableOpacity
                                         onPress={() => setShowRegDeadlinePicker(true)}
-                                        className="bg-[#131B2E] p-4 h-12 rounded-xl border border-white/10 justify-center"
+                                        className="bg-[#131B2E] px-4 h-12 rounded-xl border border-white/10 justify-center"
                                     >
-                                        <Text className={`${registrationDeadline ? 'text-white' : 'text-slate-500'} text-sm`}>
+                                        <Text className={`${registrationDeadline ? 'text-white' : 'text-slate-500'} text-sm`} numberOfLines={1}>
                                             {registrationDeadline || 'Select Deadline'}
                                         </Text>
                                     </TouchableOpacity>
@@ -483,7 +488,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                 <View className="flex-row gap-4">
                                     <View className="flex-1">
                                         <TextInput
-                                            className="bg-[#131B2E] p-4 h-12 rounded-xl text-white border border-white/10"
+                                            className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10"
                                             placeholder="Amount (e.g. 500)"
                                             placeholderTextColor="#6b7280"
                                             keyboardType="numeric"

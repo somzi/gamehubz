@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -17,7 +17,6 @@ import { ENDPOINTS, authenticatedFetch } from '../lib/api';
 import { MatchDetailsModal } from '../components/modals/MatchDetailsModal';
 import { TournamentRegion } from '../types/tournament';
 import { StatusModal } from '../components/modals/StatusModal';
-import { EditTournamentModal } from '../components/modals/EditTournamentModal';
 import { DateTimePickerModal } from '../components/modals/DateTimePickerModal';
 
 type TournamentDetailsRouteProp = RouteProp<RootStackParamList, 'TournamentDetails'>;
@@ -47,7 +46,6 @@ export default function TournamentDetailsScreen() {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<any>(null);
     const [isUserRegistered, setIsUserRegistered] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [statusModalConfig, setStatusModalConfig] = useState<{
         type: 'success' | 'error' | 'info';
@@ -698,7 +696,7 @@ export default function TournamentDetailsScreen() {
                 rightElement={
                     tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() ? (
                         <Pressable
-                            onPress={() => setShowEditModal(true)}
+                            onPress={() => navigation.navigate('ManageTournament' as any, { id })}
                             className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
                         >
                             <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
@@ -765,19 +763,7 @@ export default function TournamentDetailsScreen() {
 
                             const buttons = [];
 
-                            if (isCreator && tournament.status === 1 && isFull) {
-                                buttons.push(
-                                    <Button
-                                        key="close"
-                                        className="w-full bg-red-600 mb-3"
-                                        onPress={handleCloseRegistration}
-                                    >
-                                        Close Registration
-                                    </Button>
-                                );
-                            }
-
-                            if (!isParticipant && !isUserRegistered && isOpenOrUpcoming && !isFull) {
+                            if (!isCreator && !isParticipant && !isUserRegistered && isOpenOrUpcoming && !isFull) {
                                 buttons.push(
                                     <Button
                                         key="join"
@@ -790,7 +776,9 @@ export default function TournamentDetailsScreen() {
                                 );
                             }
 
-                            return buttons.length > 0 ? <View className="gap-3">{buttons}</View> : null;
+
+
+                            return buttons.length > 0 ? <View className="gap-3 mt-4">{buttons}</View> : null;
                         })()}
                     </View>
 
@@ -1062,29 +1050,13 @@ export default function TournamentDetailsScreen() {
                 }}
             />
 
-            <StatusModal
-                visible={showStatusModal}
-                onClose={() => setShowStatusModal(false)}
-                type={statusModalConfig.type}
-                title={statusModalConfig.title}
-                message={statusModalConfig.message}
-            />
-
-            {tournament && (
-                <EditTournamentModal
-                    visible={showEditModal}
-                    tournament={tournament}
-                    onClose={() => setShowEditModal(false)}
-                    onSaveSuccess={() => {
-                        setShowEditModal(false);
-                        fetchTournamentDetails();
-                        setStatusModalConfig({
-                            type: 'success',
-                            title: 'Updated',
-                            message: 'Tournament details updated successfully!'
-                        });
-                        setShowStatusModal(true);
-                    }}
+            {showStatusModal && (
+                <StatusModal
+                    visible={showStatusModal}
+                    type={statusModalConfig.type}
+                    title={statusModalConfig.title}
+                    message={statusModalConfig.message}
+                    onClose={() => setShowStatusModal(false)}
                 />
             )}
             

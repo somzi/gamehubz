@@ -18,6 +18,7 @@ export type RootStackParamList = {
     ManageHub: { hubId: string };
     HubMembers: { hubId: string };
     ManageHubSocials: { hubId: string };
+    ManageTournament: { id: string };
     MyMatches: undefined;
 };
 
