@@ -1,19 +1,15 @@
-import { Platform } from 'react-native';
+// Environment configuration
+const IS_PROD = !__DEV__;
+const PROD_URL = 'https://codespheresolutions.dev';
+// For local development on physical devices, use your computer's local IP
+const LOCAL_IP = '192.168.0.3';
+const LOCAL_PORT = '5057';
+const LOCAL_URL = `http://${LOCAL_IP}:${LOCAL_PORT}`;
 
-// For Android emulators, localhost is 10.0.2.2
-// For iOS simulators and Web, localhost is localhost
-// For physical devices, you MUST use your computer's local IP address (e.g., 192.168.1.5)
-const getApiHost = () => {
-    if (Platform.OS === 'android') {
-        return '192.168.0.3';
-    }
-    // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
-    return '192.168.0.3';
-};
+export const API_BASE_URL = PROD_URL;
 
-export const API_HOST = getApiHost();
-export const API_PORT = '5057';
-export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
+console.log(`[API] Environment: ${IS_PROD ? 'Production' : 'Development'}`);
+console.log(`[API] Base URL: ${API_BASE_URL}`);
 
 export const ENDPOINTS = {
     SET_PASSWORD: `${API_BASE_URL}/api/Auth/setPassword`,
@@ -32,8 +28,6 @@ export const ENDPOINTS = {
     GET_USER_TOURNAMENTS: (userId: string, status: number, page: number, pageSize: number = 10) =>
         `${API_BASE_URL}/api/User/${userId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,
     GET_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}`,
-    CANCEL_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}/cancel`,
-    HARD_DELETE_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}/hardDelete`,
     GET_TOURNAMENT_OVERVIEW: (id: string) => `${API_BASE_URL}/api/tournament/${id}/overview`,
     REGISTER_TOURNAMENT: `${API_BASE_URL}/api/tournamentRegistration`,
     GET_PENDING_REGISTRATIONS: (tournamentId: string) => `${API_BASE_URL}/api/tournamentRegistration/tournament/${tournamentId}/pending`,
@@ -44,7 +38,6 @@ export const ENDPOINTS = {
     REMOVE_PARTICIPANT: (tournamentId: string, userId: string) => `${API_BASE_URL}/api/TournamentParticipant/tournament/${tournamentId}/user/${userId}`,
     CREATE_BRACKET: `${API_BASE_URL}/api/tournament/createBracket`,
     CLOSE_REGISTRATION: (id: string) => `${API_BASE_URL}/api/tournament/${id}/closeRegistration`,
-    OPEN_REGISTRATION: (id: string) => `${API_BASE_URL}/api/tournament/${id}/openRegistration`,
     REPORT_MATCH_RESULT: `${API_BASE_URL}/api/tournament/matchResult`,
     GET_HUB_TOURNAMENTS: (hubId: string, status: number, page: number, pageSize: number = 10) =>
         `${API_BASE_URL}/api/Hub/${hubId}/tournaments?Status=${status}&Page=${page}&PageSize=${pageSize}`,
@@ -62,7 +55,7 @@ export const ENDPOINTS = {
     HUB_SOCIAL: `${API_BASE_URL}/api/HubSocial`,
     DELETE_HUB_SOCIAL: (id: string) => `${API_BASE_URL}/api/HubSocial/${id}`,
     UPDATE_TOURNAMENT: `${API_BASE_URL}/api/tournament/update`,
-    SET_ROUND_SCHEDULE: (id: string) => `${API_BASE_URL}/api/tournament/${id}/roundSchedule`,
+    SET_ROUND_DEADLINE: (id: string) => `${API_BASE_URL}/api/tournament/${id}/roundDeadline`,
     KICK_HUB_MEMBER: (hubId: string, userId: string) => `${API_BASE_URL}/api/Hub/${hubId}/user/${userId}/kick`,
     UPLOAD_MATCH_EVIDENCE: (id: string) => `${API_BASE_URL}/api/match/${id}/evidence`,
     GET_MATCH_DETAILS: (id: string) => `${API_BASE_URL}/api/match/${id}/details`,
