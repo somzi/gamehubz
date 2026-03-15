@@ -11,6 +11,7 @@ import { getOptimizedCloudinaryUrl } from '../../lib/image';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
+import { cn } from '../../lib/utils';
 
 export type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
 
@@ -97,24 +98,11 @@ export function MatchDetailsModal({
 
     useEffect(() => {
         if (visible && matchId) {
-            // Optimization: if we already have evidences and scores, skip fetch
-            if (status === 'completed' && evidences && home && away && home.score !== null && away.score !== null) {
-                setMatchDetails({
-                    homeUser: home.username,
-                    homeUserId: home.userId,
-                    awayUser: away.username,
-                    awayUserId: away.userId,
-                    homeUserScore: home.score,
-                    awayUserScore: away.score,
-                    evidences: evidences
-                });
-                return;
-            }
+            // Fetch match details to get evidence even for non-completed matches
+            fetchMatchDetails();
 
             if (status === 'pending_availability') {
                 fetchAvailability();
-            } else {
-                fetchMatchDetails();
             }
         }
     }, [visible, status, matchId, evidences, home, away]);
@@ -207,6 +195,47 @@ export function MatchDetailsModal({
         setSelectedImages(prev => prev.filter(img => img.uri !== uri));
     };
 
+    const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
+
+    const handleUploadOnly = async () => {
+        if (!matchId || selectedImages.length === 0) return;
+        
+        setIsUploadingEvidence(true);
+        setError(null);
+        
+        try {
+            const formData = new FormData();
+            selectedImages.forEach((img, index) => {
+                const filename = img.uri.split('/').pop() || `evidence-${index}.jpg`;
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : `image/jpeg`;
+                // @ts-ignore
+                formData.append('files', { uri: img.uri, name: filename, type });
+            });
+
+            const response = await authenticatedFetch(ENDPOINTS.UPLOAD_MATCH_EVIDENCE(matchId), {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || 'Failed to upload images');
+            }
+
+            setSelectedImages([]);
+            if (onMatchUpdate) onMatchUpdate();
+            // Always refresh details to show new evidence regardless of status
+            fetchMatchDetails();
+            
+        } catch (err: any) {
+            console.error('Upload evidence error:', err);
+            setError(err.message || 'An error occurred while uploading evidence');
+        } finally {
+            setIsUploadingEvidence(false);
+        }
+    };
+
     const handleSubmitResult = async () => {
         if (!matchId || !tournamentId) return;
         if (homeScore === '' || awayScore === '') {
@@ -235,20 +264,9 @@ export function MatchDetailsModal({
                 throw new Error(text || 'Failed to report result');
             }
 
+            // Still support auto-upload if they just hit submit with images
             if (selectedImages.length > 0) {
-                const formData = new FormData();
-                selectedImages.forEach((img, index) => {
-                    const filename = img.uri.split('/').pop() || `evidence-${index}.jpg`;
-                    const match = /\.(\w+)$/.exec(filename);
-                    const type = match ? `image/${match[1]}` : `image/jpeg`;
-                    // @ts-ignore
-                    formData.append('files', { uri: img.uri, name: filename, type });
-                });
-
-                await authenticatedFetch(ENDPOINTS.UPLOAD_MATCH_EVIDENCE(matchId), {
-                    method: 'POST',
-                    body: formData,
-                });
+                await handleUploadOnly();
             }
 
             onClose();
@@ -283,8 +301,16 @@ export function MatchDetailsModal({
     };
 
     // Permission check
-    const isHubOwner = hubOwnerId && user?.id && hubOwnerId.toLowerCase() === user.id.toLowerCase();
+    const isHubOwner = !!(hubOwnerId && user?.id && hubOwnerId.toLowerCase() === user.id.toLowerCase());
     const canEditResult = isHubOwner && status === 'completed' && !isEditMode;
+
+    const isHome = (home?.userId || matchDetails?.homeUserId)?.toLowerCase() === user?.id?.toLowerCase();
+    const isAway = (away?.userId || matchDetails?.awayUserId)?.toLowerCase() === user?.id?.toLowerCase();
+    const isParticipant = !!(isHome || isAway);
+    
+    // User requirement: Admin only if startTime is null, players only if startTime is not null
+    const hasStartTime = !!scheduledTime || !!matchDetails?.scheduledTime;
+    const canSubmit = hasStartTime ? isParticipant : isHubOwner;
 
     return (
         <Modal
@@ -308,6 +334,12 @@ export function MatchDetailsModal({
                             <Ionicons name="close" size={20} color="hsl(220, 15%, 55%)" />
                         </Pressable>
                     </View>
+
+                    {isLoadingDetails && !matchDetails && (
+                        <View className="py-2 mb-4">
+                            <ActivityIndicator size="small" color="#10B981" />
+                        </View>
+                    )}
 
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {status === 'completed' ? (
@@ -341,7 +373,7 @@ export function MatchDetailsModal({
                                                 </View>
 
                                                 {matchDetails.evidences && matchDetails.evidences.length > 0 && (
-                                                    <View>
+                                                    <View className="mb-6">
                                                         <View className="flex-row items-center gap-2 mb-3">
                                                             <Ionicons name="images-outline" size={18} color="#64748B" />
                                                             <Text className="text-sm font-bold text-foreground">Evidence Gallery</Text>
@@ -485,12 +517,13 @@ export function MatchDetailsModal({
                                             {home?.username || 'Home'}
                                         </Text>
                                         <TextInput
-                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                            className={cn("bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10", !canSubmit && "opacity-50")}
                                             placeholder="0"
                                             placeholderTextColor="#71717A"
                                             keyboardType="numeric"
                                             value={homeScore}
                                             onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
+                                            editable={canSubmit}
                                         />
                                     </View>
                                     <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
@@ -500,15 +533,40 @@ export function MatchDetailsModal({
                                             {away?.username || opponentName || 'Away'}
                                         </Text>
                                         <TextInput
-                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                            className={cn("bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10", !canSubmit && "opacity-50")}
                                             placeholder="0"
                                             placeholderTextColor="#71717A"
                                             keyboardType="numeric"
                                             value={awayScore}
                                             onChangeText={(val) => setAwayScore(val.replace(/[^0-9]/g, ''))}
+                                            editable={canSubmit}
                                         />
                                     </View>
                                 </View>
+
+                                {matchDetails?.evidences && matchDetails.evidences.length > 0 && (
+                                    <View className="mt-8">
+                                        <View className="flex-row items-center gap-2 mb-3">
+                                            <Ionicons name="images-outline" size={18} color="#64748B" />
+                                            <Text className="text-sm font-bold text-foreground">Previously Uploaded Evidence</Text>
+                                        </View>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                                            {matchDetails.evidences.map((url, idx) => (
+                                                <Pressable
+                                                    key={idx}
+                                                    className="mr-3"
+                                                    onPress={() => setPreviewImage(url)}
+                                                >
+                                                    <Image
+                                                        source={{ uri: getOptimizedCloudinaryUrl(url, 400) }}
+                                                        className="w-32 h-44 rounded-2xl bg-muted"
+                                                        resizeMode="cover"
+                                                    />
+                                                </Pressable>
+                                            ))}
+                                        </ScrollView>
+                                    </View>
+                                )}
 
                                 <View className="mt-6 border-t border-border/10 pt-6">
                                     <View className="flex-row items-center justify-between mb-3">
@@ -542,10 +600,29 @@ export function MatchDetailsModal({
 
                                 <View className="mt-6 flex-row gap-3">
                                     <Button variant="outline" className="flex-1" onPress={() => { setHomeScore(''); setAwayScore(''); setError(null); setSelectedImages([]); }}>Clear</Button>
-                                    <Button className="flex-1" onPress={handleSubmitResult} loading={isSubmitting} disabled={isRoundLocked}>
-                                        {isRoundLocked ? "Round not open yet" : "Submit Result"}
+                                    <Button className="flex-1" onPress={handleSubmitResult} loading={isSubmitting} disabled={isRoundLocked || !canSubmit}>
+                                        {isRoundLocked ? "Round not open yet" : !canSubmit ? (hasStartTime ? "Players Only" : "Admin Only") : "Submit Result"}
                                     </Button>
                                 </View>
+                                
+                                {selectedImages.length > 0 && !canSubmit && isParticipant && (
+                                    <Button 
+                                        className="mt-3 bg-indigo-600" 
+                                        onPress={handleUploadOnly} 
+                                        loading={isUploadingEvidence}
+                                    >
+                                        <View className="flex-row items-center gap-2">
+                                            <Ionicons name="cloud-upload-outline" size={18} color="white" />
+                                            <Text className="text-white font-bold">Upload Evidence Only</Text>
+                                        </View>
+                                    </Button>
+                                )}
+
+                                {!canSubmit && (
+                                    <Text className="text-[10px] text-muted-foreground text-center mt-2 italic">
+                                        {hasStartTime ? "Only match participants can report results once scheduled" : "Only administrators can report results for unscheduled matches"}
+                                    </Text>
+                                )}
                             </View>
                         ) : (
                             <View className="flex-1">

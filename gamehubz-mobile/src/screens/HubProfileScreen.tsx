@@ -331,7 +331,7 @@ export default function HubProfileScreen() {
                                     </View>
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="text-2xl font-black text-white" numberOfLines={1}>{hubData.name}</Text>
+                                    <Text className="text-2xl font-black text-white leading-tight" numberOfLines={2}>{hubData.name}</Text>
                                     {/* Inline stats */}
                                     <View className="flex-row items-center mt-2 gap-4">
                                         <View className="flex-row items-center gap-1.5">

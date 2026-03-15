@@ -93,10 +93,14 @@ export function BracketMatch({ home, away, startTime, status, className, onPress
     const hasScore = (p: any) => p?.score !== null && p?.score !== undefined;
     const isAlreadyReported = hasScore(home) || hasScore(away);
 
-    // Can show details if match has participants and is either Live (2) or Completed (3, 4)
+    // Can show details if match has participants and is Scheduled (1), Live (2) or Completed (3, 4)
     // We relax the "isParticipant" requirement for viewing, but keep it for reporting
-    const canShowDetails = !!onPress && !!home && !!away && (status === 2 || status === 3 || status === 4);
-    const canReport = canShowDetails && !isAlreadyReported && isParticipant && status === 2;
+    const canShowDetails = !!onPress && !!home && !!away && (status === 1 || status === 2 || status === 3 || status === 4);
+    
+    // User request: admin only if startTime is null, players only if startTime is not null
+    const hasStartTime = !!startTime;
+    const canUserReport = hasStartTime ? isParticipant : isAdmin;
+    const canReport = canShowDetails && !isAlreadyReported && canUserReport && (status === 2 || status === 1);
 
     return (
         <Pressable
