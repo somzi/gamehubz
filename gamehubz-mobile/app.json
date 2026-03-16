@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "gamehubz-mobile",
+    "name": "GameHubz",
     "slug": "gamehubz-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.codespheresolutions.gamehubzmobile"
     },
     "android": {
       "adaptiveIcon": {
