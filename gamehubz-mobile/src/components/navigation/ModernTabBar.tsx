@@ -12,16 +12,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
-const TAB_BAR_WIDTH = width - 32;
-const TAB_WIDTH = TAB_BAR_WIDTH / 4;
+const TAB_WIDTH = width / 4;
 
 export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const insets = useSafeAreaInsets();
     const translateX = useRef(new Animated.Value(0)).current;
 
+    const tabWidth = width / state.routes.length;
+
     useEffect(() => {
         Animated.spring(translateX, {
-            toValue: state.index * TAB_WIDTH,
+            toValue: state.index * tabWidth,
             useNativeDriver: true,
             tension: 60,
             friction: 10,
@@ -32,7 +33,7 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
         <View
             style={[
                 styles.container,
-                { bottom: Math.max(insets.bottom, 16) }
+                { paddingBottom: Math.max(insets.bottom, 8) }
             ]}
         >
             <View style={styles.tabWrapper}>
@@ -41,7 +42,7 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
                     style={[
                         styles.indicatorContainer,
                         {
-                            width: TAB_WIDTH,
+                            width: tabWidth,
                             transform: [{ translateX: translateX }],
                         },
                     ]}
@@ -113,23 +114,14 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
 const styles = StyleSheet.create({
     container: {
-        position: 'absolute',
-        left: 16,
-        right: 16,
-        height: 80,
-        backgroundColor: 'rgba(15, 23, 42, 0.9)', // Muted slate
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 15,
-        elevation: 8,
+        width: '100%',
+        backgroundColor: '#0F172A',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.08)',
     },
     tabWrapper: {
         flexDirection: 'row',
-        height: '100%',
+        height: 64,
         alignItems: 'center',
     },
     indicatorContainer: {
