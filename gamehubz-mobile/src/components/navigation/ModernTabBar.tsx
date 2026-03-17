@@ -37,7 +37,7 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
             ]}
         >
             <View style={styles.tabWrapper}>
-                {/* Active Indicator (Rounded Square + Dot) */}
+                {/* Animated Indicator Container */}
                 <Animated.View
                     style={[
                         styles.indicatorContainer,
@@ -47,8 +47,11 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
                         },
                     ]}
                 >
-                    <View style={styles.dot} />
-                    <View style={styles.activeSquare} />
+                    {/* Glowing Top Line */}
+                    <View style={styles.topGlowLine} />
+                    
+                    {/* Subtle Circular Glow behind Icon */}
+                    <View style={styles.activeGlowCircle} />
                 </Animated.View>
 
                 {state.routes.map((route, index) => {
@@ -71,7 +74,7 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
                         switch (name) {
                             case 'Home': return focused ? 'home' : 'home-outline';
                             case 'Tournaments': return focused ? 'trophy' : 'trophy-outline';
-                            case 'Hubs': return focused ? 'people' : 'people-outline';
+                            case 'Hubs': return focused ? 'planet' : 'planet-outline';
                             case 'Profile': return focused ? 'person' : 'person-outline';
                             default: return 'help-outline';
                         }
@@ -94,12 +97,13 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
                             <View style={styles.contentWrapper}>
                                 <Ionicons
                                     name={getIconName(route.name, isFocused)}
-                                    size={24}
-                                    color={isFocused ? '#FFFFFF' : '#94A3B8'}
+                                    size={22}
+                                    color={isFocused ? '#10B981' : '#64748B'}
+                                    style={isFocused && styles.activeIconGlow}
                                 />
                                 <Text style={[
                                     styles.tabLabel,
-                                    { color: isFocused ? '#FFFFFF' : '#94A3B8' }
+                                    { color: isFocused ? '#FFFFFF' : '#64748B' }
                                 ]}>
                                     {label as string}
                                 </Text>
@@ -115,13 +119,18 @@ export function ModernTabBar({ state, descriptors, navigation }: BottomTabBarPro
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        backgroundColor: '#0F172A',
+        backgroundColor: '#0B1120', // Very deep premium slate
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.08)',
+        borderTopColor: 'rgba(255, 255, 255, 0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 15,
     },
     tabWrapper: {
         flexDirection: 'row',
-        height: 64,
+        height: 60,
         alignItems: 'center',
     },
     indicatorContainer: {
@@ -130,29 +139,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    dot: {
+    topGlowLine: {
         position: 'absolute',
-        top: 6,
-        width: 4,
-        height: 4,
-        borderRadius: 2,
+        top: -1,
+        width: '40%',
+        height: 3,
         backgroundColor: '#10B981',
+        borderBottomLeftRadius: 3,
+        borderBottomRightRadius: 3,
         shadowColor: '#10B981',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 1,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    activeSquare: {
-        width: 64,
-        height: 64,
-        backgroundColor: '#10B981', // Emerald fill
-        borderRadius: 20,
-        shadowColor: '#10B981',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.8,
+        shadowRadius: 6,
         elevation: 4,
+    },
+    activeGlowCircle: {
+        position: 'absolute',
+        top: 8,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(16, 185, 129, 0.15)',
     },
     tabButton: {
         flex: 1,
@@ -164,6 +171,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1,
+        marginTop: 4, // Shift slightly down to balance the top indicator
+    },
+    activeIconGlow: {
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
     },
     tabLabel: {
         fontSize: 10,
