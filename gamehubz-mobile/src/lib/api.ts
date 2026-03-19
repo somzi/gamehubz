@@ -1,15 +1,19 @@
-// Environment configuration
-const IS_PROD = !__DEV__;
-const PROD_URL = 'https://codespheresolutions.dev';
-// For local development on physical devices, use your computer's local IP
-const LOCAL_IP = '192.168.0.3';
-const LOCAL_PORT = '5057';
-const LOCAL_URL = `http://${LOCAL_IP}:${LOCAL_PORT}`;
+import { Platform } from 'react-native';
 
-export const API_BASE_URL = PROD_URL;
+// For Android emulators, localhost is 10.0.2.2
+// For iOS simulators and Web, localhost is localhost
+// For physical devices, you MUST use your computer's local IP address (e.g., 192.168.1.5)
+const getApiHost = () => {
+    if (Platform.OS === 'android') {
+        return '192.168.0.3';
+    }
+    // OVO MENJAŠ: Za iPhone (i fizički Android) mora IP adresa tvog kompa
+    return '192.168.0.3';
+};
 
-console.log(`[API] Environment: ${IS_PROD ? 'Production' : 'Development'}`);
-console.log(`[API] Base URL: ${API_BASE_URL}`);
+export const API_HOST = getApiHost();
+export const API_PORT = '5057';
+export const API_BASE_URL = `http://${API_HOST}:${API_PORT}`;
 
 export const ENDPOINTS = {
     SET_PASSWORD: `${API_BASE_URL}/api/Auth/setPassword`,
@@ -120,7 +124,7 @@ apiClient.interceptors.response.use((response) => response, async (error) => {
     if (error.response?.status === 401 && !originalRequest._retry) {
         if (isRefreshing) {
             return new Promise((resolve, reject) => {
-                failedQueue.push({resolve, reject});
+                failedQueue.push({ resolve, reject });
             }).then(token => {
                 originalRequest.headers.Authorization = 'Bearer ' + token;
                 return apiClient(originalRequest);
@@ -143,7 +147,7 @@ apiClient.interceptors.response.use((response) => response, async (error) => {
                 if (refreshResponse.data) {
                     const newAccess = refreshResponse.data.accessToken?.token || refreshResponse.data.accessToken || refreshResponse.data.AccessToken;
                     const newRefresh = refreshResponse.data.refreshToken || refreshResponse.data.RefreshToken;
-                    
+
                     if (newAccess && newRefresh) {
                         await SecureStore.setItemAsync('access_token', newAccess);
                         await SecureStore.setItemAsync('refresh_token', newRefresh);
@@ -173,13 +177,13 @@ apiClient.interceptors.response.use((response) => response, async (error) => {
 export const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
     try {
         const isFormData = options.body instanceof FormData;
-        
+
         let headers: Record<string, string> = {};
         if (options.headers) {
             if (options.headers instanceof Headers) {
-                 options.headers.forEach((value, key) => { headers[key] = value; });
+                options.headers.forEach((value, key) => { headers[key] = value; });
             } else {
-                 headers = { ...(options.headers as any) };
+                headers = { ...(options.headers as any) };
             }
         }
 
@@ -192,9 +196,9 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
 
         let bodyData = options.body;
         if (typeof bodyData === 'string' && !isFormData) {
-             try { bodyData = JSON.parse(bodyData); } catch(e) {}
+            try { bodyData = JSON.parse(bodyData); } catch (e) { }
         }
-        
+
         const response = await apiClient({
             method: options.method || 'GET',
             url: routeUrl,
@@ -217,7 +221,7 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
             status: response ? response.status : 500,
             statusText: response ? response.statusText : error.message,
             json: async () => { throw new Error(response?.data?.messages || response?.data || 'API Error'); },
-            text: async () => { 
+            text: async () => {
                 if (!response) return error.message;
                 return typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
             },

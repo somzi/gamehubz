@@ -53,7 +53,7 @@ export default function TournamentDetailsScreen() {
         message: string;
     }>({ type: 'success', title: '', message: '' });
     const [hubOwnerId, setHubOwnerId] = useState<string | undefined>(undefined);
-    
+
     const [showDeadlineModal, setShowDeadlineModal] = useState(false);
     const [selectedRoundForDeadline, setSelectedRoundForDeadline] = useState<{ roundNumber: number, currentDeadline?: string | null, roundOpenAt?: string | null } | null>(null);
 
@@ -149,6 +149,7 @@ export default function TournamentDetailsScreen() {
                 rules: rawData.rules || rawData.Rules,
                 registrationDeadline: rawData.registrationDeadline || rawData.RegistrationDeadLine || rawData.registrationDeadLine,
                 hubId: rawData.hubId || rawData.HubId,
+                hubName: rawData.hubName || rawData.HubName,
             };
 
             setTournament(normalizedTournament);
@@ -483,7 +484,7 @@ export default function TournamentDetailsScreen() {
     const handleEditDeadline = (roundOrMatchday: any) => {
         const roundNumber = typeof roundOrMatchday === 'number' ? roundOrMatchday : roundOrMatchday.roundNumber;
         const currentDeadline = typeof roundOrMatchday === 'object' ? roundOrMatchday.roundDeadline : null;
-        
+
         // Find roundOpenAt
         let roundOpenAt = null;
         if (typeof roundOrMatchday === 'object') {
@@ -493,24 +494,24 @@ export default function TournamentDetailsScreen() {
                 roundOpenAt = roundOrMatchday.matches[0].matchOpensAt || roundOrMatchday.matches[0].roundOpenAt;
             }
         }
-        
+
         setSelectedRoundForDeadline({ roundNumber, currentDeadline, roundOpenAt });
         setShowDeadlineModal(true);
     };
 
     const handleSaveSchedule = async (openAtStr: string | null, deadlineStr: string | null) => {
         if (!id || !selectedRoundForDeadline) return;
-        
+
         setShowDeadlineModal(false);
         setIsLoading(true);
-        
+
         try {
             const payload = {
                 RoundNumber: selectedRoundForDeadline.roundNumber,
                 Deadline: deadlineStr ? new Date(deadlineStr.replace(' ', 'T')).toISOString() : null,
                 RoundStart: openAtStr ? new Date(openAtStr.replace(' ', 'T')).toISOString() : null
             };
-            
+
             const response = await authenticatedFetch(ENDPOINTS.SET_ROUND_SCHEDULE(id), {
                 method: 'PUT',
                 body: JSON.stringify(payload)
@@ -527,7 +528,7 @@ export default function TournamentDetailsScreen() {
                 message: 'Round schedule updated successfully!'
             });
             setShowStatusModal(true);
-            
+
             fetchBracket();
         } catch (err: any) {
             console.error('[SetDeadline] Error:', err);
@@ -561,7 +562,7 @@ export default function TournamentDetailsScreen() {
         if (match.status !== 1 && match.status !== 2 && match.status !== 3 && match.status !== 4) return;
 
         const isCreator = tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase();
-        
+
         if (match.isRoundLocked && !isCreator) {
             Alert.alert("Round Locked", "Unlocks when all matches in the previous round are completed");
             return;
@@ -585,9 +586,9 @@ export default function TournamentDetailsScreen() {
         { label: 'Overview', value: 'overview' },
         { label: 'Bracket', value: 'bracket' },
         { label: 'Players', value: 'players' },
-        ...(tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() && 
-           (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2) 
-           ? [{ label: 'Registrations', value: 'registrations' }] : []),
+        ...(tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
+            (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2)
+            ? [{ label: 'Registrations', value: 'registrations' }] : []),
     ];
 
     const getStatusText = (status: number) => {
@@ -856,42 +857,42 @@ export default function TournamentDetailsScreen() {
                         <View className="px-4 py-4 pb-12">
                             {/* Hub Owner Registration Button */}
                             {tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
-                             (tournament?.status === 0 || tournament?.status === 1) &&
-                             !participants.some(p => (p.username || p.Username)?.toLowerCase() === user?.username?.toLowerCase()) &&
-                             !isUserRegistered && (
-                                <Button
-                                    className="w-full mb-4"
-                                    onPress={handleJoin}
-                                    loading={isRegistering}
-                                >
-                                    Register for Tournament
-                                </Button>
-                            )}
+                                (tournament?.status === 0 || tournament?.status === 1) &&
+                                !participants.some(p => (p.username || p.Username)?.toLowerCase() === user?.username?.toLowerCase()) &&
+                                !isUserRegistered && (
+                                    <Button
+                                        className="w-full mb-4"
+                                        onPress={handleJoin}
+                                        loading={isRegistering}
+                                    >
+                                        Register for Tournament
+                                    </Button>
+                                )}
 
                             {/* Hub Owner Close Registration Button */}
                             {tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
-                             (tournament?.status === 0 || tournament?.status === 1) &&
-                             tournament?.numberOfParticipants >= tournament?.maxPlayers && (
-                                <Button
-                                    className="w-full mb-4 bg-[#EF4444]"
-                                    onPress={handleCloseRegistration}
-                                    loading={isLoading}
-                                >
-                                    Close Registration
-                                </Button>
-                            )}
+                                (tournament?.status === 0 || tournament?.status === 1) &&
+                                tournament?.numberOfParticipants >= tournament?.maxPlayers && (
+                                    <Button
+                                        className="w-full mb-4 bg-[#EF4444]"
+                                        onPress={handleCloseRegistration}
+                                        loading={isLoading}
+                                    >
+                                        Close Registration
+                                    </Button>
+                                )}
 
                             {/* Hub Owner Open Registration Button */}
                             {tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
-                             tournament?.status === 2 && (
-                                <Button
-                                    className="w-full mb-4 bg-[#10B981]"
-                                    onPress={handleOpenRegistration}
-                                    loading={isLoading}
-                                >
-                                    Open Registration
-                                </Button>
-                            )}
+                                tournament?.status === 2 && (
+                                    <Button
+                                        className="w-full mb-4 bg-[#10B981]"
+                                        onPress={handleOpenRegistration}
+                                        loading={isLoading}
+                                    >
+                                        Open Registration
+                                    </Button>
+                                )}
 
                             {/* Registration Deadline Alert */}
                             {tournament.registrationDeadline && [0, 1, 2].includes(Number(tournament.status)) && (
@@ -964,11 +965,11 @@ export default function TournamentDetailsScreen() {
                                                 </View>
                                                 <Text className="text-base font-black text-white text-right max-w-[60%]">
                                                     {tournament.format === 0 ? 'League' :
-                                                     tournament.format === 1 ? 'Groups + Single Elimination' :
-                                                     tournament.format === 2 ? 'Groups + Double Elimination' :
-                                                     tournament.format === 3 ? 'Single Elimination' :
-                                                     tournament.format === 4 ? 'Double Elimination' :
-                                                     tournament.format === 5 ? 'Group Stage + Knockout' : 'Unknown'}
+                                                        tournament.format === 1 ? 'Groups + Single Elimination' :
+                                                            tournament.format === 2 ? 'Groups + Double Elimination' :
+                                                                tournament.format === 3 ? 'Single Elimination' :
+                                                                    tournament.format === 4 ? 'Double Elimination' :
+                                                                        tournament.format === 5 ? 'Group Stage + Knockout' : 'Unknown'}
                                                 </Text>
                                             </View>
                                             <View className="h-[1px] bg-white/5" />
@@ -978,7 +979,7 @@ export default function TournamentDetailsScreen() {
                                                     <View className="w-8 h-8 rounded-xl bg-[#3B82F6]/10 items-center justify-center">
                                                         <Ionicons name="calendar-outline" size={16} color="#3B82F6" />
                                                     </View>
-                                                    <Text className="text-sm text-slate-400 font-bold">Date</Text>
+                                                    <Text className="text-sm text-slate-400 font-bold">Start Date</Text>
                                                 </View>
                                                 <Text className="text-base font-black text-white">
                                                     {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}
@@ -1003,6 +1004,26 @@ export default function TournamentDetailsScreen() {
                                                                             : 'Global'}
                                                 </Text>
                                             </View>
+
+                                            {/* Hub */}
+                                            {tournament.hubName && tournament.hubId && (
+                                                <>
+                                                    <View className="h-[1px] bg-white/5" />
+                                                    <View className="flex-row items-center justify-between py-3">
+                                                        <View className="flex-row items-center gap-3">
+                                                            <View className="w-8 h-8 rounded-xl bg-indigo-500/10 items-center justify-center">
+                                                                <Ionicons name="home-outline" size={16} color="#6366F1" />
+                                                            </View>
+                                                            <Text className="text-sm text-slate-400 font-bold">Hub</Text>
+                                                        </View>
+                                                        <Pressable onPress={() => navigation.navigate('HubProfile', { id: tournament.hubId })}>
+                                                            <Text className="text-base font-black text-[#10B981] underline">
+                                                                {tournament.hubName}
+                                                            </Text>
+                                                        </Pressable>
+                                                    </View>
+                                                </>
+                                            )}
                                         </View>
                                     </View>
                                 )}
@@ -1153,9 +1174,9 @@ export default function TournamentDetailsScreen() {
                                 participants.map((p, i) => {
                                     const pUserId = p.userId || p.UserId || p.id;
                                     const isCreator = tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase();
-                                    
+
                                     const canRemove = isCreator && (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2);
-                                    
+
                                     return (
                                         <View key={p.participantId || p.id || pUserId || i} className="flex-row items-center gap-2">
                                             <Pressable
@@ -1175,7 +1196,7 @@ export default function TournamentDetailsScreen() {
                                                 </View>
                                                 <Ionicons name="chevron-forward" size={24} color="#475569" />
                                             </Pressable>
-                                            
+
                                             {canRemove && (
                                                 <Pressable
                                                     onPress={() => handleRemoveParticipant(pUserId)}
@@ -1238,7 +1259,7 @@ export default function TournamentDetailsScreen() {
                     onClose={() => setShowStatusModal(false)}
                 />
             )}
-            
+
             <RoundScheduleModal
                 visible={showDeadlineModal}
                 onClose={() => setShowDeadlineModal(false)}
