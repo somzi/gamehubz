@@ -261,7 +261,7 @@ export function HourlyAvailabilityPicker({
                                     onPress={() => toggleSlot(dayKey, hour)}
                                     disabled={isDisabled}
                                     className={cn(
-                                        "w-[23.5%] h-16 mb-2 rounded-xl items-center justify-center border",
+                                        "w-[20.5%] h-12 mb-2 rounded-xl items-center justify-center border",
                                         isDisabled
                                             ? "bg-slate-800/10 border-slate-700/10 opacity-20"
                                             : isMutual
