@@ -13,6 +13,7 @@ import { EditHubModal } from '../components/modals/EditHubModal';
 import { CreateTournamentModal } from '../components/modals/CreateTournamentModal';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { StatusModal } from '../components/modals/StatusModal';
+import { MAX_FILE_SIZE, isFileSizeValid, formatFileSize } from '../lib/image';
 
 type ManageHubScreenRouteProp = RouteProp<RootStackParamList, 'ManageHub'>;
 type ManageHubScreenNavigationProp = StackNavigationProp<RootStackParamList>;
@@ -96,6 +97,18 @@ export default function ManageHubScreen() {
 
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const selectedAsset = result.assets[0];
+                
+                // File size check
+                if (!isFileSizeValid(selectedAsset)) {
+                    setStatusModalConfig({
+                        type: 'error',
+                        title: 'File Too Large',
+                        message: `Maximum allowed image size is ${formatFileSize(MAX_FILE_SIZE)}. Your image is ${formatFileSize(selectedAsset.fileSize || 0)}.`
+                    });
+                    setShowStatusModal(true);
+                    return;
+                }
+
                 setAvatarUri(selectedAsset.uri);
                 handleUploadAvatar(selectedAsset);
             }

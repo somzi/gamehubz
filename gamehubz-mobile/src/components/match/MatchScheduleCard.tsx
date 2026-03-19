@@ -11,6 +11,7 @@ import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signal
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
 import { MatchComment } from '../../types/auth';
+import { MAX_FILE_SIZE, isFileSizeValid, formatFileSize } from '../../lib/image';
 
 type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
 
@@ -284,6 +285,21 @@ export function MatchScheduleCard({
             });
 
             if (!result.canceled) {
+                // File size check for multiple selections
+                const oversized = result.assets.filter(asset => !isFileSizeValid(asset));
+                
+                if (oversized.length > 0) {
+                    const oversizedNames = oversized.map(a => a.fileName || 'Image').join(', ');
+                    setError(`Some images are too large: ${oversizedNames}. Max size is ${formatFileSize(MAX_FILE_SIZE)}.`);
+                    
+                    // Only add the valid ones
+                    const validAssets = result.assets.filter(asset => isFileSizeValid(asset));
+                    if (validAssets.length > 0) {
+                        setSelectedImages(prev => [...prev, ...validAssets]);
+                    }
+                    return;
+                }
+
                 setSelectedImages(prev => [...prev, ...result.assets]);
             }
         } catch (err) {

@@ -7,7 +7,7 @@ import { Button } from '../ui/Button';
 import { PlayerAvatar } from '../ui/PlayerAvatar';
 import { authenticatedFetch, ENDPOINTS } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { getOptimizedCloudinaryUrl } from '../../lib/image';
+import { getOptimizedCloudinaryUrl, MAX_FILE_SIZE, isFileSizeValid, formatFileSize } from '../../lib/image';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -183,6 +183,21 @@ export function MatchDetailsModal({
             });
 
             if (!result.canceled) {
+                // File size check for multiple selections
+                const oversized = result.assets.filter(asset => !isFileSizeValid(asset));
+                
+                if (oversized.length > 0) {
+                    const oversizedNames = oversized.map(a => a.fileName || 'Image').join(', ');
+                    setError(`Some images are too large: ${oversizedNames}. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}.`);
+                    
+                    // Only add the valid ones
+                    const validAssets = result.assets.filter(asset => isFileSizeValid(asset));
+                    if (validAssets.length > 0) {
+                        setSelectedImages(prev => [...prev, ...validAssets]);
+                    }
+                    return;
+                }
+
                 setSelectedImages(prev => [...prev, ...result.assets]);
             }
         } catch (err) {
