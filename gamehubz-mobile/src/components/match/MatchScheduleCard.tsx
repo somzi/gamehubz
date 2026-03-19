@@ -22,6 +22,8 @@ interface MatchScheduleCardProps {
     roundName: string;
     opponentName: string;
     opponentAvatarUrl?: string;
+    opponentNickname?: string;
+    userNickname?: string;
     status: MatchStatus;
     deadline?: string;
     scheduledTime?: string;
@@ -39,6 +41,8 @@ export function MatchScheduleCard({
     roundName,
     opponentName,
     opponentAvatarUrl,
+    opponentNickname,
+    userNickname,
     status: initialStatus,
     deadline = 'TBD',
     scheduledTime: initialScheduledTime,
@@ -705,7 +709,15 @@ export function MatchScheduleCard({
                                                         <Text className={cn("font-black text-center mt-3 mb-0.5", isPremium ? "text-base text-white" : "text-sm text-foreground")} numberOfLines={1}>
                                                             {user?.username || 'You'}
                                                         </Text>
-                                                        {isPremium && <Text className="text-[10px] font-bold text-[#10B981] uppercase tracking-[0.2em] mb-4">Your Score</Text>}
+                                                        {(userNickname || user?.nickName) && (
+                                                            <View className="flex-row items-center justify-center gap-1 mb-2">
+                                                                <Ionicons name="game-controller" size={12} color="#10B981" />
+                                                                <Text className={cn("font-bold text-xs", isPremium ? "text-slate-400" : "text-muted-foreground")} numberOfLines={1}>
+                                                                    {userNickname || user?.nickName}
+                                                                </Text>
+                                                            </View>
+                                                        )}
+                                                        {isPremium && <Text className="text-[10px] font-bold text-[#10B981] uppercase tracking-[0.2em] mb-4 mt-2">Your Score</Text>}
                                                         <View className="w-full px-2">
                                                             <TextInput
                                                                 className={cn(
@@ -748,7 +760,15 @@ export function MatchScheduleCard({
                                                         <Text className={cn("font-black text-center mt-3 mb-0.5", isPremium ? "text-base text-white" : "text-sm text-foreground")} numberOfLines={1}>
                                                             {opponentName}
                                                         </Text>
-                                                        {isPremium && <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Opponent</Text>}
+                                                        {opponentNickname && (
+                                                            <View className="flex-row items-center justify-center gap-1 mb-2">
+                                                                <Ionicons name="game-controller" size={12} color="#6366F1" />
+                                                                <Text className={cn("font-bold text-xs", isPremium ? "text-slate-400" : "text-muted-foreground")} numberOfLines={1}>
+                                                                    {opponentNickname}
+                                                                </Text>
+                                                            </View>
+                                                        )}
+                                                        {isPremium && <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4 mt-2">Opponent</Text>}
                                                         <View className="w-full px-2">
                                                             <TextInput
                                                                 className={cn(
