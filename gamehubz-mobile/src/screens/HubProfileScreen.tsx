@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
@@ -38,9 +38,11 @@ export default function HubProfileScreen() {
     const [isAboutOpen, setIsAboutOpen] = useState(false);
 
 
-    useEffect(() => {
-        fetchHubDetails();
-    }, [id]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchHubDetails();
+        }, [id])
+    );
 
     useEffect(() => {
         // Reset list when tournament filter changes
