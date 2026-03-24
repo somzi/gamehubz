@@ -638,10 +638,10 @@ export default function TournamentDetailsScreen() {
 
     const handleTeamJoined = (team: TeamDto) => {
         setUserTeam(team);
+        setShowTeamRegistration(false);
         if (tournament?.isTeamTournament) {
             fetchTournamentTeams(id);
         }
-        navigation.navigate('TeamDashboard', { teamId: team.teamId, tournamentId: id });
     };
 
     const handleTeamMatchPress = (match: any) => {
@@ -656,6 +656,15 @@ export default function TournamentDetailsScreen() {
         fetchTournamentDetails();
         fetchParticipants(); // Fetch participants on mount to check join status
     }, [id]);
+
+    // Re-fetch teams on screen focus so stale state (e.g. after deleting a team) is cleared
+    useFocusEffect(
+        useCallback(() => {
+            if (tournament?.isTeamTournament) {
+                fetchTournamentTeams(id);
+            }
+        }, [id, tournament?.isTeamTournament])
+    );
 
     const handleMatchPress = (match: any) => {
 

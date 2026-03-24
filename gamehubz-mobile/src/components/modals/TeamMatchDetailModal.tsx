@@ -315,18 +315,18 @@ export function TeamMatchDetailModal({
         !!currentUserId && !!hubOwnerId &&
         currentUserId.toLowerCase() === hubOwnerId.toLowerCase();
 
-    const isCaptainOfHome =
-        !!currentUserId &&
-        !!data?.homeTeam?.captainUserId &&
-        currentUserId.toLowerCase() === data.homeTeam.captainUserId.toLowerCase();
-
-    const isCaptainOfAway =
-        !!currentUserId &&
-        !!data?.awayTeam?.captainUserId &&
-        currentUserId.toLowerCase() === data.awayTeam.captainUserId.toLowerCase();
-
-    const isCaptainOfEitherTeam = isCaptainOfHome || isCaptainOfAway;
-
+    const isCaptainOfHome = data?.homeTeam && !!currentUserId && (
+        String(data.homeTeam.captainUserId).toLowerCase() === String(currentUserId).toLowerCase() ||
+        data.homeTeam.members?.some(m => String(m.userId).toLowerCase() === String(currentUserId).toLowerCase() && m.isCaptain)
+    );
+    const isCaptainOfAway = data?.awayTeam && !!currentUserId && (
+        String(data.awayTeam.captainUserId).toLowerCase() === String(currentUserId).toLowerCase() ||
+        data.awayTeam.members?.some(m => String(m.userId).toLowerCase() === String(currentUserId).toLowerCase() && m.isCaptain)
+    );
+    const isCaptainOfEitherTeam = !!(isCaptainOfHome || isCaptainOfAway);
+ 
+    const isTieBreakMatchCreated = data?.subMatches?.some(sm => sm.isTieBreakMatch);
+ 
     // Check if current user already submitted rep
     const hasSubmittedRep = (() => {
         if (!tieBreakStatus) return false;
@@ -338,12 +338,35 @@ export function TeamMatchDetailModal({
     // Get the team members for the rep picker
     const myTeamMembers: TeamMemberDto[] = (() => {
         if (!data) return [];
-        if (isCaptainOfHome && data.homeTeam) return data.homeTeam.members || [];
-        if (isCaptainOfAway && data.awayTeam) return data.awayTeam.members || [];
+        // Prioritize the team the user is actually on
+        const userAsHome = data.homeTeam?.members?.some(m => m.userId.toLowerCase() === currentUserId?.toLowerCase());
+        const userAsAway = data.awayTeam?.members?.some(m => m.userId.toLowerCase() === currentUserId?.toLowerCase());
+
+        if (userAsHome && data.homeTeam) return data.homeTeam.members || [];
+        if (userAsAway && data.awayTeam) return data.awayTeam.members || [];
+        
+        // If hub owner but not in a team, and not a captain, show both if we want admin choice
+        // But user said "only show members from my team" - so if they are admin they might need both
+        // Let's assume as admin they pick for the team they "choose" or we show all
+        if (isHubOwner) {
+            return (data.homeTeam?.members || []).concat(data.awayTeam?.members || []);
+        }
         return [];
     })();
 
     const getStatusBadge = (status: string | number, isCompleted?: boolean) => {
+        // If tied and no winner, always show tie-break state
+        if (tieBreakStatus?.isRequired && !data?.winnerTeamParticipantId) {
+             return (
+                <View className="bg-[#F59E0B]/10 px-3 py-1 rounded-full border border-[#F59E0B]/30 flex-row items-center gap-1.5 shadow-sm">
+                    <View className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                    <Text className="text-[10px] font-black text-[#F59E0B] uppercase tracking-tighter">
+                        Tie-Break
+                    </Text>
+                </View>
+            );
+        }
+
         if (isCompleted) {
             return (
                 <View className="bg-[#064E3B] px-2 py-1 rounded-full">
@@ -354,7 +377,6 @@ export function TeamMatchDetailModal({
             );
         }
 
-        // Handle both string and numeric statuses
         const statusStr = typeof status === 'number'
             ? (status === 0 ? 'Pending' : status === 1 ? 'ReadyPhase' : status === 2 ? 'InProgress' : status === 3 ? 'Completed' : status === 4 ? 'TieBreakRequired' : 'Pending')
             : status;
@@ -363,7 +385,6 @@ export function TeamMatchDetailModal({
             case 'Completed':
             case '2':
             case '3':
-            case '4':
                 return (
                     <View className="bg-[#064E3B] px-2 py-1 rounded-full">
                         <Text className="text-[9px] font-black text-[#10B981] uppercase">
@@ -385,8 +406,8 @@ export function TeamMatchDetailModal({
                     </View>
                 );
             case 'TieBreakRequired':
+            case '4':
             case '5':
-            case '6':
                 return (
                     <View className="bg-[#F59E0B]/10 px-3 py-1 rounded-full border border-[#F59E0B]/30 flex-row items-center gap-1.5 shadow-sm">
                         <View className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
@@ -568,13 +589,17 @@ export function TeamMatchDetailModal({
                                     </View>
 
                                     {/* Select Representative Button */}
-                                    {isCaptainOfEitherTeam && !hasSubmittedRep && (
+                                    {(isCaptainOfEitherTeam || isHubOwner) && !isTieBreakMatchCreated && (
                                         <Button
                                             className="mt-3 bg-[#F59E0B]"
                                             size="sm"
                                             onPress={() => setShowRepPicker(true)}
+                                            loading={isSubmittingRep}
                                         >
-                                            {TEAM_LABELS.SELECT_REPRESENTATIVE}
+                                            <Text className="text-white font-black uppercase text-[10px]">
+                                                {isHubOwner && !isCaptainOfEitherTeam ? "Admin: " : ""}
+                                                {hasSubmittedRep ? "Change Representative" : String(TEAM_LABELS.SELECT_REPRESENTATIVE)}
+                                            </Text>
                                         </Button>
                                     )}
 
@@ -596,17 +621,17 @@ export function TeamMatchDetailModal({
                             {data.subMatches.map((sm) => (
                                 <View
                                     key={sm.matchId}
-                                    className="bg-[#111827]/40 rounded-3xl border border-white/5 p-5 mb-4 shadow-sm"
+                                    className="bg-[#111827]/40 rounded-[28px] border border-white/5 p-4 mb-3 shadow-sm"
                                 >
                                     {sm.isTieBreakMatch && (
-                                        <View className="bg-[#F59E0B]/10 px-3 py-1 rounded-full self-start mb-4 border border-[#F59E0B]/20">
-                                            <Text className="text-[8px] font-black text-[#F59E0B] uppercase tracking-widest">
+                                        <View className="bg-[#F59E0B]/10 px-2 py-0.5 rounded-full self-start mb-3 border border-[#F59E0B]/20">
+                                            <Text className="text-[7px] font-black text-[#F59E0B] uppercase tracking-widest">
                                                 {TEAM_LABELS.TIE_BREAK_LABEL}
                                             </Text>
                                         </View>
                                     )}
-
-                                    <View className="flex-row items-center justify-between py-2">
+ 
+                                    <View className="flex-row items-center justify-between py-1">
                                         {/* Home player */}
                                         <Pressable 
                                             onPress={() => {
@@ -615,43 +640,43 @@ export function TeamMatchDetailModal({
                                                     navigation.navigate('PlayerProfile', { id: sm.homePlayer.userId });
                                                 }
                                             }}
-                                            className="flex-1 items-center gap-2"
+                                            className="flex-1 items-center gap-1.5"
                                         >
                                             <PlayerAvatar
                                                 src={sm.homePlayer?.avatarUrl}
                                                 name={sm.homePlayer?.username || 'Unknown'}
-                                                size="lg"
-                                                className="rounded-2xl"
+                                                size="md"
+                                                className="rounded-xl"
                                             />
-                                            <Text className="text-xs text-slate-200 font-bold text-center w-full px-1" numberOfLines={1}>
+                                            <Text className="text-[11px] text-slate-200 font-bold text-center w-full px-1" numberOfLines={1}>
                                                 {sm.homePlayer?.username || 'Unknown'}
                                             </Text>
                                         </Pressable>
-
+ 
                                         {/* Score Center */}
-                                        <View className="items-center justify-center px-2 min-w-[100px]">
+                                        <View className="items-center justify-center px-1 min-w-[80px]">
                                             {sm.homeScore !== null && sm.awayScore !== null ? (
                                                 <View className="items-center">
                                                     <View className="flex-row items-center">
-                                                        <Text className={`text-3xl font-black ${(sm.homeScore ?? 0) > (sm.awayScore ?? 0) ? 'text-[#10B981]' : 'text-slate-300'}`}>
+                                                        <Text className={`text-2xl font-black ${(sm.homeScore ?? 0) > (sm.awayScore ?? 0) ? 'text-[#10B981]' : 'text-slate-300'}`}>
                                                             {sm.homeScore}
                                                         </Text>
-                                                        <Text className="text-lg text-slate-600 font-black mx-3">:</Text>
-                                                        <Text className={`text-3xl font-black ${(sm.awayScore ?? 0) > (sm.homeScore ?? 0) ? 'text-[#10B981]' : 'text-slate-300'}`}>
+                                                        <Text className="text-base text-slate-600 font-black mx-2">:</Text>
+                                                        <Text className={`text-2xl font-black ${(sm.awayScore ?? 0) > (sm.homeScore ?? 0) ? 'text-[#10B981]' : 'text-slate-300'}`}>
                                                             {sm.awayScore}
                                                         </Text>
                                                     </View>
-                                                    <View className="mt-1">
+                                                    <View className="mt-0.5">
                                                         {getMatchPill(sm.status, !!sm.winnerUserId)}
                                                     </View>
                                                 </View>
                                             ) : (
-                                                <View className="bg-white/5 py-1 px-3 rounded-xl border border-white/10">
-                                                    <Text className="text-[10px] text-slate-500 font-black uppercase tracking-widest text-center">VS</Text>
+                                                <View className="bg-white/5 py-0.5 px-2.5 rounded-lg border border-white/10">
+                                                    <Text className="text-[8px] text-slate-500 font-black uppercase tracking-widest text-center">VS</Text>
                                                 </View>
                                             )}
                                         </View>
-
+ 
                                         {/* Away player */}
                                         <Pressable 
                                             onPress={() => {
@@ -660,15 +685,15 @@ export function TeamMatchDetailModal({
                                                     navigation.navigate('PlayerProfile', { id: sm.awayPlayer.userId });
                                                 }
                                             }}
-                                            className="flex-1 items-center gap-2"
+                                            className="flex-1 items-center gap-1.5"
                                         >
                                             <PlayerAvatar
                                                 src={sm.awayPlayer?.avatarUrl}
                                                 name={sm.awayPlayer?.username || 'Unknown'}
-                                                size="lg"
-                                                className="rounded-2xl"
+                                                size="md"
+                                                className="rounded-xl"
                                             />
-                                            <Text className="text-xs text-slate-200 font-bold text-center w-full px-1" numberOfLines={1}>
+                                            <Text className="text-[11px] text-slate-200 font-bold text-center w-full px-1" numberOfLines={1}>
                                                 {sm.awayPlayer?.username || 'Unknown'}
                                             </Text>
                                         </Pressable>
@@ -711,7 +736,16 @@ export function TeamMatchDetailModal({
 
                         {/* Footer */}
                         <View className="px-6 pt-2 mb-8">
-                            {data?.winnerTeamParticipantId || data?.status === 'Completed' || data?.status === 3 ? (
+                            { (tieBreakStatus?.isRequired || (data && (data.status === 'TieBreakRequired' || data.status === 4))) && !data?.winnerTeamParticipantId ? (
+                                <View className="bg-[#F59E0B]/10 rounded-3xl border border-[#F59E0B]/30 p-5 items-center">
+                                    <View className="flex-row items-center gap-3">
+                                        <Ionicons name="warning" size={20} color="#F59E0B" />
+                                        <Text className="text-sm font-black text-[#F59E0B] uppercase tracking-widest">
+                                            {TEAM_LABELS.TIE_BREAK_BANNER}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ) : (data?.winnerTeamParticipantId && (data?.status === 'Completed' || data?.status === 3)) ? (
                                 <View className="bg-[#10B981]/10 rounded-[32px] border border-[#10B981]/30 p-6 items-center shadow-lg relative overflow-hidden">
                                     <View className="flex-row items-center gap-4">
                                         <View className="bg-[#10B981]/20 p-3 rounded-2xl shadow-sm">
@@ -732,15 +766,6 @@ export function TeamMatchDetailModal({
                                                     : 'Hard fought victory'} · {data?.aggregateScore?.homeTeamWins}-{data?.aggregateScore?.awayTeamWins}
                                             </Text>
                                         </View>
-                                    </View>
-                                </View>
-                            ) : data.status === 'TieBreakRequired' ? (
-                                <View className="bg-[#F59E0B]/10 rounded-3xl border border-[#F59E0B]/30 p-5 items-center">
-                                    <View className="flex-row items-center gap-3">
-                                        <Ionicons name="warning" size={20} color="#F59E0B" />
-                                        <Text className="text-sm font-black text-[#F59E0B] uppercase tracking-widest">
-                                            {TEAM_LABELS.TIE_BREAK_BANNER}
-                                        </Text>
                                     </View>
                                 </View>
                             ) : (

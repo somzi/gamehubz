@@ -110,7 +110,7 @@ export default function TeamDashboardScreen() {
         fetchTeam();
     }, [fetchTeam]);
 
-    const actualTeamSize = team?.teamSize || team?.TeamSize || route.params.teamSize || team?.members?.length || 1;
+    const actualTeamSize = route.params.teamSize || team?.teamSize || team?.TeamSize || 2;
     const actualMemberCount = team?.memberCount || team?.MemberCount || team?.members?.length || 1;
     const isAlreadyRegistered = team?.isAlreadyRegistered || team?.IsAlreadyRegistered || team?.isAlreadyRegistred || team?.IsAlreadyRegistred;
     const captainId = team?.captainUserId || team?.CaptainUserId;

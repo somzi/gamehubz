@@ -438,14 +438,14 @@ export function MatchDetailsModal({
                                                     </View>
                                                 )}
 
-                                                <View className="flex-row items-center justify-between gap-4">
+                                                <View className="flex-row items-center justify-center gap-4">
                                                     <View className="flex-1 items-center gap-3">
                                                         <PlayerAvatar name={matchDetails.homeUser} size="lg" />
                                                         <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
                                                             {matchDetails.homeUser}
                                                         </Text>
                                                         <TextInput
-                                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                            className="bg-muted/30 w-32 h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
                                                             placeholder="0"
                                                             placeholderTextColor="#71717A"
                                                             keyboardType="numeric"
@@ -453,14 +453,16 @@ export function MatchDetailsModal({
                                                             onChangeText={(val) => setHomeScore(val.replace(/[^0-9]/g, ''))}
                                                         />
                                                     </View>
-                                                    <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
+                                                    <View className="w-10 items-center justify-center mt-12">
+                                                        <Text className="text-2xl font-bold text-muted-foreground">VS</Text>
+                                                    </View>
                                                     <View className="flex-1 items-center gap-3">
                                                         <PlayerAvatar name={matchDetails.awayUser} size="lg" />
                                                         <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
                                                             {matchDetails.awayUser}
                                                         </Text>
                                                         <TextInput
-                                                            className="bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
+                                                            className="bg-muted/30 w-32 h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10"
                                                             placeholder="0"
                                                             placeholderTextColor="#71717A"
                                                             keyboardType="numeric"
@@ -525,14 +527,14 @@ export function MatchDetailsModal({
                                         <Text className="text-destructive text-sm text-center font-medium">{error}</Text>
                                     </View>
                                 )}
-                                <View className="flex-row items-center justify-between gap-4">
+                                <View className="flex-row items-center justify-center gap-4">
                                     <View className="flex-1 items-center gap-3">
                                         <PlayerAvatar name={home?.username || 'Home'} size="lg" />
                                         <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
                                             {home?.username || 'Home'}
                                         </Text>
                                         <TextInput
-                                            className={cn("bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10", !canSubmit && "opacity-50")}
+                                            className={cn("bg-muted/30 w-32 h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10", !canSubmit && "opacity-50")}
                                             placeholder="0"
                                             placeholderTextColor="#71717A"
                                             keyboardType="numeric"
@@ -541,14 +543,16 @@ export function MatchDetailsModal({
                                             editable={canSubmit}
                                         />
                                     </View>
-                                    <Text className="text-2xl font-bold text-muted-foreground mt-12">VS</Text>
+                                    <View className="w-10 items-center justify-center mt-12">
+                                        <Text className="text-2xl font-bold text-muted-foreground">VS</Text>
+                                    </View>
                                     <View className="flex-1 items-center gap-3">
                                         <PlayerAvatar name={away?.username || opponentName || 'Away'} size="lg" />
                                         <Text className="text-sm font-bold text-foreground text-center" numberOfLines={1}>
                                             {away?.username || opponentName || 'Away'}
                                         </Text>
                                         <TextInput
-                                            className={cn("bg-muted/30 w-full h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10", !canSubmit && "opacity-50")}
+                                            className={cn("bg-muted/30 w-32 h-12 rounded-xl text-center text-lg font-bold text-foreground border border-border/10", !canSubmit && "opacity-50")}
                                             placeholder="0"
                                             placeholderTextColor="#71717A"
                                             keyboardType="numeric"
