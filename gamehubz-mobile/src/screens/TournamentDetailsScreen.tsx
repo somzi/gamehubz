@@ -645,10 +645,7 @@ export default function TournamentDetailsScreen() {
     };
 
     const handleTeamMatchPress = (match: any) => {
-        if (tournament?.status !== 3) {
-            Alert.alert('Tournament Not In Progress', 'You can only access matches when the tournament is actively in progress.');
-            return;
-        }
+
         if (!match.home || !match.away) return;
         if (match.status !== 1 && match.status !== 2 && match.status !== 3 && match.status !== 4) return;
         setSelectedTeamMatchId(match.id);
@@ -661,10 +658,6 @@ export default function TournamentDetailsScreen() {
     }, [id]);
 
     const handleMatchPress = (match: any) => {
-        if (tournament?.status !== 3) {
-            Alert.alert("Tournament Not In Progress", "You can only access matches when the tournament is actively in progress.");
-            return;
-        }
 
         // Only allow if match has participants
         if (!match.home || !match.away) return;
@@ -1290,9 +1283,9 @@ export default function TournamentDetailsScreen() {
                                     const memberCount = t.memberCount || t.MemberCount || 0;
                                     const teamSize = t.teamSize || t.TeamSize || tournament?.teamSize || 0;
                                     const captainUserId = t.captainUserId || t.CaptainUserId;
-                                    
+
                                     const membersList = t.members || t.Members || [];
-                                    const captain = membersList.find((m: any) => 
+                                    const captain = membersList.find((m: any) =>
                                         m.userId?.toLowerCase() === captainUserId?.toLowerCase() ||
                                         m.UserId?.toLowerCase() === captainUserId?.toLowerCase()
                                     );
@@ -1462,7 +1455,7 @@ export default function TournamentDetailsScreen() {
                                     return displayedRegistrations.map((reg) => {
                                         const isTeam = reg.isTeamRegistration || reg.IsTeamRegistration;
                                         const regId = reg.id || reg.registrationId || reg.Id;
-                                        
+
                                         if (isTeam) {
                                             const currentMembers = reg.memberCount || reg.MemberCount || 1;
                                             const requiredMembers = tournament?.teamSize || 2;
