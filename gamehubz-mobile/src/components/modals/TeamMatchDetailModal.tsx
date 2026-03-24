@@ -9,6 +9,9 @@ import {
     Modal,
     AppState,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../types/navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../ui/Button';
@@ -20,7 +23,7 @@ import {
     getTieBreakStatus,
     submitTieBreakRepresentative,
 } from '../../lib/teamApi';
-import { authenticatedFetch, ENDPOINTS, getErrorMessage } from '../../lib/api';
+import { authenticatedFetch, ENDPOINTS, getErrorMessage, API_BASE_URL } from '../../lib/api';
 import type {
     TeamMatchDetailsDto,
     SubMatchDto,
@@ -45,6 +48,7 @@ export function TeamMatchDetailModal({
     currentUserId,
     onMatchUpdate,
 }: TeamMatchDetailModalProps) {
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
     const insets = useSafeAreaInsets();
 
     const [data, setData] = useState<TeamMatchDetailsDto | null>(null);
@@ -71,6 +75,14 @@ export function TeamMatchDetailModal({
         message: string;
     }>({ type: 'success', title: '', message: '' });
 
+    const formatAvatarUrl = (url?: string) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+        const path = url.startsWith('/') ? url : `/${url}`;
+        return `${baseUrl}${path}`;
+    };
+
     const fetchData = useCallback(async () => {
         if (!matchId) return;
         setIsLoading(true);
@@ -94,10 +106,10 @@ export function TeamMatchDetailModal({
                         userId: m.userId || m.UserId || '',
                         username: m.username || m.Username || '',
                         isCaptain: m.isCaptain || m.IsCaptain || false,
-                        avatarUrl: m.avatarUrl || m.AvatarUrl || '',
+                        avatarUrl: formatAvatarUrl(m.avatarUrl || m.AvatarUrl),
                     })),
                     captainUserId: home.captainUserId || home.CaptainUserId || '',
-                    avatarUrl: home.avatarUrl || home.AvatarUrl || '',
+                    avatarUrl: formatAvatarUrl(home.avatarUrl || home.AvatarUrl),
                 } : null,
                 awayTeam: away ? {
                     teamId: away.teamId || away.TeamId || '',
@@ -106,27 +118,36 @@ export function TeamMatchDetailModal({
                         userId: m.userId || m.UserId || '',
                         username: m.username || m.Username || '',
                         isCaptain: m.isCaptain || m.IsCaptain || false,
-                        avatarUrl: m.avatarUrl || m.AvatarUrl || '',
+                        avatarUrl: formatAvatarUrl(m.avatarUrl || m.AvatarUrl),
                     })),
                     captainUserId: away.captainUserId || away.CaptainUserId || '',
-                    avatarUrl: away.avatarUrl || away.AvatarUrl || '',
+                    avatarUrl: formatAvatarUrl(away.avatarUrl || away.AvatarUrl),
                 } : null,
                 subMatches: (raw.subMatches || raw.SubMatches || []).map((sm: any) => {
                     const hp = sm.homePlayer || sm.HomePlayer;
                     const ap = sm.awayPlayer || sm.AwayPlayer;
+                    
+                    // Fall back to team member avatars if sub-match player avatar is null
+                    const homeTeamMember = (home?.members || home?.Members || []).find((m: any) => 
+                        (m.userId || m.UserId) === (hp?.userId || hp?.UserId)
+                    );
+                    const awayTeamMember = (away?.members || away?.Members || []).find((m: any) => 
+                        (m.userId || m.UserId) === (ap?.userId || ap?.UserId)
+                    );
+
                     return {
                         matchId: sm.matchId || sm.MatchId || '',
                         homePlayer: hp ? {
                             userId: hp.userId || hp.UserId || '',
                             username: hp.username || hp.Username || '',
                             isCaptain: hp.isCaptain || hp.IsCaptain || false,
-                            avatarUrl: hp.avatarUrl || hp.AvatarUrl || '',
+                            avatarUrl: formatAvatarUrl(hp.avatarUrl || hp.AvatarUrl || homeTeamMember?.avatarUrl || homeTeamMember?.AvatarUrl),
                         } : null,
                         awayPlayer: ap ? {
                             userId: ap.userId || ap.UserId || '',
                             username: ap.username || ap.Username || '',
                             isCaptain: ap.isCaptain || ap.IsCaptain || false,
-                            avatarUrl: ap.avatarUrl || ap.AvatarUrl || '',
+                            avatarUrl: formatAvatarUrl(ap.avatarUrl || ap.AvatarUrl || awayTeamMember?.avatarUrl || awayTeamMember?.AvatarUrl),
                         } : null,
                         homeScore: sm.homeScore ?? sm.HomeScore ?? null,
                         awayScore: sm.awayScore ?? sm.AwayScore ?? null,
@@ -548,7 +569,15 @@ export function TeamMatchDetailModal({
 
                                     <View className="flex-row items-center">
                                         {/* Home player */}
-                                        <View className="flex-1 items-center">
+                                        <Pressable 
+                                            onPress={() => {
+                                                if (sm.homePlayer?.userId) {
+                                                    onClose();
+                                                    navigation.navigate('PlayerProfile', { id: sm.homePlayer.userId });
+                                                }
+                                            }}
+                                            className="flex-1 items-center active:bg-white/5 py-1 rounded-xl"
+                                        >
                                             <PlayerAvatar
                                                 src={sm.homePlayer?.avatarUrl}
                                                 name={sm.homePlayer?.username || 'Unknown'}
@@ -557,12 +586,12 @@ export function TeamMatchDetailModal({
                                             <Text className="text-xs text-white font-bold mt-1" numberOfLines={1}>
                                                 {sm.homePlayer?.username || 'Unknown'}
                                             </Text>
-                                        </View>
+                                        </Pressable>
 
                                         {/* Score */}
-                                        <View className="items-center px-3">
+                                        <View className="items-center px-2">
                                             {sm.homeScore !== null && sm.awayScore !== null ? (
-                                                <Text className="text-lg font-black text-white">
+                                                <Text className="text-base font-black text-white">
                                                     {sm.homeScore} — {sm.awayScore}
                                                 </Text>
                                             ) : (
@@ -571,7 +600,15 @@ export function TeamMatchDetailModal({
                                         </View>
 
                                         {/* Away player */}
-                                        <View className="flex-1 items-center">
+                                        <Pressable 
+                                            onPress={() => {
+                                                if (sm.awayPlayer?.userId) {
+                                                    onClose();
+                                                    navigation.navigate('PlayerProfile', { id: sm.awayPlayer.userId });
+                                                }
+                                            }}
+                                            className="flex-1 items-center active:bg-white/5 py-1 rounded-xl"
+                                        >
                                             <PlayerAvatar
                                                 src={sm.awayPlayer?.avatarUrl}
                                                 name={sm.awayPlayer?.username || 'Unknown'}
@@ -580,7 +617,7 @@ export function TeamMatchDetailModal({
                                             <Text className="text-xs text-white font-bold mt-1" numberOfLines={1}>
                                                 {sm.awayPlayer?.username || 'Unknown'}
                                             </Text>
-                                        </View>
+                                        </Pressable>
 
                                         {/* Status badge */}
                                         <View className="ml-2">

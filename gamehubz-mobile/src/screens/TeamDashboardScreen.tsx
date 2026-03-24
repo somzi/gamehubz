@@ -431,8 +431,8 @@ export default function TeamDashboardScreen() {
 
                 {/* Action Buttons */}
                 <View className="px-6 pb-6 gap-3">
-                    {/* Captain: Register Team */}
-                    {isCaptain && (
+                    {/* Captain: Register Team - Only when full and not yet registered */}
+                    {isCaptain && actualMemberCount === actualTeamSize && (
                         isAlreadyRegistered ? (
                             <View className="w-full bg-[#10B981]/10 p-4 rounded-2xl border border-[#10B981]/20 flex-row justify-center gap-2 items-center">
                                 <Ionicons name="checkmark-circle" size={20} color="#10B981" />
