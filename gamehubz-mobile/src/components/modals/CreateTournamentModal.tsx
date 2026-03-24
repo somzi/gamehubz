@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch } from '../../lib/api';
 import { DateTimePickerModal } from './DateTimePickerModal';
 import { TournamentFormat, TournamentRegion } from '../../types/tournament';
+import { TEAM_LABELS } from '../../lib/teamConstants';
 
 interface CreateTournamentModalProps {
     visible: boolean;
@@ -84,6 +85,10 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
     // Round Duration
     const [roundDurationValue, setRoundDurationValue] = useState('');
     const [roundDurationUnit, setRoundDurationUnit] = useState('Minutes'); // Minutes | Hours | Days
+
+    // Team mode
+    const [isTeamTournament, setIsTeamTournament] = useState(false);
+    const [teamSize, setTeamSize] = useState('');
 
     // Data State
     const [hubs, setHubs] = useState<{ id: string; name: string }[]>([]);
@@ -185,6 +190,14 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
             return;
         }
 
+        if (isTeamTournament) {
+            const ts = parseInt(teamSize);
+            if (!teamSize || isNaN(ts) || ts < 2 || ts > 11) {
+                setError('Team size must be between 2 and 11');
+                return;
+            }
+        }
+
         if (!startDate || !registrationDeadline) {
             setError('Please set both Registration Deadline and Start Date');
             return;
@@ -244,7 +257,9 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                 format: parseInt(selectedFormat),
                 GroupsCount: selectedFormat === '5' ? parseInt(groupsCount) : null,
                 QualifiersPerGroup: selectedFormat === '5' ? parseInt(qualifiersPerGroup) : null,
-                roundDurationMinutes: roundDurationMinutes
+                roundDurationMinutes: roundDurationMinutes,
+                isTeamTournament: isTeamTournament,
+                teamSize: isTeamTournament ? parseInt(teamSize) : null,
             };
 
             console.log('Creating tournament with payload:', payload);
@@ -439,6 +454,50 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                     )}
                                 </View>
                             </View>
+
+                            {/* Tournament Mode Toggle */}
+                            <View>
+                                <View className="flex-row items-center mb-3">
+                                    <Ionicons name="people-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
+                                    <Text className="text-sm font-bold text-white">{TEAM_LABELS.MODE_LABEL}</Text>
+                                </View>
+                                <View className="bg-[#131B2E] p-1 rounded-2xl flex-row border border-white/5">
+                                    <Pressable
+                                        onPress={() => setIsTeamTournament(false)}
+                                        className={`flex-1 py-3 rounded-xl items-center justify-center ${!isTeamTournament ? 'bg-[#4F46E5]' : ''}`}
+                                    >
+                                        <Text className={`text-xs font-bold tracking-wide ${!isTeamTournament ? 'text-white' : 'text-zinc-500'}`}>
+                                            {TEAM_LABELS.MODE_SOLO}
+                                        </Text>
+                                    </Pressable>
+                                    <Pressable
+                                        onPress={() => setIsTeamTournament(true)}
+                                        className={`flex-1 py-3 rounded-xl items-center justify-center ${isTeamTournament ? 'bg-[#4F46E5]' : ''}`}
+                                    >
+                                        <Text className={`text-xs font-bold tracking-wide ${isTeamTournament ? 'text-white' : 'text-zinc-500'}`}>
+                                            {TEAM_LABELS.MODE_TEAM}
+                                        </Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+
+                            {/* Team Size (visible only for Team mode) */}
+                            {isTeamTournament && (
+                                <View>
+                                    <View className="flex-row items-center mb-3">
+                                        <Ionicons name="grid-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
+                                        <Text className="text-sm font-bold text-white">{TEAM_LABELS.TEAM_SIZE_LABEL} *</Text>
+                                    </View>
+                                    <TextInput
+                                        className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10"
+                                        placeholder={TEAM_LABELS.TEAM_SIZE_PLACEHOLDER}
+                                        placeholderTextColor="#6b7280"
+                                        keyboardType="numeric"
+                                        value={teamSize}
+                                        onChangeText={setTeamSize}
+                                    />
+                                </View>
+                            )}
 
                             {selectedFormat === '5' && (
                                 <View className="flex-row gap-4">

@@ -1,0 +1,105 @@
+export interface TeamMemberDto {
+    userId: string;
+    UserId?: string;
+    username: string;
+    Username?: string;
+    isCaptain: boolean;
+    IsCaptain?: boolean;
+    avatarUrl?: string;
+    AvatarUrl?: string;
+}
+
+export interface TeamMatchTeamInfoDto {
+    teamId: string;
+    TeamId?: string;
+    teamName: string;
+    TeamName?: string;
+    members: TeamMemberDto[];
+    Members?: TeamMemberDto[];
+    captainUserId?: string;
+    CaptainUserId?: string;
+    avatarUrl?: string;
+    AvatarUrl?: string;
+}
+
+export interface SubMatchDto {
+    matchId: string;
+    MatchId?: string;
+    homePlayer: TeamMemberDto | null;
+    HomePlayer?: TeamMemberDto | null;
+    awayPlayer: TeamMemberDto | null;
+    AwayPlayer?: TeamMemberDto | null;
+    homeScore: number | null;
+    HomeScore?: number | null;
+    awayScore: number | null;
+    AwayScore?: number | null;
+    status: 'Pending' | 'Completed' | number;
+    Status?: 'Pending' | 'Completed' | number;
+    winnerUserId: string | null;
+    WinnerUserId?: string | null;
+    isTieBreakMatch: boolean;
+    IsTieBreakMatch?: boolean;
+}
+
+export interface AggregateScoreDto {
+    homeTeamWins: number;
+    HomeTeamWins?: number;
+    awayTeamWins: number;
+    AwayTeamWins?: number;
+    homeTeamTotalScore: number;
+    HomeTeamTotalScore?: number;
+    awayTeamTotalScore: number;
+    AwayTeamTotalScore?: number;
+}
+
+export interface TieBreakStatusDto {
+    isRequired: boolean;
+    IsRequired?: boolean;
+    homeRepresentative: TeamMemberDto | null;
+    HomeRepresentative?: TeamMemberDto | null;
+    awayRepresentative: TeamMemberDto | null;
+    AwayRepresentative?: TeamMemberDto | null;
+}
+
+export interface TeamMatchDetailsDto {
+    teamMatchId: string;
+    TeamMatchId?: string;
+    status: 'Pending' | 'Completed' | 'TieBreakRequired' | number;
+    Status?: 'Pending' | 'Completed' | 'TieBreakRequired' | number;
+    winnerTeamParticipantId: string | null;
+    WinnerTeamParticipantId?: string | null;
+    homeTeam: TeamMatchTeamInfoDto | null;
+    HomeTeam?: TeamMatchTeamInfoDto | null;
+    awayTeam: TeamMatchTeamInfoDto | null;
+    AwayTeam?: TeamMatchTeamInfoDto | null;
+    subMatches: SubMatchDto[];
+    SubMatches?: SubMatchDto[];
+    aggregateScore: AggregateScoreDto | null;
+    AggregateScore?: AggregateScoreDto | null;
+    tieBreak: TieBreakStatusDto | null;
+    TieBreak?: TieBreakStatusDto | null;
+}
+
+// Aliases for user's specific backend naming if they prefer
+export type TeamSubMatchDto = SubMatchDto;
+export type TeamAggregateScoreDto = AggregateScoreDto;
+export type TeamTieBreakInfoDto = TieBreakStatusDto;
+
+export interface TeamDto {
+    teamId: string;
+    TeamId?: string;
+    teamName: string;
+    TeamName?: string;
+    captainUserId: string;
+    CaptainUserId?: string;
+    memberCount: number;
+    MemberCount?: number;
+    teamSize: number;
+    TeamSize?: number;
+    members: TeamMemberDto[];
+    Members?: TeamMemberDto[];
+    isAlreadyRegistered?: boolean;
+    IsAlreadyRegistered?: boolean;
+    isAlreadyRegistred?: boolean;
+    IsAlreadyRegistred?: boolean;
+}

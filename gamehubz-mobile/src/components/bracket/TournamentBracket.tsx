@@ -37,9 +37,10 @@ interface TournamentBracketProps {
     isAdmin?: boolean;
     onEditDeadline?: (round: Round) => void;
     tournamentStatus?: number;
+    isTeamTournament?: boolean;
 }
 
-export function TournamentBracket({ rounds, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline, tournamentStatus }: TournamentBracketProps) {
+export function TournamentBracket({ rounds, onMatchPress, currentUserId, currentUsername, isAdmin, onEditDeadline, tournamentStatus, isTeamTournament }: TournamentBracketProps) {
     return (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-8 p-4">
@@ -77,6 +78,7 @@ export function TournamentBracket({ rounds, onMatchPress, currentUserId, current
                                         currentUserId={currentUserId}
                                         currentUsername={currentUsername}
                                         isAdmin={isAdmin}
+                                        isTeamTournament={isTeamTournament}
                                     />
                                     {match.nextMatchId && (
                                         <View className="w-8 h-[1px] bg-border" />

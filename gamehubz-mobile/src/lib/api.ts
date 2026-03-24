@@ -30,6 +30,7 @@ export const ENDPOINTS = {
     GET_TOURNAMENT: (id: string) => `${API_BASE_URL}/api/tournament/${id}`,
     GET_TOURNAMENT_OVERVIEW: (id: string) => `${API_BASE_URL}/api/tournament/${id}/overview`,
     REGISTER_TOURNAMENT: `${API_BASE_URL}/api/tournamentRegistration`,
+    REGISTER_TEAM_IN_TOURNAMENT: (tournamentId: string, teamId: string) => `${API_BASE_URL}/api/tournamentRegistration/tournament/${tournamentId}/team/${teamId}/register`,
     GET_PENDING_REGISTRATIONS: (tournamentId: string) => `${API_BASE_URL}/api/tournamentRegistration/tournament/${tournamentId}/pending`,
     APPROVE_REGISTRATION: `${API_BASE_URL}/api/tournamentRegistration/approve`,
     APPROVE_ALL_REGISTRATIONS: `${API_BASE_URL}/api/tournamentRegistration/approveAll`,
@@ -217,7 +218,10 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
             ok: false,
             status: response ? response.status : 500,
             statusText: response ? response.statusText : error.message,
-            json: async () => { throw new Error(response?.data?.messages || response?.data || 'API Error'); },
+            json: async () => {
+                const errData = response?.data?.messages || response?.data || 'API Error';
+                throw new Error(typeof errData === 'string' ? errData : JSON.stringify(errData));
+            },
             text: async () => {
                 if (!response) return error.message;
                 return typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
@@ -225,3 +229,84 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
         } as unknown as Response;
     }
 };
+/**
+ * Extract a human-readable error message from an API error
+ */
+export function getErrorMessage(error: any): string {
+    if (!error) return 'An unexpected error occurred';
+
+    // If it's a string, try to parse it as JSON first
+    if (typeof error === 'string') {
+        if (error.startsWith('{') || error.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(error);
+                return getErrorMessage(parsed);
+            } catch (e) {
+                return error;
+            }
+        }
+        return error;
+    }
+
+    // Handle Axios Errors
+    if (axios.isAxiosError(error)) {
+        const data = error.response?.data;
+        
+        console.log('[API Error Debug] Axios error data:', JSON.stringify(data));
+        
+        if (data) return getErrorMessage(data);
+        
+        return error.message;
+    }
+
+    // Handle generic Error objects
+    if (error instanceof Error) {
+        // If the message is JSON, parse it
+        if (error.message.startsWith('{') || error.message.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(error.message);
+                return getErrorMessage(parsed);
+            } catch (e) {
+                return error.message;
+            }
+        }
+        return error.message;
+    }
+    
+    // Handle data objects (from axios.response.data or JSON.parse)
+    if (typeof error === 'object') {
+        const getField = (obj: any, field: string) => obj[field] || obj[field.charAt(0).toUpperCase() + field.slice(1)];
+        
+        const detail = getField(error, 'detail');
+        if (detail && typeof detail === 'string') return detail;
+        
+        const message = getField(error, 'message');
+        if (message && typeof message === 'string') return message;
+        
+        const err = getField(error, 'error');
+        if (err && typeof err === 'string') return err;
+
+        const messages = getField(error, 'messages');
+        if (messages) {
+            return Array.isArray(messages) ? messages.join(', ') : (typeof messages === 'string' ? messages : JSON.stringify(messages));
+        }
+
+        // Specifically handle ASP.NET un-named exceptions that might come as a JSON object with just one message key
+        const values = Object.values(error);
+        if (values.length === 1 && typeof values[0] === 'string') {
+            return values[0] as string;
+        }
+
+        // Fallback for objects with many fields - look for anything that looks like a message
+        for (const key in error) {
+            if (key.toLowerCase().includes('message') && typeof error[key] === 'string') {
+                return error[key];
+            }
+        }
+
+        // If it's just an object we can't digest, stringify it
+        return JSON.stringify(error);
+    }
+    
+    return String(error);
+}
