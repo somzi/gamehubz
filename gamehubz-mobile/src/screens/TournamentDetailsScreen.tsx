@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -137,6 +137,20 @@ export default function TournamentDetailsScreen() {
             setShowStatusModal(true);
         } finally {
             setJoiningTeamId(null);
+        }
+    };
+
+    const handleShare = async () => {
+        if (!tournament) return;
+        try {
+            // This link should match the deep linking configuration (e.g. universal/app links)
+            const shareUrl = `https://gamehubz.com/tournament/${id}`;
+            await Share.share({
+                message: `Check out this ${tournament.name} tournament on GameHubz!\n\nJoin here: ${shareUrl}`,
+                title: tournament.name
+            });
+        } catch (error) {
+            console.error('Share error:', error);
         }
     };
 
@@ -865,14 +879,22 @@ export default function TournamentDetailsScreen() {
                 title="Tournament"
                 showBack
                 rightElement={
-                    creatorId?.toLowerCase() === user?.id?.toLowerCase() ? (
+                    <View className="flex-row items-center gap-2">
                         <Pressable
-                            onPress={() => navigation.navigate('ManageTournament' as any, { id })}
-                            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                            onPress={handleShare}
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-[#00E5A0]/10 border border-[#00E5A0]/20"
                         >
-                            <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
+                            <Ionicons name="share-outline" size={20} color="#00E5A0" />
                         </Pressable>
-                    ) : null
+                        {creatorId?.toLowerCase() === user?.id?.toLowerCase() && (
+                            <Pressable
+                                onPress={() => navigation.navigate('ManageTournament' as any, { id })}
+                                className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                            >
+                                <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
+                            </Pressable>
+                        )}
+                    </View>
                 }
             />
             <ScrollView className="flex-1 bg-[#0F172A]">

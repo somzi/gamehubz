@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "GameHubz",
+    "scheme": "gamehubz",
     "slug": "gamehubz-mobile",
     "version": "1.0.1",
     "orientation": "portrait",
