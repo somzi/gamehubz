@@ -284,6 +284,9 @@ export function HourlyAvailabilityPicker({
                                     ) : (
                                         <>
                                             <View className="flex-row items-center justify-center gap-1">
+                                                {opponentAvail && !isSelected && (
+                                                    <View className="w-1.5 h-1.5 rounded-full bg-indigo-400 mr-0.5" />
+                                                )}
                                                 <Text className={cn(
                                                     "text-sm font-black",
                                                     isSelected ? "text-primary" : opponentAvail ? "text-indigo-400" : "text-slate-300"
@@ -294,11 +297,6 @@ export function HourlyAvailabilityPicker({
                                                     <Ionicons name="checkmark-circle" size={12} color="#10B981" />
                                                 )}
                                             </View>
-                                            {opponentAvail && (
-                                                <Text className="text-[10px] text-indigo-400/80 absolute bottom-1.5 uppercase font-black tracking-widest">
-                                                    Available
-                                                </Text>
-                                            )}
                                         </>
                                     )}
                                 </Pressable>
