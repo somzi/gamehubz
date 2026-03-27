@@ -71,6 +71,7 @@ export default function TournamentDetailsScreen() {
     const [userTeam, setUserTeam] = useState<TeamDto | null>(null);
     const [showTeamMatchDetail, setShowTeamMatchDetail] = useState(false);
     const [selectedTeamMatchId, setSelectedTeamMatchId] = useState<string | null>(null);
+    const [removingTeamId, setRemovingTeamId] = useState<string | null>(null);
 
     // Collapsible section states
     const [isGeneralInfoOpen, setIsGeneralInfoOpen] = useState(true);
@@ -642,6 +643,53 @@ export default function TournamentDetailsScreen() {
         if (tournament?.isTeamTournament) {
             fetchTournamentTeams(id);
         }
+    };
+
+    const handleRemoveTeam = (teamId: string, teamName: string) => {
+        Alert.alert(
+            'Remove Team',
+            `Are you sure you want to remove "${teamName}" from this tournament?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setRemovingTeamId(teamId);
+                        try {
+                            const endpointUrl = ENDPOINTS.REMOVE_TEAM_FROM_TOURNAMENT(id, teamId);
+                            console.log(`[Remove Team] Hitting endpoint: POST ${endpointUrl}`);
+                            const response = await authenticatedFetch(
+                                endpointUrl,
+                                { method: 'POST' }
+                            );
+                            if (!response.ok) {
+                                const text = await response.text().catch(() => 'Failed to remove team');
+                                throw new Error(text);
+                            }
+                            setStatusModalConfig({
+                                type: 'success',
+                                title: 'Team Removed',
+                                message: `${teamName} has been removed from the tournament.`
+                            });
+                            setShowStatusModal(true);
+                            setTournamentTeams(prev => prev.filter(t => (t.teamId || t.TeamId) !== teamId));
+                            fetchTournamentTeams(id);
+                            fetchTournamentDetails();
+                        } catch (err: any) {
+                            setStatusModalConfig({
+                                type: 'error',
+                                title: 'Error',
+                                message: getErrorMessage(err)
+                            });
+                            setShowStatusModal(true);
+                        } finally {
+                            setRemovingTeamId(null);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleTeamMatchPress = (match: any) => {
@@ -1301,92 +1349,108 @@ export default function TournamentDetailsScreen() {
 
                                     const isExpanded = expandedTeamId === teamId;
 
-                                    return (
-                                        <Pressable
-                                            key={teamId || index.toString()}
-                                            onPress={() => setExpandedTeamId(isExpanded ? null : (teamId || null))}
-                                            className={`bg-gradient-to-br from-[#1A233A] to-[#131B2E] p-5 rounded-[24px] border border-white/5 mb-2 overflow-hidden ${isExpanded ? 'border-[#00E5A0]/20' : ''}`}
-                                        >
-                                            <View className="flex-row items-center gap-4">
-                                                <View className="w-12 h-12 rounded-2xl bg-[#00E5A0]/10 items-center justify-center border border-[#00E5A0]/10 shadow-sm shadow-[#00E5A0]/20">
-                                                    <Ionicons name="people" size={22} color="#00E5A0" />
-                                                </View>
-                                                <View className="flex-1">
-                                                    <Text className="font-black text-lg text-white" numberOfLines={1}>
-                                                        {teamName || 'Unknown Team'}
-                                                    </Text>
-                                                    <View className="flex-row items-center gap-2 mt-1">
-                                                        {(memberCount >= teamSize && teamSize > 0) ? (
-                                                            <View className="bg-[#00E5A0]/10 px-2 py-0.5 rounded-full border border-[#00E5A0]/20 flex-shrink-0">
-                                                                <Text className="text-[9px] font-black text-[#00E5A0] uppercase">
-                                                                    {TEAM_LABELS.TEAM_FULL}
-                                                                </Text>
-                                                            </View>
-                                                        ) : (
-                                                            <Text className="text-[10px] font-bold tracking-widest uppercase text-slate-400 flex-shrink-0">
-                                                                {memberCount} / {teamSize > 0 ? teamSize : '?'} {TEAM_LABELS.MEMBERS_LABEL}
-                                                            </Text>
-                                                        )}
-                                                        {captain && (
-                                                            <View className="flex-row items-center gap-1 bg-[#F59E0B]/10 px-2 rounded-full py-0.5 border border-[#F59E0B]/20 flex-shrink">
-                                                                <Ionicons name="shield" size={10} color="#F59E0B" />
-                                                                <Text className="text-[9px] text-[#F59E0B] font-black uppercase flex-shrink" numberOfLines={1}>
-                                                                    {captain.username || captain.Username}
-                                                                </Text>
-                                                            </View>
-                                                        )}
+                                     return (
+                                        <View key={teamId || index.toString()} className="flex-row items-start gap-3 mb-2">
+                                            <Pressable
+                                                onPress={() => setExpandedTeamId(isExpanded ? null : (teamId || null))}
+                                                className={`flex-1 bg-gradient-to-br from-[#1A233A] to-[#131B2E] p-5 rounded-[24px] border border-white/5 overflow-hidden ${isExpanded ? 'border-[#00E5A0]/20' : ''}`}
+                                            >
+                                                <View className="flex-row items-center gap-4">
+                                                    <View className="w-12 h-12 rounded-2xl bg-[#00E5A0]/10 items-center justify-center border border-[#00E5A0]/10 shadow-sm shadow-[#00E5A0]/20">
+                                                        <Ionicons name="people" size={22} color="#00E5A0" />
                                                     </View>
-                                                </View>
-                                                <View className="flex-row items-center gap-3">
+                                                    <View className="flex-1">
+                                                        <Text className="font-black text-lg text-white" numberOfLines={1}>
+                                                            {teamName || 'Unknown Team'}
+                                                        </Text>
+                                                        <View className="flex-row items-center gap-2 mt-1">
+                                                            {(memberCount >= teamSize && teamSize > 0) ? (
+                                                                <View className="bg-[#00E5A0]/10 px-2 py-0.5 rounded-full border border-[#00E5A0]/20 flex-shrink-0">
+                                                                    <Text className="text-[9px] font-black text-[#00E5A0] uppercase">
+                                                                        {TEAM_LABELS.TEAM_FULL}
+                                                                    </Text>
+                                                                </View>
+                                                            ) : (
+                                                                <Text className="text-[10px] font-bold tracking-widest uppercase text-slate-400 flex-shrink-0">
+                                                                    {memberCount} / {teamSize > 0 ? teamSize : '?'} {TEAM_LABELS.MEMBERS_LABEL}
+                                                                </Text>
+                                                            )}
+                                                            {captain && (
+                                                                <View className="flex-row items-center gap-1 bg-[#F59E0B]/10 px-2 rounded-full py-0.5 border border-[#F59E0B]/20 flex-shrink">
+                                                                    <Ionicons name="shield" size={10} color="#F59E0B" />
+                                                                    <Text className="text-[9px] text-[#F59E0B] font-black uppercase flex-shrink" numberOfLines={1}>
+                                                                        {captain?.username || captain?.Username}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+                                                        </View>
+                                                    </View>
                                                     <View className="w-8 h-8 rounded-full bg-white/5 items-center justify-center border border-white/5">
                                                         <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={16} color="#94A3B8" />
                                                     </View>
                                                 </View>
-                                            </View>
 
-                                            {/* Expanded Members List */}
-                                            {isExpanded && (
-                                                <View className="mt-4 pt-4 border-t border-white/5 space-y-4">
-                                                    {membersList.length > 0 ? (
-                                                        membersList.map((m: any, mIdx: number) => {
-                                                            const isMemberCaptain = (m.userId || m.UserId)?.toLowerCase() === captainUserId?.toLowerCase();
-                                                            return (
-                                                                <Pressable
-                                                                    key={(m.userId || m.UserId) || mIdx.toString()}
-                                                                    onPress={() => navigation.navigate('PlayerProfile', { id: m.userId || m.UserId })}
-                                                                    className="flex-row items-center justify-between bg-white/[0.03] p-4 rounded-[18px] border border-white/10 active:opacity-60 shadow-sm"
-                                                                >
-                                                                    <View className="flex-row items-center gap-3">
-                                                                        <PlayerAvatar name={m.username || m.Username} src={m.avatarUrl || m.AvatarUrl} size="sm" />
-                                                                        <Text className="text-white font-bold text-sm tracking-wide">{m.username || m.Username}</Text>
-                                                                    </View>
-                                                                    {isMemberCaptain && (
-                                                                        <View className="bg-[#F59E0B]/10 px-2 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#F59E0B]/20">
-                                                                            <Ionicons name="shield-checkmark" size={13} color="#F59E0B" />
-                                                                            <Text className="text-[10px] font-black text-[#F59E0B] uppercase tracking-widest">Captain</Text>
+                                                {/* Expanded Members List */}
+                                                {isExpanded && (
+                                                    <View className="mt-4 pt-4 border-t border-white/5 space-y-4">
+                                                        {membersList.length > 0 ? (
+                                                            membersList.map((m: any, mIdx: number) => {
+                                                                const isMemberCaptain = (m.userId || m.UserId)?.toLowerCase() === captainUserId?.toLowerCase();
+                                                                return (
+                                                                    <Pressable
+                                                                        key={(m.userId || m.UserId) || mIdx.toString()}
+                                                                        onPress={() => navigation.navigate('PlayerProfile', { id: m.userId || m.UserId })}
+                                                                        className="flex-row items-center justify-between bg-white/[0.03] p-4 rounded-[18px] border border-white/10 active:opacity-60 shadow-sm"
+                                                                    >
+                                                                        <View className="flex-row items-center gap-3">
+                                                                            <PlayerAvatar name={m.username || m.Username} src={m.avatarUrl || m.AvatarUrl} size="sm" />
+                                                                            <Text className="text-white font-bold text-sm tracking-wide">{m.username || m.Username}</Text>
                                                                         </View>
-                                                                    )}
-                                                                </Pressable>
-                                                            );
-                                                        })
-                                                    ) : (
-                                                        <Text className="text-slate-500 text-center text-xs py-2 italic">No members found</Text>
-                                                    )}
+                                                                        {isMemberCaptain && (
+                                                                            <View className="bg-[#F59E0B]/10 px-2 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#F59E0B]/20">
+                                                                                <Ionicons name="shield-checkmark" size={13} color="#F59E0B" />
+                                                                                <Text className="text-[10px] font-black text-[#F59E0B] uppercase tracking-widest">Captain</Text>
+                                                                            </View>
+                                                                        )}
+                                                                    </Pressable>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <Text className="text-slate-500 text-center text-xs py-2 italic">No members found</Text>
+                                                        )}
 
-                                                    {/* Join Button inside Expanded View */}
-                                                    {(!userTeam && !isUserRegistered && memberCount < teamSize && teamSize > 0) && (
-                                                        <Button
-                                                            className="bg-[#00E5A0] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#00E5A0]/20"
-                                                            onPress={() => handleJoinTeam(teamId as string)}
-                                                            loading={joiningTeamId === teamId}
-                                                            disabled={joiningTeamId !== null}
-                                                        >
-                                                            <Text className="text-[#0F172A] font-black uppercase tracking-widest text-sm text-center">Join This Team</Text>
-                                                        </Button>
-                                                    )}
+                                                        {/* Join Button inside Expanded View */}
+                                                        {(!userTeam && !isUserRegistered && memberCount < teamSize && teamSize > 0) && (
+                                                            <Button
+                                                                className="bg-[#00E5A0] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#00E5A0]/20"
+                                                                onPress={() => handleJoinTeam(teamId as string)}
+                                                                loading={joiningTeamId === teamId}
+                                                                disabled={joiningTeamId !== null}
+                                                            >
+                                                                <Text className="text-[#0F172A] font-black uppercase tracking-widest text-sm text-center">Join This Team</Text>
+                                                            </Button>
+                                                        )}
+                                                    </View>
+                                                )}
+                                            </Pressable>
+
+                                            {/* Remove Team Button — Creator Only (Outside Card) */}
+                                            {creatorId?.toLowerCase() === user?.id?.toLowerCase() && (
+                                                <View className="self-start mt-5">
+                                                    <Pressable
+                                                        onPress={() => handleRemoveTeam(teamId as string, teamName as string)}
+                                                        disabled={removingTeamId === teamId}
+                                                        className="w-12 h-12 rounded-2xl bg-red-500/10 items-center justify-center border border-red-500/20 active:opacity-60"
+                                                    >
+                                                        {removingTeamId === teamId ? (
+                                                            <ActivityIndicator size="small" color="#EF4444" />
+                                                        ) : (
+                                                            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                        )}
+                                                    </Pressable>
                                                 </View>
                                             )}
-                                        </Pressable>
+                                        </View>
                                     );
                                 })
                             )}

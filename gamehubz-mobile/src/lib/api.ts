@@ -68,6 +68,7 @@ export const ENDPOINTS = {
     UPLOAD_AVATAR: `${API_BASE_URL}/api/userProfile/avatar`,
     UPLOAD_HUB_AVATAR: (id: string) => `${API_BASE_URL}/api/hub/${id}/avatar`,
     DELETE_HUB: (id: string) => `${API_BASE_URL}/api/hub/${id}`,
+    REMOVE_TEAM_FROM_TOURNAMENT: (tournamentId: string, teamId: string) => `${API_BASE_URL}/api/tournamentParticipant/tournament/${tournamentId}/team/${teamId}`,
     DELETE_ACCOUNT: `${API_BASE_URL}/api/Auth`,
     FORGOT_PASSWORD: `${API_BASE_URL}/api/Auth/forgotPassword`,
     RESET_PASSWORD: `${API_BASE_URL}/api/Auth/resetPassword`,
@@ -251,11 +252,11 @@ export function getErrorMessage(error: any): string {
     // Handle Axios Errors
     if (axios.isAxiosError(error)) {
         const data = error.response?.data;
-        
+
         console.log('[API Error Debug] Axios error data:', JSON.stringify(data));
-        
+
         if (data) return getErrorMessage(data);
-        
+
         return error.message;
     }
 
@@ -272,17 +273,17 @@ export function getErrorMessage(error: any): string {
         }
         return error.message;
     }
-    
+
     // Handle data objects (from axios.response.data or JSON.parse)
     if (typeof error === 'object') {
         const getField = (obj: any, field: string) => obj[field] || obj[field.charAt(0).toUpperCase() + field.slice(1)];
-        
+
         const detail = getField(error, 'detail');
         if (detail && typeof detail === 'string') return detail;
-        
+
         const message = getField(error, 'message');
         if (message && typeof message === 'string') return message;
-        
+
         const err = getField(error, 'error');
         if (err && typeof err === 'string') return err;
 
@@ -307,6 +308,6 @@ export function getErrorMessage(error: any): string {
         // If it's just an object we can't digest, stringify it
         return JSON.stringify(error);
     }
-    
+
     return String(error);
 }
