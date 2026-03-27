@@ -169,9 +169,9 @@ export default function TournamentDetailsScreen() {
         }
     };
 
-    const fetchTournamentDetails = async () => {
+    const fetchTournamentDetails = async (silent = false) => {
         if (!id) return;
-        setIsLoading(true);
+        if (!silent) setIsLoading(true);
         setError(null);
         try {
             const url = ENDPOINTS.GET_TOURNAMENT_OVERVIEW(id);
@@ -209,14 +209,16 @@ export default function TournamentDetailsScreen() {
 
             setTournament(normalizedTournament);
 
-            // Fetch teams if team tournament
+            // Fetch teams and registration status in parallel so page renders with full data
+            const parallelTasks: Promise<any>[] = [];
             if (normalizedTournament.isTeamTournament) {
-                fetchTournamentTeams(id);
+                parallelTasks.push(fetchTournamentTeams(id));
             }
-
-            // Check registration status if tournament is open for registration
             if (normalizedTournament.status === 0 || normalizedTournament.status === 1) {
-                checkRegistrationStatus();
+                parallelTasks.push(checkRegistrationStatus());
+            }
+            if (parallelTasks.length > 0) {
+                await Promise.all(parallelTasks);
             }
         } catch (err: any) {
             console.error('Tournament fetch error:', err);
@@ -621,10 +623,8 @@ export default function TournamentDetailsScreen() {
         try {
             const allTeams = await getPendingTournamentTeams(tournamentId);
             setTournamentTeams(allTeams);
-            // Find user's team
+            // Find user's team from the already-fetched list (no second API call)
             if (user?.id) {
-                // We check ALL teams (including pending) so the user can manage their team via My Team
-                const allTeams = await getPendingTournamentTeams(tournamentId);
                 const myTeam = allTeams.find(t =>
                     t.members.some(m => m.userId.toLowerCase() === user.id.toLowerCase())
                 );
@@ -700,18 +700,14 @@ export default function TournamentDetailsScreen() {
         setShowTeamMatchDetail(true);
     };
 
-    useEffect(() => {
-        fetchTournamentDetails();
-        fetchParticipants(); // Fetch participants on mount to check join status
-    }, [id]);
-
-    // Re-fetch teams on screen focus so stale state (e.g. after deleting a team) is cleared
+    // Load initial data and silently refresh when coming back to this screen
     useFocusEffect(
         useCallback(() => {
-            if (tournament?.isTeamTournament) {
-                fetchTournamentTeams(id);
-            }
-        }, [id, tournament?.isTeamTournament])
+            // First time it mounts, isLoading is already true by default, so silent doesn't matter visually, 
+            // but for subsequent focuses, silent=true prevents the screen from going blank
+            fetchTournamentDetails(true);
+            fetchParticipants();
+        }, [id])
     );
 
     const handleMatchPress = (match: any) => {
@@ -740,7 +736,7 @@ export default function TournamentDetailsScreen() {
             fetchPendingRegistrations();
         } else if (activeTab === 'players') {
             fetchParticipants();
-        } else if (activeTab === 'teams' && tournament?.isTeamTournament) {
+        } else if (activeTab === 'teams' && tournament?.isTeamTournament && tournamentTeams.length === 0 && !isLoadingTeams) {
             fetchTournamentTeams(id);
         }
     }, [id, activeTab]);
@@ -1010,8 +1006,10 @@ export default function TournamentDetailsScreen() {
                             const buttons = [];
 
                             if (tournament.isTeamTournament) {
-                                // Team tournament: show team-specific buttons
-                                if (!userTeam && !isParticipant && !isUserRegistered && isOpenOrUpcoming && !isFull) {
+                                // Show nothing while teams are still loading (prevents flash of register button)
+                                if (isLoadingTeams) {
+                                    // render nothing — button appears smoothly once data resolves
+                                } else if (!userTeam && !isParticipant && !isUserRegistered && isOpenOrUpcoming && !isFull) {
                                     buttons.push(
                                         <Button
                                             key="team-register"
@@ -1092,7 +1090,7 @@ export default function TournamentDetailsScreen() {
                             )}
 
                             {/* My Team Button - Polished & Modern */}
-                            {tournament.isTeamTournament && userTeam && (
+                            {tournament.isTeamTournament && !isLoadingTeams && userTeam && (
                                 <Pressable
                                     onPress={() => navigation.navigate('TeamDashboard', { teamId: userTeam.teamId, tournamentId: id, teamSize: tournament?.teamSize, tournamentStatus: tournament?.status })}
                                     className="mb-4 bg-gradient-to-r from-[#1A233A] to-[#131B2E] border border-[#00E5A0]/30 rounded-[24px] overflow-hidden"
@@ -1735,26 +1733,30 @@ export default function TournamentDetailsScreen() {
             />
 
             {/* Team Registration Modal */}
-            <TeamRegistrationModal
-                visible={showTeamRegistration}
-                onClose={() => setShowTeamRegistration(false)}
-                tournamentId={id}
-                onTeamJoined={handleTeamJoined}
-                availableTeams={tournamentTeams}
-            />
+            {showTeamRegistration && (
+                <TeamRegistrationModal
+                    visible={showTeamRegistration}
+                    onClose={() => setShowTeamRegistration(false)}
+                    tournamentId={id}
+                    onTeamJoined={handleTeamJoined}
+                    availableTeams={tournamentTeams}
+                />
+            )}
 
             {/* Team Match Detail Modal */}
-            <TeamMatchDetailModal
-                visible={showTeamMatchDetail}
-                onClose={() => { setShowTeamMatchDetail(false); setSelectedTeamMatchId(null); }}
-                matchId={selectedTeamMatchId}
-                hubOwnerId={hubOwnerId}
-                currentUserId={user?.id}
-                onMatchUpdate={() => {
-                    fetchBracket();
-                    if (tournament?.isTeamTournament) fetchTournamentTeams(id);
-                }}
-            />
+            {showTeamMatchDetail && (
+                <TeamMatchDetailModal
+                    visible={showTeamMatchDetail}
+                    onClose={() => { setShowTeamMatchDetail(false); setSelectedTeamMatchId(null); }}
+                    matchId={selectedTeamMatchId}
+                    hubOwnerId={hubOwnerId}
+                    currentUserId={user?.id}
+                    onMatchUpdate={() => {
+                        fetchBracket();
+                        if (tournament?.isTeamTournament) fetchTournamentTeams(id);
+                    }}
+                />
+            )}
         </SafeAreaView>
     );
 }
