@@ -113,6 +113,7 @@ export default function TeamDashboardScreen() {
     const actualTeamSize = route.params.teamSize || team?.teamSize || team?.TeamSize || 2;
     const actualMemberCount = team?.memberCount || team?.MemberCount || team?.members?.length || 1;
     const isAlreadyRegistered = team?.isAlreadyRegistered || team?.IsAlreadyRegistered || team?.isAlreadyRegistred || team?.IsAlreadyRegistred;
+    const isRegistrationAccepted = team?.isRegistrationAccepted || team?.IsRegistrationAccepted;
     const captainId = team?.captainUserId || team?.CaptainUserId;
     const isCaptain = !!user?.id && !!captainId && user.id.toLowerCase() === captainId.toLowerCase();
 
@@ -319,7 +320,7 @@ export default function TeamDashboardScreen() {
                                 >
                                     {team.teamName}
                                 </Text>
-                                {isCaptain && Number(tournamentStatus) === 1 && (
+                                {isCaptain && Number(tournamentStatus) === 1 && !isRegistrationAccepted && (
                                     <Pressable
                                         onPress={handleStartEditName}
                                         className="w-10 h-10 rounded-xl bg-white/5 items-center justify-center border border-white/10"
@@ -415,8 +416,8 @@ export default function TeamDashboardScreen() {
                                     )}
                                 </View>
 
-                                {/* Captain can kick non-captain members only while registration is open (Status 1) */}
-                                {isCaptain && !isMemberCaptain && Number(tournamentStatus) === 1 && (
+                                {/* Captain can kick non-captain members only while registration is open (Status 1) and not registered */}
+                                {isCaptain && !isMemberCaptain && Number(tournamentStatus) === 1 && !isAlreadyRegistered && !isRegistrationAccepted && (
                                     <Pressable
                                         onPress={() => handleKickMember(member.userId, member.username)}
                                         className="w-10 h-10 rounded-xl bg-red-500/10 items-center justify-center border border-red-500/20"
@@ -433,10 +434,15 @@ export default function TeamDashboardScreen() {
                 <View className="px-6 pb-6 gap-3">
                     {/* Captain: Register Team - Only when full and not yet registered */}
                     {isCaptain && actualMemberCount === actualTeamSize && (
-                        isAlreadyRegistered ? (
+                        isRegistrationAccepted ? (
                             <View className="w-full bg-[#10B981]/10 p-4 rounded-2xl border border-[#10B981]/20 flex-row justify-center gap-2 items-center">
-                                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                                <Text className="text-[#10B981] font-black uppercase tracking-widest text-sm">Registered</Text>
+                                <Ionicons name="shield-checkmark" size={20} color="#10B981" />
+                                <Text className="text-[#10B981] font-black uppercase tracking-widest text-sm">Accepted</Text>
+                            </View>
+                        ) : isAlreadyRegistered ? (
+                            <View className="w-full bg-[#F59E0B]/10 p-4 rounded-2xl border border-[#F59E0B]/20 flex-row justify-center gap-2 items-center">
+                                <Ionicons name="hourglass-outline" size={20} color="#F59E0B" />
+                                <Text className="text-[#F59E0B] font-black uppercase tracking-widest text-sm">Registered (Pending)</Text>
                             </View>
                         ) : (
                             <Button
@@ -449,19 +455,19 @@ export default function TeamDashboardScreen() {
                         )
                     )}
 
-                    {/* Regular member: Leave Team - Only while registration is open (Status 1) */}
-                    {!isCaptain && Number(tournamentStatus) === 1 && (
+                    {/* Leave Team - Available for all members (including Captain) while registration is open (Status 1) and not registered/accepted */}
+                    {Number(tournamentStatus) === 1 && !isAlreadyRegistered && !isRegistrationAccepted && (
                         <Button
                             variant="outline"
-                            className="w-full border-red-500/30"
+                            className="w-full border-red-500/30 mb-3"
                             onPress={handleLeaveTeam}
                         >
                             {TEAM_LABELS.LEAVE_TEAM_BUTTON}
                         </Button>
                     )}
 
-                    {/* Captain: Delete Team - Only while registration is open (Status 1) */}
-                    {isCaptain && Number(tournamentStatus) === 1 && (
+                    {/* Captain: Delete Team - Only while registration is open (Status 1) and not registered/accepted */}
+                    {isCaptain && Number(tournamentStatus) === 1 && !isAlreadyRegistered && !isRegistrationAccepted && (
                         <Button
                             variant="destructive"
                             className="w-full"

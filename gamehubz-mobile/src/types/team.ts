@@ -102,4 +102,6 @@ export interface TeamDto {
     IsAlreadyRegistered?: boolean;
     isAlreadyRegistred?: boolean;
     IsAlreadyRegistred?: boolean;
+    isRegistrationAccepted?: boolean;
+    IsRegistrationAccepted?: boolean;
 }
