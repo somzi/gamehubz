@@ -10,6 +10,7 @@ import {
     Modal,
     KeyboardAvoidingView,
     Platform,
+    Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../ui/Button';
@@ -37,11 +38,13 @@ export function TeamRegistrationModal({
     const [teamName, setTeamName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
+    const [requiresApproval, setRequiresApproval] = useState(false);
 
     useEffect(() => {
         if (visible) {
             setTeamName('');
             setCreateError(null);
+            setRequiresApproval(false);
         }
     }, [visible]);
 
@@ -53,7 +56,7 @@ export function TeamRegistrationModal({
         setIsCreating(true);
         setCreateError(null);
         try {
-            const team = await createTeam(tournamentId, teamName.trim());
+            const team = await createTeam(tournamentId, teamName.trim(), requiresApproval);
             onTeamJoined(team);
             onClose();
         } catch (err: unknown) {
@@ -123,6 +126,23 @@ export function TeamRegistrationModal({
                                             placeholderTextColor="#6b7280"
                                             value={teamName}
                                             onChangeText={setTeamName}
+                                        />
+                                    </View>
+
+                                    {/* Private Team Toggle */}
+                                    <View className="flex-row items-center justify-between bg-[#131B2E] p-4 rounded-xl border border-white/5">
+                                        <View className="flex-1 mr-4 gap-1">
+                                            <View className="flex-row items-center gap-2">
+                                                <Ionicons name="lock-closed-outline" size={16} color="#3B82F6" />
+                                                <Text className="text-sm font-bold text-white">Private Team</Text>
+                                            </View>
+                                            <Text className="text-xs text-slate-400">Require approval for new members to join</Text>
+                                        </View>
+                                        <Switch
+                                            value={requiresApproval}
+                                            onValueChange={setRequiresApproval}
+                                            trackColor={{ false: '#334155', true: '#00E5A0' }}
+                                            thumbColor="#ffffff"
                                         />
                                     </View>
 

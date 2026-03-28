@@ -20,7 +20,12 @@ import { StatusModal } from '../components/modals/StatusModal';
 import { RoundScheduleModal } from '../components/modals/RoundScheduleModal';
 import { TeamRegistrationModal } from '../components/modals/TeamRegistrationModal';
 import { TeamMatchDetailModal } from '../components/modals/TeamMatchDetailModal';
-import { getTournamentTeams, getPendingTournamentTeams, joinTeam } from '../lib/teamApi';
+import {
+    getTournamentTeams,
+    getPendingTournamentTeams,
+    joinTeam,
+    requestJoinTeam
+} from '../lib/teamApi';
 import { TEAM_LABELS } from '../lib/teamConstants';
 import type { TeamDto } from '../types/team';
 
@@ -118,21 +123,30 @@ export default function TournamentDetailsScreen() {
         }
     };
 
-    const handleJoinTeam = async (teamId: string) => {
+    const handleJoinTeam = async (teamId: string, requiresApproval?: boolean) => {
         setJoiningTeamId(teamId);
         try {
-            await joinTeam(teamId);
-            setStatusModalConfig({
-                type: 'success',
-                title: 'Success!',
-                message: 'You have successfully joined the team!'
-            });
+            if (requiresApproval) {
+                await requestJoinTeam(teamId);
+                setStatusModalConfig({
+                    type: 'success',
+                    title: 'Request Sent',
+                    message: 'Your join request was sent to the team captain!'
+                });
+            } else {
+                await joinTeam(teamId);
+                setStatusModalConfig({
+                    type: 'success',
+                    title: 'Success!',
+                    message: 'You have successfully joined the team!'
+                });
+            }
             setShowStatusModal(true);
-            fetchTournamentDetails(); // Check if this resets user state, probably does via checkRegistrationStatus in effect
+            fetchTournamentDetails(true); // silent refresh
         } catch (err: unknown) {
             setStatusModalConfig({
                 type: 'error',
-                title: 'Join Failed',
+                title: requiresApproval ? 'Request Failed' : 'Join Failed',
                 message: getErrorMessage(err)
             });
             setShowStatusModal(true);
@@ -1420,12 +1434,16 @@ export default function TournamentDetailsScreen() {
                                                         {/* Join Button inside Expanded View */}
                                                         {(!userTeam && !isUserRegistered && memberCount < teamSize && teamSize > 0) && (
                                                             <Button
-                                                                className="bg-[#00E5A0] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#00E5A0]/20"
-                                                                onPress={() => handleJoinTeam(teamId as string)}
+                                                                className={t.requiresApproval || t.RequiresApproval ? "bg-[#3B82F6] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#3B82F6]/20" : "bg-[#00E5A0] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#00E5A0]/20"}
+                                                                onPress={() => handleJoinTeam(teamId as string, t.requiresApproval || t.RequiresApproval)}
                                                                 loading={joiningTeamId === teamId}
-                                                                disabled={joiningTeamId !== null}
+                                                                disabled={joiningTeamId !== null || t.userRequestStatus === 'Pending' || t.UserRequestStatus === 'Pending'}
                                                             >
-                                                                <Text className="text-[#0F172A] font-black uppercase tracking-widest text-sm text-center">Join This Team</Text>
+                                                                <Text className={t.requiresApproval || t.RequiresApproval ? "text-white font-black uppercase tracking-widest text-sm text-center" : "text-[#0F172A] font-black uppercase tracking-widest text-sm text-center"}>
+                                                                    {(t.userRequestStatus === 'Pending' || t.UserRequestStatus === 'Pending') 
+                                                                        ? 'Request Pending' 
+                                                                        : (t.requiresApproval || t.RequiresApproval) ? 'Request to Join' : 'Join This Team'}
+                                                                </Text>
                                                             </Button>
                                                         )}
                                                     </View>

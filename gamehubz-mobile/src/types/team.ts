@@ -104,4 +104,21 @@ export interface TeamDto {
     IsAlreadyRegistred?: boolean;
     isRegistrationAccepted?: boolean;
     IsRegistrationAccepted?: boolean;
+    requiresApproval?: boolean;
+    RequiresApproval?: boolean;
+    userRequestStatus?: 'Pending' | 'Approved' | 'Rejected' | null;
+    UserRequestStatus?: 'Pending' | 'Approved' | 'Rejected' | null;
+}
+
+export interface TeamJoinRequestDto {
+    requestId: string;
+    RequestId?: string;
+    userId: string;
+    UserId?: string;
+    username: string;
+    Username?: string;
+    avatarUrl?: string;
+    AvatarUrl?: string;
+    requestedAt: string;
+    RequestedAt?: string;
 }

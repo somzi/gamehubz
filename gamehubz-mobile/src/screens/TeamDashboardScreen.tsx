@@ -25,9 +25,12 @@ import {
     kickMember,
     leaveTeam,
     deleteTeam,
+    getTeamJoinRequests,
+    approveJoinRequest,
+    rejectJoinRequest,
 } from '../lib/teamApi';
 import { ENDPOINTS, authenticatedFetch, getErrorMessage, API_BASE_URL } from '../lib/api';
-import type { TeamDto } from '../types/team';
+import type { TeamDto, TeamJoinRequestDto } from '../types/team';
 
 type TeamDashboardRouteProp = RouteProp<RootStackParamList, 'TeamDashboard'>;
 
@@ -40,6 +43,10 @@ export default function TeamDashboardScreen() {
     const [team, setTeam] = useState<TeamDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Join Requests
+    const [joinRequests, setJoinRequests] = useState<TeamJoinRequestDto[]>([]);
+    const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
     // Editing team name
     const [isEditingName, setIsEditingName] = useState(false);
@@ -104,11 +111,32 @@ export default function TeamDashboardScreen() {
         } finally {
             setIsLoading(false);
         }
-    }, [tournamentId]);
+    }, [tournamentId, user?.id]);
+
+    const fetchRequests = useCallback(async (teamId: string) => {
+        setIsLoadingRequests(true);
+        try {
+            const requests = await getTeamJoinRequests(teamId);
+            // Only keep Pending ones usually, but backend might already filter
+            setJoinRequests(requests);
+        } catch (err) {
+            console.error('Error fetching join requests', err);
+        } finally {
+            setIsLoadingRequests(false);
+        }
+    }, []);
 
     useEffect(() => {
         fetchTeam();
     }, [fetchTeam]);
+
+    useEffect(() => {
+        const captainId = team?.captainUserId || team?.CaptainUserId;
+        const isCaptain = !!user?.id && !!captainId && user.id.toLowerCase() === captainId.toLowerCase();
+        if (team?.teamId && isCaptain) {
+            fetchRequests(team.teamId);
+        }
+    }, [team, user?.id, fetchRequests]);
 
     const actualTeamSize = route.params.teamSize || team?.teamSize || team?.TeamSize || 2;
     const actualMemberCount = team?.memberCount || team?.MemberCount || team?.members?.length || 1;
@@ -238,6 +266,29 @@ export default function TeamDashboardScreen() {
             setShowStatusModal(true);
         } finally {
             setIsRegistering(false);
+        }
+    };
+
+    const handleApproveRequest = async (requestId: string) => {
+        try {
+            await approveJoinRequest(requestId);
+            setStatusModalConfig({ type: 'success', title: 'Success', message: 'Player approved and added to the team!' });
+            setShowStatusModal(true);
+            fetchTeam();
+            if (team?.teamId) fetchRequests(team.teamId);
+        } catch (err: unknown) {
+            setStatusModalConfig({ type: 'error', title: 'Error', message: getErrorMessage(err) });
+            setShowStatusModal(true);
+        }
+    };
+
+    const handleRejectRequest = async (requestId: string) => {
+        try {
+            await rejectJoinRequest(requestId);
+            if (team?.teamId) fetchRequests(team.teamId);
+        } catch (err: unknown) {
+            setStatusModalConfig({ type: 'error', title: 'Error', message: getErrorMessage(err) });
+            setShowStatusModal(true);
         }
     };
 
@@ -429,6 +480,54 @@ export default function TeamDashboardScreen() {
                         );
                     })}
                 </View>
+
+                {/* Join Requests (Captain Only) */}
+                {isCaptain && joinRequests.length > 0 && (
+                    <View className="px-6 pb-6">
+                        <View className="flex-row items-center gap-2 mb-3">
+                            <Ionicons name="mail-unread-outline" size={18} color="#F59E0B" />
+                            <Text className="text-sm font-black text-white uppercase tracking-widest">
+                                Join Requests ({joinRequests.length})
+                            </Text>
+                        </View>
+
+                        {joinRequests.map((req, idx) => {
+                            const requestId = req.requestId || req.RequestId || idx.toString();
+                            return (
+                                <View
+                                    key={requestId}
+                                    className="bg-[#F59E0B]/5 p-4 mb-2 rounded-[22px] border border-[#F59E0B]/20 flex-row items-center gap-3"
+                                >
+                                    <PlayerAvatar
+                                        name={req.username || req.Username || 'Unknown'}
+                                        src={req.avatarUrl || req.AvatarUrl}
+                                        size="md"
+                                    />
+                                    <View className="flex-1">
+                                        <Text className="font-bold text-lg text-white">
+                                            {req.username || req.Username}
+                                        </Text>
+                                        <Text className="text-[10px] text-slate-400 font-bold mt-0.5">Wants to join</Text>
+                                    </View>
+                                    <View className="flex-row items-center gap-2">
+                                        <Pressable
+                                            onPress={() => handleRejectRequest(requestId)}
+                                            className="w-10 h-10 rounded-xl bg-red-500/10 items-center justify-center border border-red-500/20"
+                                        >
+                                            <Ionicons name="close" size={18} color="#EF4444" />
+                                        </Pressable>
+                                        <Pressable
+                                            onPress={() => handleApproveRequest(requestId)}
+                                            className="w-10 h-10 rounded-xl bg-[#10B981]/10 items-center justify-center border border-[#10B981]/20"
+                                        >
+                                            <Ionicons name="checkmark" size={18} color="#10B981" />
+                                        </Pressable>
+                                    </View>
+                                </View>
+                            );
+                        })}
+                    </View>
+                )}
 
                 {/* Action Buttons */}
                 <View className="px-6 pb-6 gap-3">

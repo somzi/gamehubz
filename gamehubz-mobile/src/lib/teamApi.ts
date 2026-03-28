@@ -7,10 +7,11 @@ import type {
 
 // --- Team CRUD ---
 
-export async function createTeam(tournamentId: string, teamName: string): Promise<TeamDto> {
+export async function createTeam(tournamentId: string, teamName: string, requiresApproval: boolean = false): Promise<TeamDto> {
     const response = await apiClient.post<TeamDto>(`/api/teams`, {
         tournamentId,
         teamName,
+        requiresApproval,
     });
     return response.data;
 }
@@ -18,6 +19,42 @@ export async function createTeam(tournamentId: string, teamName: string): Promis
 export async function joinTeam(teamId: string): Promise<TeamDto> {
     const response = await apiClient.post<TeamDto>(`/api/teams/${teamId}/join`);
     return response.data;
+}
+
+export async function requestJoinTeam(teamId: string): Promise<void> {
+    const response = await authenticatedFetch(`/api/teams/${teamId}/request-join`, {
+        method: 'POST'
+    });
+    if (!response.ok) {
+        const text = await response.text().catch(() => 'Failed to request join');
+        throw new Error(text);
+    }
+}
+
+export async function getTeamJoinRequests(teamId: string): Promise<import('../types/team').TeamJoinRequestDto[]> {
+    const response = await apiClient.get<import('../types/team').TeamJoinRequestDto[]>(`/api/teams/${teamId}/requests`);
+    const data = response.data;
+    return Array.isArray(data) ? data : (data as unknown as { items: import('../types/team').TeamJoinRequestDto[] }).items || [];
+}
+
+export async function approveJoinRequest(requestId: string): Promise<void> {
+    const response = await authenticatedFetch(`/api/teams/requests/${requestId}/approve`, {
+        method: 'PUT'
+    });
+    if (!response.ok) {
+        const text = await response.text().catch(() => 'Failed to approve request');
+        throw new Error(text);
+    }
+}
+
+export async function rejectJoinRequest(requestId: string): Promise<void> {
+    const response = await authenticatedFetch(`/api/teams/requests/${requestId}/reject`, {
+        method: 'PUT'
+    });
+    if (!response.ok) {
+        const text = await response.text().catch(() => 'Failed to reject request');
+        throw new Error(text);
+    }
 }
 
 export async function renameTeam(teamId: string, teamName: string): Promise<TeamDto> {
