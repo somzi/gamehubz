@@ -745,28 +745,56 @@ export function TeamMatchDetailModal({
                                         </Text>
                                     </View>
                                 </View>
-                            ) : (data?.winnerTeamParticipantId && (data?.status === 'Completed' || data?.status === 3)) ? (
-                                <View className="bg-[#10B981]/10 rounded-[32px] border border-[#10B981]/30 p-6 items-center shadow-lg relative overflow-hidden">
-                                    <View className="flex-row items-center gap-4">
-                                        <View className="bg-[#10B981]/20 p-3 rounded-2xl shadow-sm">
-                                            <Ionicons name="trophy" size={24} color="#10B981" />
-                                        </View>
-                                        <View>
-                                            <Text className="text-[10px] font-black text-[#10B981]/60 uppercase tracking-[2px] mb-1">
-                                                TEAM MATCH WINNER
-                                            </Text>
-                                            <Text className="text-lg font-black text-[#10B981] uppercase leading-tight">
-                                                {data?.homeTeam?.teamId === data?.winnerTeamParticipantId
-                                                    ? data?.homeTeam?.teamName
-                                                    : data?.awayTeam?.teamName} WINS
-                                            </Text>
-                                            <Text className="text-[11px] font-bold text-[#10B981]/70 mt-1">
-                                                {Math.abs((data?.aggregateScore?.homeTeamWins ?? 0) - (data?.aggregateScore?.awayTeamWins ?? 0)) >= 2 
-                                                    ? 'Dominant performance' 
-                                                    : 'Hard fought victory'} · {data?.aggregateScore?.homeTeamWins}-{data?.aggregateScore?.awayTeamWins}
-                                            </Text>
-                                        </View>
-                                    </View>
+                            ) : (data?.status === 'Completed' || data?.status === 3 || data?.winnerTeamParticipantId) && ((data?.aggregateScore?.homeTeamWins ?? 0) !== (data?.aggregateScore?.awayTeamWins ?? 0) || data?.winnerTeamParticipantId) ? (
+                                <View className="bg-[#10B981]/10 rounded-[32px] border border-[#10B981]/30 p-6 shadow-lg relative overflow-hidden">
+                                     <View className="flex-row items-center gap-4">
+                                         <View className="bg-[#10B981]/20 p-4 rounded-3xl shadow-sm border border-[#10B981]/30">
+                                             <Ionicons name="trophy" size={32} color="#10B981" />
+                                         </View>
+                                         <View className="flex-1">
+                                             {(() => {
+                                                 const winnerIsHome = data?.winnerTeamParticipantId
+                                                     ? data?.homeTeam?.teamId === data?.winnerTeamParticipantId
+                                                     : ((data?.aggregateScore?.homeTeamWins ?? 0) > (data?.aggregateScore?.awayTeamWins ?? 0));
+                                                     
+                                                 const winningTeamName = winnerIsHome ? data?.homeTeam?.teamName : data?.awayTeam?.teamName;
+                                                 const winningWins = winnerIsHome ? (data?.aggregateScore?.homeTeamWins ?? 0) : (data?.aggregateScore?.awayTeamWins ?? 0);
+                                                 const losingWins = winnerIsHome ? (data?.aggregateScore?.awayTeamWins ?? 0) : (data?.aggregateScore?.homeTeamWins ?? 0);
+                                                 const winningTotal = winnerIsHome ? (data?.aggregateScore?.homeTeamTotalScore ?? 0) : (data?.aggregateScore?.awayTeamTotalScore ?? 0);
+                                                 const losingTotal = winnerIsHome ? (data?.aggregateScore?.awayTeamTotalScore ?? 0) : (data?.aggregateScore?.homeTeamTotalScore ?? 0);
+                                                 
+                                                 const isTie = winningWins === losingWins;
+                                                 const isBigWin = Math.abs(winningWins - losingWins) >= 2;
+
+                                                 return (
+                                                     <>
+                                                         <Text className="text-[10px] font-black text-[#10B981]/60 uppercase tracking-[2px] mb-1">
+                                                             TEAM MATCH WINNER
+                                                         </Text>
+                                                         <Text className="text-xl font-black text-[#10B981] uppercase leading-tight mb-2" numberOfLines={1}>
+                                                             {winningTeamName}
+                                                         </Text>
+                                                         
+                                                         {isTie ? (
+                                                             <View className="flex-row items-center bg-[#10B981]/15 self-start px-2.5 py-1 rounded-lg border border-[#10B981]/20 gap-1.5">
+                                                                 <Ionicons name="calculator" size={12} color="#10B981" />
+                                                                 <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-wider mt-0.5">
+                                                                     AGGREGATE WIN · {winningTotal} - {losingTotal}
+                                                                 </Text>
+                                                             </View>
+                                                         ) : (
+                                                             <View className="flex-row items-center bg-[#10B981]/15 self-start px-2.5 py-1 rounded-lg border border-[#10B981]/20 gap-1.5">
+                                                                 <Ionicons name="flag" size={12} color="#10B981" />
+                                                                 <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-wider mt-0.5">
+                                                                     {isBigWin ? 'DOMINANT WIN' : 'MATCH WINS'} · {winningWins} - {losingWins}
+                                                                 </Text>
+                                                             </View>
+                                                         )}
+                                                     </>
+                                                 );
+                                             })()}
+                                         </View>
+                                     </View>
                                 </View>
                             ) : (
                                 <View className="bg-white/5 rounded-3xl border border-white/10 p-5 items-center">

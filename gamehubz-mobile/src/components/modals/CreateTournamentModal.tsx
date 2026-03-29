@@ -52,6 +52,11 @@ const durationUnits = [
     { value: 'Days', label: 'Days' },
 ];
 
+const teamWinConditions = [
+    { value: '0', label: 'Match Wins' },
+    { value: '1', label: 'Aggregate Score' },
+];
+
 const regionMapping: Record<string, number> = {
     'global': TournamentRegion.Global,
     'north-america': TournamentRegion.NorthAmerica,
@@ -89,6 +94,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
     // Team mode
     const [isTeamTournament, setIsTeamTournament] = useState(false);
     const [teamSize, setTeamSize] = useState('');
+    const [teamWinCondition, setTeamWinCondition] = useState('0');
 
     // Data State
     const [hubs, setHubs] = useState<{ id: string; name: string }[]>([]);
@@ -104,6 +110,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
     const [showRegDeadlinePicker, setShowRegDeadlinePicker] = useState(false);
     const [showFormatPicker, setShowFormatPicker] = useState(false);
     const [showDurationUnitPicker, setShowDurationUnitPicker] = useState(false);
+    const [showTeamWinConditionPicker, setShowTeamWinConditionPicker] = useState(false);
 
     // Fetch Hubs
     useEffect(() => {
@@ -196,6 +203,11 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                 setError('Team size must be between 2 and 11');
                 return;
             }
+            const mp = parseInt(maxPlayers);
+            if (mp < ts * 2) {
+                setError(`Max Players must be at least ${ts * 2} (Team Size × 2) to allow a minimum of 2 teams`);
+                return;
+            }
         }
 
         if (!startDate || !registrationDeadline) {
@@ -260,6 +272,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                 roundDurationMinutes: roundDurationMinutes,
                 isTeamTournament: isTeamTournament,
                 teamSize: isTeamTournament ? parseInt(teamSize) : null,
+                teamWinCondition: isTeamTournament ? parseInt(teamWinCondition) : null,
             };
 
             console.log('Creating tournament with payload:', payload);
@@ -481,21 +494,38 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                 </View>
                             </View>
 
-                            {/* Team Size (visible only for Team mode) */}
+                            {/* Team Size & Win Cond (visible only for Team mode) */}
                             {isTeamTournament && (
-                                <View>
-                                    <View className="flex-row items-center mb-3">
-                                        <Ionicons name="grid-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
-                                        <Text className="text-sm font-bold text-white">{TEAM_LABELS.TEAM_SIZE_LABEL} *</Text>
+                                <View className="flex-row gap-4 mb-2">
+                                    <View className="flex-1">
+                                        <View className="flex-row items-center mb-3">
+                                            <Ionicons name="grid-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
+                                            <Text className="text-sm font-bold text-white">{TEAM_LABELS.TEAM_SIZE_LABEL} *</Text>
+                                        </View>
+                                        <TextInput
+                                            className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10 text-sm"
+                                            placeholder={TEAM_LABELS.TEAM_SIZE_PLACEHOLDER}
+                                            placeholderTextColor="#6b7280"
+                                            keyboardType="numeric"
+                                            value={teamSize}
+                                            onChangeText={setTeamSize}
+                                        />
                                     </View>
-                                    <TextInput
-                                        className="bg-[#131B2E] px-4 h-12 rounded-xl text-white border border-white/10"
-                                        placeholder={TEAM_LABELS.TEAM_SIZE_PLACEHOLDER}
-                                        placeholderTextColor="#6b7280"
-                                        keyboardType="numeric"
-                                        value={teamSize}
-                                        onChangeText={setTeamSize}
-                                    />
+                                    <View className="flex-1">
+                                        <View className="flex-row items-center mb-3">
+                                            <Ionicons name="trophy-outline" size={16} color="#10B981" style={{ marginRight: 6 }} />
+                                            <Text className="text-sm font-bold text-white">Win Condition</Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            onPress={() => setShowTeamWinConditionPicker(true)}
+                                            className="bg-[#131B2E] px-4 h-12 rounded-xl border border-white/10 flex-row items-center justify-between"
+                                        >
+                                            <Text className="text-white text-sm" numberOfLines={1}>
+                                                {teamWinConditions.find(c => c.value === teamWinCondition)?.label || 'Select'}
+                                            </Text>
+                                            <Ionicons name="chevron-down" size={16} color="#94A3B8" />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             )}
 
@@ -661,6 +691,13 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                         durationUnits,
                         roundDurationUnit,
                         setRoundDurationUnit
+                    )}
+                    {renderOptionsModal(
+                        showTeamWinConditionPicker,
+                        () => setShowTeamWinConditionPicker(false),
+                        teamWinConditions,
+                        teamWinCondition,
+                        setTeamWinCondition
                     )}
                     <DateTimePickerModal
                         visible={showStartDatePicker}

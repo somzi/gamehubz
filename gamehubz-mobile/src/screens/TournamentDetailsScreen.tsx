@@ -38,6 +38,7 @@ export default function TournamentDetailsScreen() {
     const { id } = route.params;
     const [activeTab, setActiveTab] = useState('overview');
     const [teamsTab, setTeamsTab] = useState('confirmed');
+    const [playersTab, setPlayersTab] = useState<'confirmed' | 'registrations'>('confirmed');
     const [openTeams, setOpenTeams] = useState<TeamDto[]>([]);
     const [isLoadingOpenTeams, setIsLoadingOpenTeams] = useState(false);
     const [tournament, setTournament] = useState<any>(null);
@@ -645,7 +646,7 @@ export default function TournamentDetailsScreen() {
             // Populate confirmed list
             const finalTeams = await getTournamentTeams(tournamentId);
             setTournamentTeams(finalTeams);
-            
+
             // Find user's team from all teams (including pending) like before
             if (user?.id) {
                 try {
@@ -763,13 +764,14 @@ export default function TournamentDetailsScreen() {
         } else if (activeTab === 'registrations') {
             fetchPendingRegistrations();
         } else if (activeTab === 'players') {
-            fetchParticipants();
+            if (playersTab === 'confirmed') fetchParticipants();
+            else if (playersTab === 'registrations' && pendingRegistrations.length === 0) fetchPendingRegistrations();
         } else if (activeTab === 'teams' && tournament?.isTeamTournament) {
             if (teamsTab === 'open' && openTeams.length === 0) fetchOpenTeams();
             else if (teamsTab === 'registrations' && pendingRegistrations.length === 0) fetchPendingRegistrations();
             else if (teamsTab === 'confirmed' && tournamentTeams.length === 0) fetchTournamentTeams(id);
         }
-    }, [id, activeTab, teamsTab]);
+    }, [id, activeTab, teamsTab, playersTab]);
 
     const fetchOpenTeams = async () => {
         if (!id) return;
@@ -790,10 +792,6 @@ export default function TournamentDetailsScreen() {
         ...(tournament?.isTeamTournament
             ? [{ label: 'Teams', value: 'teams' }]
             : [{ label: 'Players', value: 'players' }]),
-        ...(tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() &&
-            (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2) &&
-            !tournament?.isTeamTournament
-            ? [{ label: 'Registrations', value: 'registrations' }] : []),
     ];
 
     const getStatusText = (status: number) => {
@@ -1371,22 +1369,22 @@ export default function TournamentDetailsScreen() {
 
                             {/* Sub Tabs */}
                             <View className="flex-row bg-[#131B2E] p-1 rounded-2xl border border-white/5 mb-4 shadow-sm shadow-black/20">
-                                <Pressable 
+                                <Pressable
                                     onPress={() => setTeamsTab('confirmed')}
                                     className={`flex-1 py-2.5 items-center justify-center rounded-xl ${teamsTab === 'confirmed' ? 'bg-[#00E5A0]/10 border border-[#00E5A0]/20' : 'bg-transparent'}`}
                                 >
                                     <Text className={`font-black text-[10px] uppercase tracking-wider ${teamsTab === 'confirmed' ? 'text-[#00E5A0]' : 'text-slate-500'}`}>Confirmed</Text>
                                 </Pressable>
                                 {tournament?.status < 3 && (
-                                    <Pressable 
+                                    <Pressable
                                         onPress={() => setTeamsTab('open')}
                                         className={`flex-1 py-2.5 items-center justify-center rounded-xl ${teamsTab === 'open' ? 'bg-[#3B82F6]/10 border border-[#3B82F6]/20' : 'bg-transparent'}`}
                                     >
-                                        <Text className={`font-black text-[10px] uppercase tracking-wider ${teamsTab === 'open' ? 'text-[#3B82F6]' : 'text-slate-500'}`}>Open Teams</Text>
+                                        <Text className={`font-black text-[10px] uppercase tracking-wider ${teamsTab === 'open' ? 'text-[#3B82F6]' : 'text-slate-500'}`}>Registred</Text>
                                     </Pressable>
                                 )}
                                 {creatorId?.toLowerCase() === user?.id?.toLowerCase() && (
-                                    <Pressable 
+                                    <Pressable
                                         onPress={() => setTeamsTab('registrations')}
                                         className={`flex-1 py-2.5 items-center justify-center rounded-xl ${teamsTab === 'registrations' ? 'bg-[#F59E0B]/10 border border-[#F59E0B]/20' : 'bg-transparent'}`}
                                     >
@@ -1394,141 +1392,141 @@ export default function TournamentDetailsScreen() {
                                     </Pressable>
                                 )}
                             </View>
-                            
+
                             {/* Confirmed Teams */}
                             {teamsTab === 'confirmed' && (
                                 isLoadingTeams ? (
-                                <ActivityIndicator size="small" color="#00E5A0" />
-                            ) : tournamentTeams.length === 0 ? (
-                                <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
-                                    <Ionicons name="people-outline" size={48} color="#71717A" />
-                                    <Text className="text-slate-400 mt-4 text-center">{TEAM_LABELS.NO_TEAMS_REGISTERED}</Text>
-                                </View>
-                            ) : (
-                                tournamentTeams.map((t, index) => {
-                                    const teamId = t.teamId || t.TeamId;
-                                    const teamName = t.teamName || t.TeamName;
-                                    const memberCount = t.memberCount || t.MemberCount || 0;
-                                    const teamSize = t.teamSize || t.TeamSize || tournament?.teamSize || 0;
-                                    const captainUserId = t.captainUserId || t.CaptainUserId;
+                                    <ActivityIndicator size="small" color="#00E5A0" />
+                                ) : tournamentTeams.length === 0 ? (
+                                    <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
+                                        <Ionicons name="people-outline" size={48} color="#71717A" />
+                                        <Text className="text-slate-400 mt-4 text-center">{TEAM_LABELS.NO_TEAMS_REGISTERED}</Text>
+                                    </View>
+                                ) : (
+                                    tournamentTeams.map((t, index) => {
+                                        const teamId = t.teamId || t.TeamId;
+                                        const teamName = t.teamName || t.TeamName;
+                                        const memberCount = t.memberCount || t.MemberCount || 0;
+                                        const teamSize = t.teamSize || t.TeamSize || tournament?.teamSize || 0;
+                                        const captainUserId = t.captainUserId || t.CaptainUserId;
 
-                                    const membersList = t.members || t.Members || [];
-                                    const captain = membersList.find((m: any) =>
-                                        m.userId?.toLowerCase() === captainUserId?.toLowerCase() ||
-                                        m.UserId?.toLowerCase() === captainUserId?.toLowerCase()
-                                    );
+                                        const membersList = t.members || t.Members || [];
+                                        const captain = membersList.find((m: any) =>
+                                            m.userId?.toLowerCase() === captainUserId?.toLowerCase() ||
+                                            m.UserId?.toLowerCase() === captainUserId?.toLowerCase()
+                                        );
 
-                                    const isExpanded = expandedTeamId === teamId;
+                                        const isExpanded = expandedTeamId === teamId;
 
-                                     return (
-                                        <View key={teamId || index.toString()} className="flex-row items-start gap-3 mb-2">
-                                            <Pressable
-                                                onPress={() => setExpandedTeamId(isExpanded ? null : (teamId || null))}
-                                                className={`flex-1 bg-gradient-to-br from-[#1A233A] to-[#131B2E] p-5 rounded-[24px] border border-white/5 overflow-hidden ${isExpanded ? 'border-[#00E5A0]/20' : ''}`}
-                                            >
-                                                <View className="flex-row items-center gap-4">
-                                                    <View className="w-12 h-12 rounded-2xl bg-[#00E5A0]/10 items-center justify-center border border-[#00E5A0]/10 shadow-sm shadow-[#00E5A0]/20">
-                                                        <Ionicons name="people" size={22} color="#00E5A0" />
-                                                    </View>
-                                                    <View className="flex-1">
-                                                        <Text className="font-black text-lg text-white" numberOfLines={1}>
-                                                            {teamName || 'Unknown Team'}
-                                                        </Text>
-                                                        <View className="flex-row items-center gap-2 mt-1">
-                                                            {(memberCount >= teamSize && teamSize > 0) ? (
-                                                                <View className="bg-[#00E5A0]/10 px-2 py-0.5 rounded-full border border-[#00E5A0]/20 flex-shrink-0">
-                                                                    <Text className="text-[9px] font-black text-[#00E5A0] uppercase">
-                                                                        {TEAM_LABELS.TEAM_FULL}
+                                        return (
+                                            <View key={teamId || index.toString()} className="flex-row items-start gap-3 mb-2">
+                                                <Pressable
+                                                    onPress={() => setExpandedTeamId(isExpanded ? null : (teamId || null))}
+                                                    className={`flex-1 bg-gradient-to-br from-[#1A233A] to-[#131B2E] p-5 rounded-[24px] border border-white/5 overflow-hidden ${isExpanded ? 'border-[#00E5A0]/20' : ''}`}
+                                                >
+                                                    <View className="flex-row items-center gap-4">
+                                                        <View className="w-12 h-12 rounded-2xl bg-[#00E5A0]/10 items-center justify-center border border-[#00E5A0]/20 shadow-sm shadow-[#00E5A0]/20">
+                                                            <Ionicons name="shield-half-outline" size={24} color="#00E5A0" />
+                                                        </View>
+                                                        <View className="flex-1">
+                                                            <Text className="font-black text-lg text-white" numberOfLines={1}>
+                                                                {teamName || 'Unknown Team'}
+                                                            </Text>
+                                                            <View className="flex-row items-center gap-2 mt-1">
+                                                                {(memberCount >= teamSize && teamSize > 0) ? (
+                                                                    <View className="bg-[#00E5A0]/10 px-2 py-0.5 rounded-full border border-[#00E5A0]/20 flex-shrink-0">
+                                                                        <Text className="text-[9px] font-black text-[#00E5A0] uppercase">
+                                                                            {TEAM_LABELS.TEAM_FULL}
+                                                                        </Text>
+                                                                    </View>
+                                                                ) : (
+                                                                    <Text className="text-[10px] font-bold tracking-widest uppercase text-slate-400 flex-shrink-0">
+                                                                        {memberCount} / {teamSize > 0 ? teamSize : '?'} {TEAM_LABELS.MEMBERS_LABEL}
                                                                     </Text>
-                                                                </View>
-                                                            ) : (
-                                                                <Text className="text-[10px] font-bold tracking-widest uppercase text-slate-400 flex-shrink-0">
-                                                                    {memberCount} / {teamSize > 0 ? teamSize : '?'} {TEAM_LABELS.MEMBERS_LABEL}
-                                                                </Text>
-                                                            )}
-                                                            {captain && (
-                                                                <View className="flex-row items-center gap-1 bg-[#F59E0B]/10 px-2 rounded-full py-0.5 border border-[#F59E0B]/20 flex-shrink">
-                                                                    <Ionicons name="shield" size={10} color="#F59E0B" />
-                                                                    <Text className="text-[9px] text-[#F59E0B] font-black uppercase flex-shrink" numberOfLines={1}>
-                                                                        {captain?.username || captain?.Username}
-                                                                    </Text>
-                                                                </View>
-                                                            )}
+                                                                )}
+                                                                {captain && (
+                                                                    <View className="flex-row items-center gap-1 bg-[#F59E0B]/10 px-2 rounded-full py-0.5 border border-[#F59E0B]/20 flex-shrink">
+                                                                        <Ionicons name="shield" size={10} color="#F59E0B" />
+                                                                        <Text className="text-[9px] text-[#F59E0B] font-black uppercase flex-shrink" numberOfLines={1}>
+                                                                            {captain?.username || captain?.Username}
+                                                                        </Text>
+                                                                    </View>
+                                                                )}
+                                                            </View>
+                                                        </View>
+                                                        <View className="w-8 h-8 rounded-full bg-white/5 items-center justify-center border border-white/5">
+                                                            <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={16} color="#94A3B8" />
                                                         </View>
                                                     </View>
-                                                    <View className="w-8 h-8 rounded-full bg-white/5 items-center justify-center border border-white/5">
-                                                        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={16} color="#94A3B8" />
-                                                    </View>
-                                                </View>
 
-                                                {/* Expanded Members List */}
-                                                {isExpanded && (
-                                                    <View className="mt-4 pt-4 border-t border-white/5 space-y-4">
-                                                        {membersList.length > 0 ? (
-                                                            membersList.map((m: any, mIdx: number) => {
-                                                                const isMemberCaptain = (m.userId || m.UserId)?.toLowerCase() === captainUserId?.toLowerCase();
-                                                                return (
-                                                                    <Pressable
-                                                                        key={(m.userId || m.UserId) || mIdx.toString()}
-                                                                        onPress={() => navigation.navigate('PlayerProfile', { id: m.userId || m.UserId })}
-                                                                        className="flex-row items-center justify-between bg-white/[0.03] p-4 rounded-[18px] border border-white/10 active:opacity-60 shadow-sm"
-                                                                    >
-                                                                        <View className="flex-row items-center gap-3">
-                                                                            <PlayerAvatar name={m.username || m.Username} src={m.avatarUrl || m.AvatarUrl} size="sm" />
-                                                                            <Text className="text-white font-bold text-sm tracking-wide">{m.username || m.Username}</Text>
-                                                                        </View>
-                                                                        {isMemberCaptain && (
-                                                                            <View className="bg-[#F59E0B]/10 px-2 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#F59E0B]/20">
-                                                                                <Ionicons name="shield-checkmark" size={13} color="#F59E0B" />
-                                                                                <Text className="text-[10px] font-black text-[#F59E0B] uppercase tracking-widest">Captain</Text>
+                                                    {/* Expanded Members List */}
+                                                    {isExpanded && (
+                                                        <View className="mt-4 pt-4 border-t border-white/5 space-y-4">
+                                                            {membersList.length > 0 ? (
+                                                                membersList.map((m: any, mIdx: number) => {
+                                                                    const isMemberCaptain = (m.userId || m.UserId)?.toLowerCase() === captainUserId?.toLowerCase();
+                                                                    return (
+                                                                        <Pressable
+                                                                            key={(m.userId || m.UserId) || mIdx.toString()}
+                                                                            onPress={() => navigation.navigate('PlayerProfile', { id: m.userId || m.UserId })}
+                                                                            className="flex-row items-center justify-between bg-white/[0.03] p-4 rounded-[18px] border border-white/10 active:opacity-60 shadow-sm"
+                                                                        >
+                                                                            <View className="flex-row items-center gap-3">
+                                                                                <PlayerAvatar name={m.username || m.Username} src={m.avatarUrl || m.AvatarUrl} size="sm" />
+                                                                                <Text className="text-white font-bold text-sm tracking-wide">{m.username || m.Username}</Text>
                                                                             </View>
-                                                                        )}
-                                                                    </Pressable>
-                                                                );
-                                                            })
-                                                        ) : (
-                                                            <Text className="text-slate-500 text-center text-xs py-2 italic">No members found</Text>
-                                                        )}
+                                                                            {isMemberCaptain && (
+                                                                                <View className="bg-[#F59E0B]/10 px-2 py-1.5 rounded-full flex-row items-center gap-1.5 border border-[#F59E0B]/20">
+                                                                                    <Ionicons name="shield-checkmark" size={13} color="#F59E0B" />
+                                                                                    <Text className="text-[10px] font-black text-[#F59E0B] uppercase tracking-widest">Captain</Text>
+                                                                                </View>
+                                                                            )}
+                                                                        </Pressable>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <Text className="text-slate-500 text-center text-xs py-2 italic">No members found</Text>
+                                                            )}
 
-                                                        {/* Join Button inside Expanded View */}
-                                                        {(!userTeam && !isUserRegistered && memberCount < teamSize && teamSize > 0) && (
-                                                            <Button
-                                                                className={t.requiresApproval || t.RequiresApproval ? "bg-[#3B82F6] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#3B82F6]/20" : "bg-[#00E5A0] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#00E5A0]/20"}
-                                                                onPress={() => handleJoinTeam(teamId as string, t.requiresApproval || t.RequiresApproval)}
-                                                                loading={joiningTeamId === teamId}
-                                                                disabled={joiningTeamId !== null || t.userRequestStatus === 'Pending' || t.UserRequestStatus === 'Pending'}
-                                                            >
-                                                                <Text className={t.requiresApproval || t.RequiresApproval ? "text-white font-black uppercase tracking-widest text-sm text-center" : "text-[#0F172A] font-black uppercase tracking-widest text-sm text-center"}>
-                                                                    {(t.userRequestStatus === 'Pending' || t.UserRequestStatus === 'Pending') 
-                                                                        ? 'Request Pending' 
-                                                                        : (t.requiresApproval || t.RequiresApproval) ? 'Request to Join' : 'Join This Team'}
-                                                                </Text>
-                                                            </Button>
-                                                        )}
+                                                            {/* Join Button inside Expanded View */}
+                                                            {(!userTeam && !isUserRegistered && memberCount < teamSize && teamSize > 0) && (
+                                                                <Button
+                                                                    className={t.requiresApproval || t.RequiresApproval ? "bg-[#3B82F6] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#3B82F6]/20" : "bg-[#00E5A0] py-3.5 rounded-2xl w-full mt-3 shadow-md shadow-[#00E5A0]/20"}
+                                                                    onPress={() => handleJoinTeam(teamId as string, t.requiresApproval || t.RequiresApproval)}
+                                                                    loading={joiningTeamId === teamId}
+                                                                    disabled={joiningTeamId !== null || t.userRequestStatus === 'Pending' || t.UserRequestStatus === 'Pending'}
+                                                                >
+                                                                    <Text className={t.requiresApproval || t.RequiresApproval ? "text-white font-black uppercase tracking-widest text-sm text-center" : "text-[#0F172A] font-black uppercase tracking-widest text-sm text-center"}>
+                                                                        {(t.userRequestStatus === 'Pending' || t.UserRequestStatus === 'Pending')
+                                                                            ? 'Request Pending'
+                                                                            : (t.requiresApproval || t.RequiresApproval) ? 'Request to Join' : 'Join This Team'}
+                                                                    </Text>
+                                                                </Button>
+                                                            )}
+                                                        </View>
+                                                    )}
+                                                </Pressable>
+
+                                                {/* Remove Team Button — Creator Only (Outside Card) */}
+                                                {creatorId?.toLowerCase() === user?.id?.toLowerCase() && (
+                                                    <View className="self-start mt-5">
+                                                        <Pressable
+                                                            onPress={() => handleRemoveTeam(teamId as string, teamName as string)}
+                                                            disabled={removingTeamId === teamId}
+                                                            className="w-12 h-12 rounded-2xl bg-red-500/10 items-center justify-center border border-red-500/20 active:opacity-60"
+                                                        >
+                                                            {removingTeamId === teamId ? (
+                                                                <ActivityIndicator size="small" color="#EF4444" />
+                                                            ) : (
+                                                                <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                            )}
+                                                        </Pressable>
                                                     </View>
                                                 )}
-                                            </Pressable>
-
-                                            {/* Remove Team Button — Creator Only (Outside Card) */}
-                                            {creatorId?.toLowerCase() === user?.id?.toLowerCase() && (
-                                                <View className="self-start mt-5">
-                                                    <Pressable
-                                                        onPress={() => handleRemoveTeam(teamId as string, teamName as string)}
-                                                        disabled={removingTeamId === teamId}
-                                                        className="w-12 h-12 rounded-2xl bg-red-500/10 items-center justify-center border border-red-500/20 active:opacity-60"
-                                                    >
-                                                        {removingTeamId === teamId ? (
-                                                            <ActivityIndicator size="small" color="#EF4444" />
-                                                        ) : (
-                                                            <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                                                        )}
-                                                    </Pressable>
-                                                </View>
-                                            )}
-                                        </View>
-                                    );
-                                })
-                            )
+                                            </View>
+                                        );
+                                    })
+                                )
                             )}
 
                             {/* Open Teams */}
@@ -1562,8 +1560,8 @@ export default function TournamentDetailsScreen() {
                                                     className={`flex-1 bg-gradient-to-br from-[#1A233A] to-[#131B2E] p-5 rounded-[24px] border border-white/5 overflow-hidden ${isExpanded ? 'border-[#3B82F6]/20' : ''}`}
                                                 >
                                                     <View className="flex-row items-center gap-4">
-                                                        <View className="w-12 h-12 rounded-2xl bg-[#3B82F6]/10 items-center justify-center border border-[#3B82F6]/10 shadow-sm shadow-[#3B82F6]/20">
-                                                            <Ionicons name="game-controller-outline" size={22} color="#3B82F6" />
+                                                        <View className="w-12 h-12 rounded-2xl bg-[#3B82F6]/10 items-center justify-center border border-[#3B82F6]/20 shadow-sm shadow-[#3B82F6]/20">
+                                                            <Ionicons name="game-controller-outline" size={24} color="#3B82F6" />
                                                         </View>
                                                         <View className="flex-1">
                                                             <Text className="font-black text-lg text-white" numberOfLines={1}>
@@ -1632,7 +1630,7 @@ export default function TournamentDetailsScreen() {
                                                                 // If the user has no team (they may have been kicked), trust userTeam state.
                                                                 // Per-team isApproved prevents rejoining a team they're already "approved" in.
                                                                 const showButton = !userTeam && !isUserRegistered && !isApproved && memberCount < teamSize && teamSize > 0;
-                                                                
+
                                                                 if (!showButton) return null;
 
                                                                 return (
@@ -1643,8 +1641,8 @@ export default function TournamentDetailsScreen() {
                                                                         disabled={joiningTeamId !== null || isPending}
                                                                     >
                                                                         <Text className={t.requiresApproval || t.RequiresApproval ? "text-white font-black uppercase tracking-widest text-sm text-center" : "text-[#0F172A] font-black uppercase tracking-widest text-sm text-center"}>
-                                                                            {isPending 
-                                                                                ? 'Request Pending' 
+                                                                            {isPending
+                                                                                ? 'Request Pending'
                                                                                 : (t.requiresApproval || t.RequiresApproval) ? 'Request to Join' : 'Join This Team'}
                                                                         </Text>
                                                                     </Button>
@@ -1781,227 +1779,168 @@ export default function TournamentDetailsScreen() {
                         </View>
                     )}
 
-                    {/* Pending Registrations Admin Tab (Solo Only) */}
-                    {activeTab === 'registrations' && !tournament?.isTeamTournament && (
-                        <View className="px-4 py-4 space-y-4 pb-12">
-                            <View className="flex-row justify-between items-center mb-4">
+                    {/* Pending Registrations Admin Tab (Solo Only) - now merged into players tab */}
+
+                    {activeTab === 'players' && (
+                        <View className="px-4 py-4 gap-3 pb-12">
+                            {/* Header */}
+                            <View className="flex-row items-center justify-between mb-1">
                                 <View className="flex-row items-center gap-2">
-                                    <Ionicons name="time-outline" size={20} color="#F59E0B" />
-                                    <Text className="text-lg font-bold text-white">
-                                        Pending Requests
-                                    </Text>
+                                    <Ionicons name="people-outline" size={20} color="#3B82F6" />
+                                    <Text className="text-lg font-black text-white">Players</Text>
                                 </View>
-                                {(() => {
-                                    const displayedRegistrations = tournament?.isTeamTournament
-                                        ? pendingRegistrations.reduce((acc: any[], current: any) => {
-                                            const teamId = current.teamId || current.TeamId;
-                                            if (teamId) {
-                                                const exists = acc.find(item => (item.teamId || item.TeamId) === teamId);
-                                                if (!exists) acc.push(current);
-                                            } else {
-                                                acc.push(current);
-                                            }
-                                            return acc;
-                                        }, [])
-                                        : pendingRegistrations;
-
-                                    const hasApprovable = displayedRegistrations.some((reg: any) => {
-                                        const isTeam = reg.isTeamRegistration || reg.IsTeamRegistration;
-                                        if (isTeam && tournament?.teamSize) {
-                                            const currentMembers = reg.memberCount || reg.MemberCount || 1;
-                                            return currentMembers >= tournament.teamSize;
-                                        }
-                                        return true;
-                                    });
-
-                                    return hasApprovable && displayedRegistrations.length > 0 && (
-                                        <Button
-                                            size="sm"
-                                            onPress={handleApproveAll}
-                                            loading={isLoadingPending}
-                                            className="bg-[#10B981]"
-                                        >
-                                            Approve All
-                                        </Button>
-                                    );
-                                })()}
                             </View>
 
-                            {isLoadingPending ? (
-                                <ActivityIndicator size="small" color="#10B981" />
-                            ) : pendingRegistrations.length === 0 ? (
-                                <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
-                                    <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" />
-                                    <Text className="text-slate-400 mt-4 text-center">No pending registrations.</Text>
-                                </View>
-                            ) : (
-                                (() => {
-                                    const displayedRegistrations = tournament?.isTeamTournament
-                                        ? pendingRegistrations.reduce((acc: any[], current: any) => {
-                                            const teamId = current.teamId || current.TeamId;
-                                            if (teamId) {
-                                                const exists = acc.find(item => (item.teamId || item.TeamId) === teamId);
-                                                if (!exists) acc.push(current);
-                                            } else {
-                                                acc.push(current);
-                                            }
-                                            return acc;
-                                        }, [])
-                                        : pendingRegistrations;
+                            {/* Sub-tabs */}
+                            <View className="flex-row bg-[#131B2E] p-1 rounded-2xl border border-white/5 mb-2 shadow-sm shadow-black/20">
+                                <Pressable
+                                    onPress={() => setPlayersTab('confirmed')}
+                                    className={`flex-1 py-2.5 items-center justify-center rounded-xl ${playersTab === 'confirmed' ? 'bg-[#3B82F6]/10 border border-[#3B82F6]/20' : 'bg-transparent'}`}
+                                >
+                                    <Text className={`font-black text-[10px] uppercase tracking-wider ${playersTab === 'confirmed' ? 'text-[#3B82F6]' : 'text-slate-500'}`}>Confirmed</Text>
+                                </Pressable>
+                                {tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() && (
+                                    <Pressable
+                                        onPress={() => {
+                                            setPlayersTab('registrations');
+                                            if (pendingRegistrations.length === 0) fetchPendingRegistrations();
+                                        }}
+                                        className={`flex-1 py-2.5 items-center justify-center rounded-xl ${playersTab === 'registrations' ? 'bg-[#F59E0B]/10 border border-[#F59E0B]/20' : 'bg-transparent'}`}
+                                    >
+                                        <View className="flex-row items-center gap-1.5">
+                                            <Text className={`font-black text-[10px] uppercase tracking-wider ${playersTab === 'registrations' ? 'text-[#F59E0B]' : 'text-slate-500'}`}>Registrations</Text>
+                                            {pendingRegistrations.length > 0 && (
+                                                <View className="w-5 h-5 rounded-full bg-[#F59E0B] items-center justify-center">
+                                                    <Text className="text-[9px] font-black text-[#0F172A]">{pendingRegistrations.length}</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    </Pressable>
+                                )}
+                            </View>
 
-                                    return displayedRegistrations.map((reg) => {
-                                        const isTeam = reg.isTeamRegistration || reg.IsTeamRegistration;
-                                        const regId = reg.id || reg.registrationId || reg.Id;
+                            {/* Confirmed Players */}
+                            {playersTab === 'confirmed' && (
+                                isLoadingParticipants ? (
+                                    <ActivityIndicator size="small" color="#3B82F6" />
+                                ) : participants.length === 0 ? (
+                                    <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
+                                        <Ionicons name="people-outline" size={48} color="#71717A" />
+                                        <Text className="text-slate-400 mt-4 text-center">No confirmed players yet.</Text>
+                                    </View>
+                                ) : (
+                                    participants.map((p, i) => {
+                                        const pUserId = p.userId || p.UserId || p.id;
+                                        const isCreator = tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase();
+                                        const canRemove = isCreator && (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2);
+                                        const isCurrentUser = user?.id?.toLowerCase() === pUserId?.toLowerCase();
 
-                                        if (isTeam) {
-                                            const currentMembers = reg.memberCount || reg.MemberCount || 1;
-                                            const requiredMembers = tournament?.teamSize || 2;
-                                            const canApprove = currentMembers >= requiredMembers;
-
-                                            return (
-                                                <View key={regId || Math.random().toString()} className="bg-[#131B2E]/80 p-5 mb-3 rounded-[28px] border border-[#00E5A0]/20 flex-row items-center gap-4">
-                                                    <View className="w-12 h-12 rounded-2xl bg-[#00E5A0]/10 items-center justify-center border border-[#00E5A0]/20">
-                                                        <Ionicons name="people" size={22} color="#00E5A0" />
+                                        return (
+                                            <View key={p.participantId || p.id || pUserId || i} className="flex-row items-center gap-2 mb-2">
+                                                <Pressable
+                                                    onPress={() => { if (pUserId) navigation.navigate('PlayerProfile', { id: pUserId }); }}
+                                                    className="bg-[#131B2E]/60 p-4 rounded-[22px] border border-white/5 flex-row items-center gap-3 flex-1 active:opacity-70"
+                                                >
+                                                    <View className="w-7 items-center justify-center">
+                                                        <Text className="text-slate-500 font-black text-sm">{i + 1}</Text>
                                                     </View>
+                                                    <PlayerAvatar src={p.avatarUrl || p.AvatarUrl} name={p.username || p.Username || 'Player'} size="md" />
                                                     <View className="flex-1 justify-center">
-                                                        <Text className="font-bold text-lg text-white" numberOfLines={1}>
-                                                            {reg.teamName || reg.TeamName}
-                                                        </Text>
-                                                        <Text className="text-sm text-slate-400 mt-0.5">
-                                                            {currentMembers} / {requiredMembers} members
-                                                        </Text>
+                                                        <View className="flex-row items-center gap-2">
+                                                            <Text className="font-bold text-base text-white">{p.username || p.Username}</Text>
+                                                            {isCurrentUser && (
+                                                                <View className="bg-white/10 px-1.5 py-0.5 rounded-full">
+                                                                    <Text className="text-[9px] text-slate-400 font-black uppercase">You</Text>
+                                                                </View>
+                                                            )}
+                                                        </View>
                                                     </View>
-                                                    <View className="flex-row gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="border-red-500/20 w-10 h-10 p-0 items-center justify-center"
+                                                    <Ionicons name="chevron-forward" size={16} color="#475569" />
+                                                </Pressable>
+                                                {canRemove && (
+                                                    <Pressable
+                                                        onPress={() => handleRemoveParticipant(pUserId)}
+                                                        disabled={processingId !== null}
+                                                        className="w-11 h-11 rounded-2xl bg-red-500/10 items-center justify-center border border-red-500/20 active:opacity-60"
+                                                    >
+                                                        {processingId === pUserId ? (
+                                                            <ActivityIndicator size="small" color="#EF4444" />
+                                                        ) : (
+                                                            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                        )}
+                                                    </Pressable>
+                                                )}
+                                            </View>
+                                        );
+                                    })
+                                )
+                            )}
+
+                            {/* Registrations (admin, solo) */}
+                            {playersTab === 'registrations' && tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase() && (
+                                <>
+                                    {/* Approve All button */}
+                                    {pendingRegistrations.length > 0 && (
+                                        <View className="flex-row justify-end mb-1">
+                                            <Button
+                                                size="sm"
+                                                onPress={handleApproveAll}
+                                                loading={isLoadingPending}
+                                                className="bg-[#10B981]"
+                                            >
+                                                Approve All
+                                            </Button>
+                                        </View>
+                                    )}
+                                    {isLoadingPending ? (
+                                        <ActivityIndicator size="small" color="#F59E0B" />
+                                    ) : pendingRegistrations.length === 0 ? (
+                                        <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
+                                            <Ionicons name="checkmark-circle-outline" size={48} color="#10B981" />
+                                            <Text className="text-slate-400 mt-4 text-center">No pending registrations.</Text>
+                                        </View>
+                                    ) : (
+                                        pendingRegistrations.map((reg) => {
+                                            const regId = reg.id || reg.registrationId || reg.Id;
+                                            return (
+                                                <View key={regId || Math.random().toString()} className="bg-[#F59E0B]/5 p-4 mb-2 rounded-[22px] border border-[#F59E0B]/15 flex-row items-center gap-3">
+                                                    <PlayerAvatar src={reg.avatarUrl || reg.AvatarUrl} name={reg.username || reg.Username || 'Unknown'} size="md" />
+                                                    <View className="flex-1 justify-center">
+                                                        <Text className="font-bold text-base text-white">{reg.username || reg.Username}</Text>
+                                                        <View className="flex-row items-center gap-1 mt-0.5">
+                                                            <Ionicons name="person-add-outline" size={11} color="#F59E0B" />
+                                                            <Text className="text-[10px] text-[#F59E0B] font-bold">Wants to join</Text>
+                                                        </View>
+                                                    </View>
+                                                    <View className="flex-row gap-2 items-center">
+                                                        <Pressable
                                                             onPress={() => handleReject(regId)}
                                                             disabled={processingId !== null}
+                                                            className="w-10 h-10 rounded-xl bg-red-500/10 items-center justify-center border border-red-500/20 active:opacity-60"
                                                         >
                                                             {processingId === regId ? (
                                                                 <ActivityIndicator size="small" color="#EF4444" />
                                                             ) : (
-                                                                <Ionicons name="close" size={20} color="#EF4444" />
+                                                                <Ionicons name="close" size={18} color="#EF4444" />
                                                             )}
-                                                        </Button>
-                                                        {canApprove && (
-                                                            <Button
-                                                                size="sm"
-                                                                className="bg-[#10B981] w-10 h-10 p-0 items-center justify-center"
-                                                                onPress={() => handleApprove(regId)}
-                                                                disabled={processingId !== null}
-                                                            >
-                                                                {processingId === regId ? (
-                                                                    <ActivityIndicator size="small" color="#131B2E" />
-                                                                ) : (
-                                                                    <Ionicons name="checkmark" size={20} color="#131B2E" />
-                                                                )}
-                                                            </Button>
-                                                        )}
+                                                        </Pressable>
+                                                        <Pressable
+                                                            onPress={() => handleApprove(regId)}
+                                                            disabled={processingId !== null}
+                                                            className="w-10 h-10 rounded-xl bg-[#10B981]/10 items-center justify-center border border-[#10B981]/20 active:opacity-60"
+                                                        >
+                                                            {processingId === regId ? (
+                                                                <ActivityIndicator size="small" color="#10B981" />
+                                                            ) : (
+                                                                <Ionicons name="checkmark" size={18} color="#10B981" />
+                                                            )}
+                                                        </Pressable>
                                                     </View>
                                                 </View>
                                             );
-                                        }
-
-                                        return (
-                                            <View key={regId || Math.random().toString()} className="bg-[#131B2E]/50 p-5 mb-3 rounded-[28px] border border-white/5 flex-row items-center gap-4">
-                                                <PlayerAvatar src={reg.avatarUrl || reg.AvatarUrl} name={reg.username || reg.Username || 'Unknown'} size="md" />
-                                                <View className="flex-1 justify-center">
-                                                    <Text className="font-bold text-lg text-white">{reg.username || reg.Username}</Text>
-                                                    <Text className="text-sm text-slate-400 mt-0.5">Wants to join</Text>
-                                                </View>
-                                                <View className="flex-row gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="border-red-500/20 w-10 h-10 p-0 items-center justify-center"
-                                                        onPress={() => handleReject(regId)}
-                                                        disabled={processingId !== null}
-                                                    >
-                                                        {processingId === regId ? (
-                                                            <ActivityIndicator size="small" color="#EF4444" />
-                                                        ) : (
-                                                            <Ionicons name="close" size={20} color="#EF4444" />
-                                                        )}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        className="bg-[#10B981] w-10 h-10 p-0 items-center justify-center"
-                                                        onPress={() => handleApprove(regId)}
-                                                        disabled={processingId !== null}
-                                                    >
-                                                        {processingId === regId ? (
-                                                            <ActivityIndicator size="small" color="#131B2E" />
-                                                        ) : (
-                                                            <Ionicons name="checkmark" size={20} color="#131B2E" />
-                                                        )}
-                                                    </Button>
-                                                </View>
-                                            </View>
-                                        );
-                                    });
-                                })()
-                            )}
-                        </View>
-                    )}
-
-                    {activeTab === 'players' && (
-                        <View className="px-4 py-4 gap-3 pb-12">
-                            <View className="flex-row items-center gap-2 mb-2">
-                                <Ionicons name="people-outline" size={20} color="#3B82F6" />
-                                <Text className="text-lg font-bold text-white">Participants List</Text>
-                            </View>
-                            {isLoadingParticipants ? (
-                                <ActivityIndicator size="small" color="#10B981" />
-                            ) : participants.length === 0 ? (
-                                <View className="bg-[#131B2E]/50 p-8 rounded-3xl border border-white/5 items-center justify-center">
-                                    <Ionicons name="people-outline" size={48} color="#3B82F6" />
-                                    <Text className="text-slate-400 mt-4 text-center">No participants yet.</Text>
-                                </View>
-                            ) : (
-                                participants.map((p, i) => {
-                                    const pUserId = p.userId || p.UserId || p.id;
-                                    const isCreator = tournament?.createdBy?.toLowerCase() === user?.id?.toLowerCase();
-
-                                    const canRemove = isCreator && (tournament?.status === 0 || tournament?.status === 1 || tournament?.status === 2);
-
-                                    return (
-                                        <View key={p.participantId || p.id || pUserId || i} className="flex-row items-center gap-2">
-                                            <Pressable
-                                                onPress={() => {
-                                                    if (pUserId) {
-                                                        navigation.navigate('PlayerProfile', { id: pUserId });
-                                                    }
-                                                }}
-                                                className="bg-[#131B2E]/50 p-5 mb-1 rounded-[28px] border border-white/5 flex-row items-center gap-4 flex-1"
-                                            >
-                                                <View className="w-8 items-center justify-center">
-                                                    <Text className="text-slate-500 font-bold text-sm">{i + 1}</Text>
-                                                </View>
-                                                <PlayerAvatar src={p.avatarUrl || p.AvatarUrl} name={p.username || p.Username || 'Player'} size="md" />
-                                                <View className="flex-1 justify-center">
-                                                    <Text className="font-bold text-lg text-white">{p.username || p.Username}</Text>
-                                                </View>
-                                                <Ionicons name="chevron-forward" size={24} color="#475569" />
-                                            </Pressable>
-
-                                            {canRemove && (
-                                                <Pressable
-                                                    onPress={() => handleRemoveParticipant(pUserId)}
-                                                    disabled={processingId !== null}
-                                                    className="w-12 h-12 rounded-2xl bg-red-500/10 items-center justify-center border border-red-500/20"
-                                                >
-                                                    {processingId === pUserId ? (
-                                                        <ActivityIndicator size="small" color="#EF4444" />
-                                                    ) : (
-                                                        <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                                                    )}
-                                                </Pressable>
-                                            )}
-                                        </View>
-                                    );
-                                })
+                                        })
+                                    )}
+                                </>
                             )}
                         </View>
                     )}
