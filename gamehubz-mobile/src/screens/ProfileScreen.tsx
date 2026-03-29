@@ -51,11 +51,7 @@ export default function ProfileScreen() {
         setMatchesPage(0);
         setHasMoreMatches(true);
         try {
-            const [statsRes, tournamentsRes, matchesRes] = await Promise.all([
-                authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(user.id)),
-                authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(user.id, 0)),
-                authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(user.id, 0))
-            ]);
+            const statsRes = await authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(user.id));
 
             if (statsRes.ok) {
                 const statsData = await statsRes.json();
@@ -76,24 +72,9 @@ export default function ProfileScreen() {
                 setPlayerMatches(normalizedStats);
             }
 
-            if (tournamentsRes.ok) {
-                const tournamentsData = await tournamentsRes.json();
-                const items = tournamentsData.items || tournamentsData.Items || tournamentsData.result || tournamentsData;
-                const itemsArray = Array.isArray(items) ? items : [];
-                setUserTournaments(itemsArray);
-                setHasMoreTournaments(itemsArray.length === 10); // Assume 10 is page size
-            }
-
-            if (matchesRes.ok) {
-                const matchesData = await matchesRes.json();
-                const items = matchesData.items || matchesData.Items || matchesData.result || matchesData;
-                const itemsArray = Array.isArray(items) ? items : [];
-                setUserMatches(itemsArray);
-                setHasMoreMatches(itemsArray.length === 10);
-            }
         } catch (error: any) {
             console.error('Error fetching profile detailed data:', error);
-            setError('Failed to refresh stats/tournaments/matches');
+            setError('Failed to refresh stats');
         } finally {
             setIsLoadingData(false);
         }
@@ -156,6 +137,14 @@ export default function ProfileScreen() {
     useEffect(() => {
         fetchDetailedData();
     }, [fetchDetailedData]);
+
+    useEffect(() => {
+        if (activeTab === 'tournaments' && userTournaments.length === 0 && hasMoreTournaments && !isLoadingMoreTournaments) {
+            loadMoreTournaments();
+        } else if (activeTab === 'matches' && userMatches.length === 0 && hasMoreMatches && !isLoadingMoreMatches) {
+            loadMoreMatches();
+        }
+    }, [activeTab]);
 
     useFocusEffect(
         useCallback(() => {

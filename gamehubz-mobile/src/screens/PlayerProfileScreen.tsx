@@ -58,11 +58,9 @@ export default function PlayerProfileScreen() {
             setMatchesPage(0);
             setHasMoreMatches(true);
             try {
-                const [infoRes, statsRes, tournamentsRes, matchesRes] = await Promise.all([
+                const [infoRes, statsRes] = await Promise.all([
                     authenticatedFetch(ENDPOINTS.GET_USER_INFO(id)),
-                    authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(id)),
-                    authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id, 0)),
-                    authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(id, 0))
+                    authenticatedFetch(ENDPOINTS.GET_PLAYER_STATS(id))
                 ]);
 
                 if (infoRes.ok) {
@@ -96,22 +94,6 @@ export default function PlayerProfileScreen() {
                     setPlayerMatches(normalizedStats);
                 }
 
-                if (tournamentsRes.ok) {
-                    const tournamentsData = await tournamentsRes.json();
-                    const items = tournamentsData.items || tournamentsData.Items || tournamentsData.result || tournamentsData;
-                    const itemsArray = Array.isArray(items) ? items : [];
-                    setUserTournaments(itemsArray);
-                    setHasMoreTournaments(itemsArray.length === 10);
-                }
-
-                if (matchesRes.ok) {
-                    const matchesData = await matchesRes.json();
-                    const items = matchesData.items || matchesData.Items || matchesData.result || matchesData;
-                    const itemsArray = Array.isArray(items) ? items : [];
-                    setUserMatches(itemsArray);
-                    setHasMoreMatches(itemsArray.length === 10);
-                }
-
                 if (!infoRes.ok && !statsRes.ok) {
                     throw new Error('Could not load player data');
                 }
@@ -125,6 +107,14 @@ export default function PlayerProfileScreen() {
 
         fetchPlayerData();
     }, [id]);
+
+    useEffect(() => {
+        if (activeTab === 'tournaments' && userTournaments.length === 0 && hasMoreTournaments && !isLoadingMoreTournaments) {
+            loadMoreTournaments();
+        } else if (activeTab === 'matches' && userMatches.length === 0 && hasMoreMatches && !isLoadingMoreMatches) {
+            loadMoreMatches();
+        }
+    }, [activeTab]);
 
     const loadMoreTournaments = async () => {
         if (!id || isLoadingMoreTournaments || !hasMoreTournaments) return;

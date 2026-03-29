@@ -48,22 +48,14 @@ export default function HubProfileScreen() {
     );
 
     useEffect(() => {
-        // Reset list when tournament filter changes
-        setTournaments([]);
-        setPage(0);
-        setHasMore(true);
-        fetchTournaments(0, tournamentFilter);
-    }, [tournamentFilter]);
-
-    useEffect(() => {
-        // Fetch tournaments when switching to Tournaments tab
+        // Only fetch if we are on the tournaments tab
         if (hubTab === 'tournaments') {
             setTournaments([]);
             setPage(0);
             setHasMore(true);
             fetchTournaments(0, tournamentFilter);
         }
-    }, [hubTab]);
+    }, [tournamentFilter, hubTab]);
 
     const fetchHubDetails = async () => {
         try {
