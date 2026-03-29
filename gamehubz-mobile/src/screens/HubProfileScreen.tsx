@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { SocialLinks } from '../components/profile/SocialLinks';
 import { SocialType } from '../types/auth';
 import { getSocialUrl } from '../lib/social';
+import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 
 type HubProfileRouteProp = RouteProp<RootStackParamList, 'HubProfile'>;
 
@@ -36,6 +37,8 @@ export default function HubProfileScreen() {
     const [error, setError] = useState<string | null>(null);
     const [isGeneralInfoOpen, setIsGeneralInfoOpen] = useState(true);
     const [isAboutOpen, setIsAboutOpen] = useState(false);
+    const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false);
+    const [isUnfollowing, setIsUnfollowing] = useState(false);
 
 
     useFocusEffect(
@@ -126,33 +129,43 @@ export default function HubProfileScreen() {
     const handleFollowToggle = async () => {
         if (!user?.id) return;
 
+        if (isFollowing) {
+            // Show confirmation before unfollowing
+            setShowUnfollowConfirm(true);
+            return;
+        }
+
         try {
-            if (isFollowing) {
-                // Unfollow - send userId and hubId as query parameters
-                const response = await authenticatedFetch(ENDPOINTS.UNFOLLOW_HUB(user.id, id), {
-                    method: 'DELETE',
-                });
+            // Follow
+            const response = await authenticatedFetch(ENDPOINTS.FOLLOW_HUB, {
+                method: 'POST',
+                body: JSON.stringify({
+                    id: null,
+                    userId: user.id,
+                    hubId: id,
+                }),
+            });
+            if (response.ok) setIsFollowing(true);
+        } catch (error) {
+            console.error('Error following hub:', error);
+        }
+    };
 
-                if (response.ok) {
-                    setIsFollowing(false);
-                }
-            } else {
-                // Follow
-                const response = await authenticatedFetch(ENDPOINTS.FOLLOW_HUB, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        id: null,
-                        userId: user.id,
-                        hubId: id,
-                    }),
-                });
-
-                if (response.ok) {
-                    setIsFollowing(true);
-                }
+    const handleConfirmUnfollow = async () => {
+        if (!user?.id) return;
+        setIsUnfollowing(true);
+        try {
+            const response = await authenticatedFetch(ENDPOINTS.UNFOLLOW_HUB(user.id, id), {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                setIsFollowing(false);
+                setShowUnfollowConfirm(false);
             }
         } catch (error) {
-            console.error('Error toggling follow status:', error);
+            console.error('Error unfollowing hub:', error);
+        } finally {
+            setIsUnfollowing(false);
         }
     };
 
@@ -530,6 +543,16 @@ export default function HubProfileScreen() {
                     </View>
                 )}
             </ScrollView>
+
+            <ConfirmationModal
+                visible={showUnfollowConfirm}
+                onClose={() => setShowUnfollowConfirm(false)}
+                onConfirm={handleConfirmUnfollow}
+                title="Unfollow Hub"
+                message={`Are you sure you want to unfollow ${hubData?.name || 'this hub'}? You will lose access to its private tournaments.`}
+                isDestructive={true}
+                isLoading={isUnfollowing}
+            />
         </SafeAreaView>
     );
 }

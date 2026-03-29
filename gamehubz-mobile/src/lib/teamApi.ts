@@ -101,7 +101,7 @@ export async function leaveTeam(teamId: string): Promise<void> {
 export async function getTournamentTeams(tournamentId: string): Promise<TeamDto[]> {
     try {
         const response = await apiClient.get<TeamDto[]>(
-            `/api/tournament/${tournamentId}/teams/confirmed`
+            `/api/tournament/${tournamentId}/finalTeams`
         );
         const data = response.data;
         return Array.isArray(data) ? data : (data as unknown as { items: TeamDto[] }).items || [];
@@ -113,6 +113,14 @@ export async function getTournamentTeams(tournamentId: string): Promise<TeamDto[
 export async function getPendingTournamentTeams(tournamentId: string): Promise<TeamDto[]> {
     const response = await apiClient.get<TeamDto[]>(
         `/api/tournament/${tournamentId}/teams`
+    );
+    const data = response.data;
+    return Array.isArray(data) ? data : (data as unknown as { items: TeamDto[] }).items || [];
+}
+
+export async function getTeamsToJoin(tournamentId: string): Promise<TeamDto[]> {
+    const response = await apiClient.get<TeamDto[]>(
+        `/api/tournament/${tournamentId}/teams/me`
     );
     const data = response.data;
     return Array.isArray(data) ? data : (data as unknown as { items: TeamDto[] }).items || [];
