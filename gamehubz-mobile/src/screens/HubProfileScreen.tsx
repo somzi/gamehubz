@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { SocialLinks } from '../components/profile/SocialLinks';
 import { SocialType } from '../types/auth';
 import { getSocialUrl } from '../lib/social';
+import { buildDeepLink, shareDeepLink } from '../lib/share';
 import { ConfirmationModal } from '../components/modals/ConfirmationModal';
 
 type HubProfileRouteProp = RouteProp<RootStackParamList, 'HubProfile'>;
@@ -300,6 +301,19 @@ export default function HubProfileScreen() {
         );
     }
 
+    const handleShare = async () => {
+        try {
+            const hubName = hubData?.name || 'this hub';
+            await shareDeepLink({
+                title: hubData?.name || 'Hub',
+                description: `Check out ${hubName} on GameHubz.`,
+                deepLink: buildDeepLink('hub', id),
+            });
+        } catch (error) {
+            console.error('Share error:', error);
+        }
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-[#0F172A]" edges={['top']}>
             {/* Top Bar */}
@@ -311,16 +325,22 @@ export default function HubProfileScreen() {
                     <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
                 </Pressable>
                 <Text className="text-lg font-black text-white tracking-tight">Hub</Text>
-                {isOwner ? (
+                <View className="flex-row items-center gap-2">
                     <Pressable
-                        onPress={() => navigation.navigate('ManageHub', { hubId: id })}
+                        onPress={handleShare}
                         className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
                     >
-                        <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
+                        <Ionicons name="share-outline" size={20} color="#FAFAFA" />
                     </Pressable>
-                ) : (
-                    <View className="w-10" />
-                )}
+                    {isOwner && (
+                        <Pressable
+                            onPress={() => navigation.navigate('ManageHub', { hubId: id })}
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                        >
+                            <Ionicons name="settings-outline" size={20} color="#FAFAFA" />
+                        </Pressable>
+                    )}
+                </View>
             </View>
 
             <ScrollView

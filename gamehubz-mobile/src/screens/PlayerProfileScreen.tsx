@@ -13,6 +13,7 @@ import { UserInfo, SocialType } from '../types/auth';
 import { PlayerMatchesDto } from '../types/user';
 import { cn } from '../lib/utils';
 import { getSocialUrl } from '../lib/social';
+import { buildDeepLink, shareDeepLink } from '../lib/share';
 import { Button } from '../components/ui/Button';
 import { TournamentCard } from '../components/cards/TournamentCard';
 import { Tabs } from '../components/ui/Tabs';
@@ -270,6 +271,19 @@ export default function PlayerProfileScreen() {
         }
     };
 
+    const handleShare = async () => {
+        try {
+            const playerName = userInfo?.username || userInfo?.nickName || 'this player';
+            await shareDeepLink({
+                title: userInfo?.username || 'Player Profile',
+                description: `View ${playerName} on GameHubz.`,
+                deepLink: buildDeepLink('player', id),
+            });
+        } catch (error) {
+            console.error('Share error:', error);
+        }
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-[#0F172A]" edges={['top']}>
             {/* Top Bar with Back Button */}
@@ -281,7 +295,12 @@ export default function PlayerProfileScreen() {
                     <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
                 </Pressable>
                 <Text className="text-lg font-black text-white tracking-tight">Player Profile</Text>
-                <View className="w-10" />
+                <Pressable
+                    onPress={handleShare}
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
+                >
+                    <Ionicons name="share-outline" size={20} color="#FAFAFA" />
+                </Pressable>
             </View>
 
             <ScrollView

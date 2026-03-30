@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch } from '../../lib/api';
 import { DateTimePickerModal } from './DateTimePickerModal';
-import { TournamentFormat, TournamentRegion } from '../../types/tournament';
+import { TEAM_TOURNAMENT_FORMATS, TOURNAMENT_FORMAT_OPTIONS, TournamentFormat, TournamentRegion } from '../../types/tournament';
 import { TEAM_LABELS } from '../../lib/teamConstants';
 
 interface CreateTournamentModalProps {
@@ -38,12 +38,6 @@ const prizeCurrencies = [
     { value: '2', label: 'USD' },
     { value: '3', label: 'StarPass' },
     { value: '4', label: 'FCP' },
-];
-
-const tournamentFormats = [
-    { value: '0', label: 'League' },
-    { value: '3', label: 'Single Elimination' },
-    { value: '5', label: 'Group Stage + Knockout' },
 ];
 
 const durationUnits = [
@@ -183,8 +177,21 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
     };
 
     const getFormatLabel = () => {
-        return tournamentFormats.find(f => f.value === selectedFormat)?.label || 'Select Format';
+        return TOURNAMENT_FORMAT_OPTIONS.find(f => f.value === selectedFormat)?.label || 'Select Format';
     };
+
+    useEffect(() => {
+        if (!isTeamTournament) {
+            return;
+        }
+
+        const selectedFormatValue = Number(selectedFormat);
+        const isAllowedTeamFormat = TEAM_TOURNAMENT_FORMATS.some((format) => format === selectedFormatValue);
+
+        if (!isAllowedTeamFormat) {
+            setSelectedFormat(String(TournamentFormat.SingleElimination));
+        }
+    }, [isTeamTournament, selectedFormat]);
 
     const handleSubmit = async () => {
         if (!name || !selectedHubId) {
@@ -206,6 +213,13 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
             const mp = parseInt(maxPlayers);
             if (mp < ts * 2) {
                 setError(`Max Players must be at least ${ts * 2} (Team Size × 2) to allow a minimum of 2 teams`);
+                return;
+            }
+
+            const selectedFormatValue = Number(selectedFormat);
+            const isAllowedTeamFormat = TEAM_TOURNAMENT_FORMATS.some((format) => format === selectedFormatValue);
+            if (!isAllowedTeamFormat) {
+                setError('Team tournaments only support Single Bracket');
                 return;
             }
         }
@@ -460,13 +474,15 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                                 </View>
                             </View>
 
-                            <View className="flex-row gap-4">
-                                <View className="flex-1">
-                                    {renderSelectField('Format', getFormatLabel(), 'list-outline', () =>
-                                        setShowFormatPicker(true)
-                                    )}
+                            {!isTeamTournament && (
+                                <View className="flex-row gap-4">
+                                    <View className="flex-1">
+                                        {renderSelectField('Format', getFormatLabel(), 'list-outline', () =>
+                                            setShowFormatPicker(true)
+                                        )}
+                                    </View>
                                 </View>
-                            </View>
+                            )}
 
                             {/* Tournament Mode Toggle */}
                             <View>
@@ -681,7 +697,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                     {renderOptionsModal(
                         showFormatPicker,
                         () => setShowFormatPicker(false),
-                        tournamentFormats,
+                        TOURNAMENT_FORMAT_OPTIONS,
                         selectedFormat,
                         setSelectedFormat
                     )}

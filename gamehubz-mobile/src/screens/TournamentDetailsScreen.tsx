@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert, Share } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
+import { File as FSFile, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as SecureStore from 'expo-secure-store';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -12,10 +15,11 @@ import { Button } from '../components/ui/Button';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../lib/utils';
+import { buildDeepLink, shareDeepLink } from '../lib/share';
 import { useAuth } from '../context/AuthContext';
 import { ENDPOINTS, authenticatedFetch, getErrorMessage } from '../lib/api';
 import { MatchDetailsModal } from '../components/modals/MatchDetailsModal';
-import { TournamentRegion } from '../types/tournament';
+import { getTournamentFormatLabel, TournamentRegion } from '../types/tournament';
 import { StatusModal } from '../components/modals/StatusModal';
 import { RoundScheduleModal } from '../components/modals/RoundScheduleModal';
 import { TeamRegistrationModal } from '../components/modals/TeamRegistrationModal';
@@ -73,6 +77,8 @@ export default function TournamentDetailsScreen() {
 
     const [showDeadlineModal, setShowDeadlineModal] = useState(false);
     const [selectedRoundForDeadline, setSelectedRoundForDeadline] = useState<{ roundNumber: number, currentDeadline?: string | null, roundOpenAt?: string | null } | null>(null);
+
+    const [isExportingPdf, setIsExportingPdf] = useState(false);
 
     // Team tournament states
     const [showTeamRegistration, setShowTeamRegistration] = useState(false);
@@ -163,14 +169,48 @@ export default function TournamentDetailsScreen() {
         }
     };
 
+    const handleExportBracketPdf = async () => {
+        if (!id) return;
+        setIsExportingPdf(true);
+        try {
+            const token = await SecureStore.getItemAsync('access_token');
+            const safeName = (tournament?.name ?? id)
+                .replace(/\s+/g, '_')
+                .replace(/[^a-zA-Z0-9_\-]/g, '');
+            const destFile = new FSFile(Paths.cache, `${safeName}_bracket.pdf`);
+            // Remove stale cache file so downloadFileAsync never hits "Destination already exists"
+            if (destFile.exists) {
+                destFile.delete();
+            }
+            const downloaded = await FSFile.downloadFileAsync(
+                ENDPOINTS.EXPORT_BRACKET_PDF(id),
+                destFile,
+                token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+            );
+            const canShare = await Sharing.isAvailableAsync();
+            if (!canShare) {
+                Alert.alert('Sharing not available', 'Your device does not support sharing.');
+                return;
+            }
+            await Sharing.shareAsync(downloaded.uri, {
+                mimeType: 'application/pdf',
+                dialogTitle: 'Share Bracket PDF',
+                UTI: 'com.adobe.pdf',
+            });
+        } catch (err: any) {
+            Alert.alert('Export Failed', err.message || 'Could not export the bracket PDF.');
+        } finally {
+            setIsExportingPdf(false);
+        }
+    };
+
     const handleShare = async () => {
         if (!tournament) return;
         try {
-            // This link should match the deep linking configuration (e.g. universal/app links)
-            const shareUrl = `https://gamehubz.com/tournament/${id}`;
-            await Share.share({
-                message: `Check out this ${tournament.name} tournament on GameHubz!\n\nJoin here: ${shareUrl}`,
-                title: tournament.name
+            await shareDeepLink({
+                title: tournament.name,
+                description: `Join ${tournament.name} on GameHubz.`,
+                deepLink: buildDeepLink('tournament', id),
             });
         } catch (error) {
             console.error('Share error:', error);
@@ -968,6 +1008,19 @@ export default function TournamentDetailsScreen() {
                 showBack
                 rightElement={
                     <View className="flex-row items-center gap-2">
+                        {activeTab === 'bracket' && stages.length > 0 && (
+                            <Pressable
+                                onPress={handleExportBracketPdf}
+                                disabled={isExportingPdf}
+                                className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 active:opacity-60"
+                            >
+                                {isExportingPdf ? (
+                                    <ActivityIndicator size="small" color="#FAFAFA" />
+                                ) : (
+                                    <Ionicons name="document-outline" size={20} color="#FAFAFA" />
+                                )}
+                            </Pressable>
+                        )}
                         <Pressable
                             onPress={handleShare}
                             className="w-10 h-10 rounded-2xl flex items-center justify-center bg-[#00E5A0]/10 border border-[#00E5A0]/20"
@@ -1206,12 +1259,7 @@ export default function TournamentDetailsScreen() {
                                                     <Text className="text-sm text-slate-400 font-bold">Format</Text>
                                                 </View>
                                                 <Text className="text-base font-black text-white text-right max-w-[60%]">
-                                                    {tournament.format === 0 ? 'League' :
-                                                        tournament.format === 1 ? 'Groups + Single Elimination' :
-                                                            tournament.format === 2 ? 'Groups + Double Elimination' :
-                                                                tournament.format === 3 ? 'Single Elimination' :
-                                                                    tournament.format === 4 ? 'Double Elimination' :
-                                                                        tournament.format === 5 ? 'Group Stage + Knockout' : 'Unknown'}
+                                                    {getTournamentFormatLabel(Number(tournament.format))}
                                                 </Text>
                                             </View>
                                             <View className="h-[1px] bg-white/5" />
