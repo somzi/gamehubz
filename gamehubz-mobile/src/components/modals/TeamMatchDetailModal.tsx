@@ -8,7 +8,10 @@ import {
     Pressable,
     Modal,
     AppState,
+    Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { getOptimizedCloudinaryUrl, MAX_FILE_SIZE, isFileSizeValid, formatFileSize } from '../../lib/image';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -35,6 +38,7 @@ interface TeamMatchDetailModalProps {
     visible: boolean;
     onClose: () => void;
     matchId: string | null;
+    tournamentId?: string;
     hubOwnerId?: string;
     currentUserId?: string;
     onMatchUpdate?: () => void;
@@ -44,6 +48,7 @@ export function TeamMatchDetailModal({
     visible,
     onClose,
     matchId,
+    tournamentId,
     hubOwnerId,
     currentUserId,
     onMatchUpdate,
@@ -60,6 +65,13 @@ export function TeamMatchDetailModal({
         Record<string, { home: string; away: string }>
     >({});
     const [submittingScoreId, setSubmittingScoreId] = useState<string | null>(null);
+
+    // Edit & Evidence state
+    const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+    const [selectedImages, setSelectedImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
+    const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
 
     // Tie-break
     const [tieBreakStatus, setTieBreakStatus] = useState<TieBreakStatusDto | null>(null);
@@ -154,6 +166,7 @@ export function TeamMatchDetailModal({
                         status: sm.status ?? sm.Status ?? 'Pending',
                         winnerUserId: sm.winnerUserId || sm.WinnerUserId || null,
                         isTieBreakMatch: sm.isTieBreakMatch || sm.IsTieBreakMatch || false,
+                        evidences: sm.evidences || sm.Evidences || [],
                     };
                 }),
                 aggregateScore: agg ? {
@@ -187,7 +200,8 @@ export function TeamMatchDetailModal({
                             avatarUrl: ar.avatarUrl || ar.AvatarUrl || '',
                         } : null;
                     })(),
-                } : null
+                } : null,
+                evidences: raw.evidences || raw.Evidences || []
             };
 
             setData(normalized);
@@ -248,6 +262,98 @@ export function TeamMatchDetailModal({
         return () => subscription.remove();
     }, [visible, matchId, fetchData]);
 
+    const pickImages = async () => {
+        try {
+            const { status: pStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (pStatus !== 'granted') {
+                setStatusConfig({ type: 'error', title: 'Permission Required', message: 'Camera roll permissions are needed.' });
+                setShowStatusModal(true);
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsMultipleSelection: true,
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                const oversized = result.assets.filter(asset => !isFileSizeValid(asset));
+
+                if (oversized.length > 0) {
+                    const oversizedNames = oversized.map(a => a.fileName || 'Image').join(', ');
+                    setStatusConfig({ 
+                        type: 'error', 
+                        title: 'Files too large', 
+                        message: `Some images are too large: ${oversizedNames}. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}.` 
+                    });
+                    setShowStatusModal(true);
+
+                    const validAssets = result.assets.filter(asset => isFileSizeValid(asset));
+                    if (validAssets.length > 0) {
+                        setSelectedImages(prev => [...prev, ...validAssets]);
+                    }
+                    return;
+                }
+
+                setSelectedImages(prev => [...prev, ...result.assets]);
+            }
+        } catch (err) {
+            console.error('Error picking images:', err);
+        }
+    };
+
+    const removeImage = (uri: string) => {
+        setSelectedImages(prev => prev.filter(img => img.uri !== uri));
+    };
+
+    const handleUploadOnly = async (subMatchId: string) => {
+        if (!subMatchId || selectedImages.length === 0) return;
+        setIsUploadingEvidence(true);
+        try {
+            const formData = new FormData();
+            selectedImages.forEach((img, index) => {
+                const filename = img.uri.split('/').pop() || `evidence-${index}.jpg`;
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : `image/jpeg`;
+                // @ts-ignore
+                formData.append('files', { uri: img.uri, name: filename, type });
+            });
+
+            const response = await authenticatedFetch(ENDPOINTS.UPLOAD_MATCH_EVIDENCE(subMatchId), {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || 'Failed to upload images');
+            }
+            setSelectedImages([]);
+            fetchData();
+        } catch (err: any) {
+            console.error('Upload evidence error:', err);
+            setStatusConfig({ type: 'error', title: 'Upload Failed', message: err.message || 'Failed to upload evidence' });
+            setShowStatusModal(true);
+        } finally {
+            setIsUploadingEvidence(false);
+        }
+    };
+
+    const handleEditSubMatch = (sm: SubMatchDto) => {
+        setEditingMatchId(sm.matchId);
+        setScoreInputs((prev) => ({
+            ...prev,
+            [sm.matchId]: { home: String(sm.homeScore ?? ''), away: String(sm.awayScore ?? '') }
+        }));
+        setSelectedImages([]);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingMatchId(null);
+        setSelectedImages([]);
+    };
+
     const handleScoreChange = (subMatchId: string, side: 'home' | 'away', value: string) => {
         setScoreInputs((prev) => ({
             ...prev,
@@ -269,11 +375,12 @@ export function TeamMatchDetailModal({
         setSubmittingScoreId(subMatch.matchId);
         try {
             const response = await authenticatedFetch(ENDPOINTS.REPORT_MATCH_RESULT, {
-                method: 'PUT',
+                method: 'POST',
                 body: JSON.stringify({
                     MatchId: subMatch.matchId,
                     HomeScore: homeScore,
                     AwayScore: awayScore,
+                    TournamentId: tournamentId
                 }),
             });
 
@@ -282,7 +389,12 @@ export function TeamMatchDetailModal({
                 throw new Error(text);
             }
 
+            if (selectedImages.length > 0 && subMatch.matchId === editingMatchId) {
+                await handleUploadOnly(subMatch.matchId);
+            }
+
             // Refresh data after submission
+            setEditingMatchId(null);
             fetchData();
             onMatchUpdate?.();
         } catch (err: unknown) {
@@ -440,6 +552,8 @@ export function TeamMatchDetailModal({
         }
         return null;
     };
+
+    const allEvidences = [...(data?.evidences || []), ...(data?.subMatches?.flatMap(sm => sm.evidences || []) || [])];
 
     if (!visible) return null;
 
@@ -699,39 +813,156 @@ export function TeamMatchDetailModal({
                                         </Pressable>
                                     </View>
 
-                                    {/* Score Input (hub owner only, pending matches) */}
-                                    {isHubOwner && sm.status === 'Pending' && (
-                                        <View className="flex-row items-center gap-2 mt-3 pt-3 border-t border-border/10">
-                                            <TextInput
-                                                className="flex-1 bg-muted/30 px-3 h-10 rounded-xl text-foreground text-center border border-border/10"
-                                                placeholder="0"
-                                                placeholderTextColor="#71717A"
-                                                keyboardType="numeric"
-                                                value={scoreInputs[sm.matchId]?.home || ''}
-                                                onChangeText={(v) => handleScoreChange(sm.matchId, 'home', v)}
-                                            />
-                                            <Text className="text-muted-foreground font-bold text-xs">—</Text>
-                                            <TextInput
-                                                className="flex-1 bg-muted/30 px-3 h-10 rounded-xl text-foreground text-center border border-border/10"
-                                                placeholder="0"
-                                                placeholderTextColor="#71717A"
-                                                keyboardType="numeric"
-                                                value={scoreInputs[sm.matchId]?.away || ''}
-                                                onChangeText={(v) => handleScoreChange(sm.matchId, 'away', v)}
-                                            />
-                                            <Button
-                                                size="sm"
-                                                className="bg-primary/90 ml-1"
-                                                onPress={() => handleSubmitScore(sm)}
-                                                loading={submittingScoreId === sm.matchId}
-                                                disabled={submittingScoreId !== null}
-                                            >
-                                                {TEAM_LABELS.SUBMIT_SCORE}
-                                            </Button>
+                                    {/* Evidence & Edit Mode */}
+                                    {editingMatchId === sm.matchId || (isHubOwner && sm.status === 'Pending') ? (
+                                        <View className="mt-3 pt-3 border-t border-border/10">
+                                            {/* Score Input */}
+                                            <View className="flex-row items-center gap-2 mb-3">
+                                                <TextInput
+                                                    className="flex-1 bg-muted/30 px-3 h-10 rounded-xl text-foreground text-center border border-border/10 font-black"
+                                                    placeholder="0"
+                                                    placeholderTextColor="#71717A"
+                                                    keyboardType="numeric"
+                                                    value={scoreInputs[sm.matchId]?.home || ''}
+                                                    onChangeText={(v) => handleScoreChange(sm.matchId, 'home', v)}
+                                                />
+                                                <Text className="text-muted-foreground font-bold text-xs">—</Text>
+                                                <TextInput
+                                                    className="flex-1 bg-muted/30 px-3 h-10 rounded-xl text-foreground text-center border border-border/10 font-black"
+                                                    placeholder="0"
+                                                    placeholderTextColor="#71717A"
+                                                    keyboardType="numeric"
+                                                    value={scoreInputs[sm.matchId]?.away || ''}
+                                                    onChangeText={(v) => handleScoreChange(sm.matchId, 'away', v)}
+                                                />
+                                            </View>
+                                            
+                                            {/* Evidence Section */}
+                                            <View className="mb-4">
+                                                <View className="flex-row items-center justify-between mb-2">
+                                                    <View className="flex-row items-center gap-1.5">
+                                                        <View className="w-5 h-5 rounded-md bg-[#10B981]/10 items-center justify-center">
+                                                            <Ionicons name="images-outline" size={12} color="#10B981" />
+                                                        </View>
+                                                        <Text className="text-[10px] font-black text-white uppercase tracking-widest">Evidence</Text>
+                                                    </View>
+                                                    <Pressable onPress={pickImages} className="bg-[#10B981]/10 px-2 py-1 rounded-md border border-[#10B981]/20">
+                                                        <Text className="text-[9px] font-black text-[#10B981] uppercase tracking-wider">Add</Text>
+                                                    </Pressable>
+                                                </View>
+                                                {selectedImages.length > 0 ? (
+                                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                        {selectedImages.map((img, index) => (
+                                                            <View key={img.uri + index} className="mr-2 mb-1">
+                                                                <View className="rounded-xl overflow-hidden border border-white/5">
+                                                                    <Image source={{ uri: img.uri }} className="w-16 h-16" />
+                                                                </View>
+                                                                <Pressable onPress={() => removeImage(img.uri)} className="absolute -top-1 -right-1 bg-red-500 w-4 h-4 rounded-full items-center justify-center border border-[#0B1120] shadow-sm">
+                                                                    <Ionicons name="close" size={8} color="white" />
+                                                                </Pressable>
+                                                            </View>
+                                                        ))}
+                                                    </ScrollView>
+                                                ) : (
+                                                    <Pressable onPress={pickImages} className="h-14 border border-dashed border-white/10 rounded-xl items-center justify-center bg-white/[0.02]">
+                                                        <Text className="text-[10px] text-slate-600 font-bold">No photos selected</Text>
+                                                    </Pressable>
+                                                )}
+                                            </View>
+
+                                            <View className="flex-row gap-2">
+                                                {sm.status !== 'Pending' && (
+                                                    <Pressable onPress={handleCancelEdit} className="flex-1 bg-white/5 rounded-xl py-2 items-center border border-white/10 active:opacity-70">
+                                                        <Text className="text-xs font-black text-slate-400 uppercase tracking-wider">Cancel</Text>
+                                                    </Pressable>
+                                                )}
+                                                <Pressable 
+                                                    onPress={() => handleSubmitScore(sm)} 
+                                                    className="flex-1 bg-primary/90 rounded-xl py-2 items-center active:opacity-80"
+                                                >
+                                                    {submittingScoreId === sm.matchId ? (
+                                                        <ActivityIndicator size="small" color="#0F172A" />
+                                                    ) : (
+                                                        <Text className="text-xs font-black text-primary-foreground uppercase tracking-wider">Save</Text>
+                                                    )}
+                                                </Pressable>
+                                            </View>
                                         </View>
+                                    ) : (
+                                        <>
+                                            {isHubOwner && sm.status !== 'Pending' && (
+                                                <View className="flex-row justify-end mt-2 pt-2 border-t border-border/10">
+                                                    <Pressable 
+                                                        onPress={() => handleEditSubMatch(sm)}
+                                                        className="bg-[#10B981]/10 px-3 py-1 rounded-md border border-[#10B981]/20 active:opacity-70"
+                                                    >
+                                                        <Text className="text-[9px] font-black text-[#10B981] uppercase tracking-wider">Edit Result</Text>
+                                                    </Pressable>
+                                                </View>
+                                            )}
+                                        </>
                                     )}
                                 </View>
                             ))}
+                        </View>
+
+                        {/* Evidence Gallery — collapsible */}
+                        <View className="mx-6 mb-6">
+                            <Pressable
+                                onPress={() => setIsEvidenceOpen(prev => !prev)}
+                                className="flex-row items-center justify-between py-1 active:opacity-70"
+                            >
+                                <View className="flex-row items-center gap-2.5">
+                                    <View className="w-7 h-7 rounded-xl bg-indigo-500/10 items-center justify-center">
+                                        <Ionicons name="images-outline" size={14} color="#818CF8" />
+                                    </View>
+                                    <Text className="text-[11px] font-black text-white uppercase tracking-[2px]">Evidence</Text>
+                                    {allEvidences.length > 0 && (
+                                        <View className="bg-white/5 px-2 py-0.5 rounded-full">
+                                            <Text className="text-[9px] font-bold text-slate-500">{allEvidences.length}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <View className="w-7 h-7 rounded-full bg-white/5 items-center justify-center">
+                                    <Ionicons
+                                        name={isEvidenceOpen ? 'chevron-up' : 'chevron-down'}
+                                        size={14}
+                                        color="#475569"
+                                    />
+                                </View>
+                            </Pressable>
+
+                            {isEvidenceOpen && (
+                                <View className="mt-3">
+                                    {/* Display existing evidences */}
+                                    {allEvidences.length > 0 ? (
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            {allEvidences.map((url, idx) => (
+                                                <Pressable
+                                                    key={idx}
+                                                    className="mr-3"
+                                                    onPress={() => setPreviewImage(url)}
+                                                >
+                                                    <View className="rounded-2xl overflow-hidden border border-white/5">
+                                                        <Image
+                                                            source={{ uri: getOptimizedCloudinaryUrl(url, 400) }}
+                                                            className="w-36 h-48 bg-muted"
+                                                            resizeMode="cover"
+                                                        />
+                                                    </View>
+                                                </Pressable>
+                                            ))}
+                                        </ScrollView>
+                                    ) : (
+                                        <View className="bg-white/5 rounded-2xl py-6 items-center justify-center border border-white/10 border-dashed">
+                                            <View className="w-10 h-10 rounded-full bg-indigo-500/10 items-center justify-center mb-2">
+                                                <Ionicons name="images-outline" size={18} color="#818CF8" />
+                                            </View>
+                                            <Text className="text-[11px] font-black text-slate-400 uppercase tracking-widest">No Evidence Attached</Text>
+                                        </View>
+                                    )}
+                                </View>
+                            )}
                         </View>
 
                         {/* Footer */}
@@ -753,17 +984,42 @@ export function TeamMatchDetailModal({
                                          </View>
                                          <View className="flex-1">
                                              {(() => {
-                                                 const winnerIsHome = data?.winnerTeamParticipantId
-                                                     ? data?.homeTeam?.teamId === data?.winnerTeamParticipantId
-                                                     : ((data?.aggregateScore?.homeTeamWins ?? 0) > (data?.aggregateScore?.awayTeamWins ?? 0));
-                                                     
-                                                 const winningTeamName = winnerIsHome ? data?.homeTeam?.teamName : data?.awayTeam?.teamName;
-                                                 const winningWins = winnerIsHome ? (data?.aggregateScore?.homeTeamWins ?? 0) : (data?.aggregateScore?.awayTeamWins ?? 0);
-                                                 const losingWins = winnerIsHome ? (data?.aggregateScore?.awayTeamWins ?? 0) : (data?.aggregateScore?.homeTeamWins ?? 0);
-                                                 const winningTotal = winnerIsHome ? (data?.aggregateScore?.homeTeamTotalScore ?? 0) : (data?.aggregateScore?.awayTeamTotalScore ?? 0);
-                                                 const losingTotal = winnerIsHome ? (data?.aggregateScore?.awayTeamTotalScore ?? 0) : (data?.aggregateScore?.homeTeamTotalScore ?? 0);
+                                                 let winnerIsHome = false;
+                                                 let isTie = false;
+                                                 let winnerCalculated = false;
+
+                                                 const matchWinsHome = data?.aggregateScore?.homeTeamWins ?? 0;
+                                                 const matchWinsAway = data?.aggregateScore?.awayTeamWins ?? 0;
+                                                 const totalScoreHome = data?.aggregateScore?.homeTeamTotalScore ?? 0;
+                                                 const totalScoreAway = data?.aggregateScore?.awayTeamTotalScore ?? 0;
+
+                                                 if (data?.winnerTeamParticipantId) {
+                                                     if (data?.homeTeam?.teamId === data?.winnerTeamParticipantId) {
+                                                         winnerIsHome = true;
+                                                         winnerCalculated = true;
+                                                     } else if (data?.awayTeam?.teamId === data?.winnerTeamParticipantId) {
+                                                         winnerIsHome = false;
+                                                         winnerCalculated = true;
+                                                     }
+                                                 }
+
+                                                 if (!winnerCalculated) {
+                                                     if (matchWinsHome !== matchWinsAway) {
+                                                         winnerIsHome = matchWinsHome > matchWinsAway;
+                                                     } else if (totalScoreHome !== totalScoreAway) {
+                                                         winnerIsHome = totalScoreHome > totalScoreAway;
+                                                     } else {
+                                                         isTie = true;
+                                                     }
+                                                 }
+
+                                                 const winningTeamName = isTie ? 'MATCH DRAW' : (winnerIsHome ? data?.homeTeam?.teamName : data?.awayTeam?.teamName);
+                                                 const winningWins = winnerIsHome ? matchWinsHome : matchWinsAway;
+                                                 const losingWins = winnerIsHome ? matchWinsAway : matchWinsHome;
+                                                 const winningTotal = winnerIsHome ? totalScoreHome : totalScoreAway;
+                                                 const losingTotal = winnerIsHome ? totalScoreAway : totalScoreHome;
                                                  
-                                                 const isTie = winningWins === losingWins;
+                                                 const isMatchWinsTie = matchWinsHome === matchWinsAway;
                                                  const isBigWin = Math.abs(winningWins - losingWins) >= 2;
 
                                                  return (
@@ -776,6 +1032,13 @@ export function TeamMatchDetailModal({
                                                          </Text>
                                                          
                                                          {isTie ? (
+                                                             <View className="flex-row items-center bg-[#10B981]/15 self-start px-2.5 py-1 rounded-lg border border-[#10B981]/20 gap-1.5">
+                                                                 <Ionicons name="calculator" size={12} color="#10B981" />
+                                                                 <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-wider mt-0.5">
+                                                                     DRAW · {winningWins} - {losingWins}
+                                                                 </Text>
+                                                             </View>
+                                                         ) : isMatchWinsTie ? (
                                                              <View className="flex-row items-center bg-[#10B981]/15 self-start px-2.5 py-1 rounded-lg border border-[#10B981]/20 gap-1.5">
                                                                  <Ionicons name="calculator" size={12} color="#10B981" />
                                                                  <Text className="text-[10px] font-black text-[#10B981] uppercase tracking-wider mt-0.5">
@@ -879,6 +1142,22 @@ export function TeamMatchDetailModal({
                     message={statusConfig.message}
                     onClose={() => setShowStatusModal(false)}
                 />
+            )}
+
+            {/* Evidence Image Preview Modal */}
+            {previewImage && (
+                <Modal visible={!!previewImage} transparent animationType="fade" onRequestClose={() => setPreviewImage(null)}>
+                    <View className="flex-1 bg-black/95 items-center justify-center p-4">
+                        <Pressable onPress={() => setPreviewImage(null)} className="absolute top-12 right-6 z-10 w-10 h-10 bg-white/10 rounded-full items-center justify-center">
+                            <Ionicons name="close" size={24} color="white" />
+                        </Pressable>
+                        <Image
+                            source={{ uri: getOptimizedCloudinaryUrl(previewImage, 800) }}
+                            className="w-full h-full"
+                            resizeMode="contain"
+                        />
+                    </View>
+                </Modal>
             )}
         </Modal>
     );

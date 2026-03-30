@@ -2014,6 +2014,7 @@ export default function TournamentDetailsScreen() {
                     visible={showTeamMatchDetail}
                     onClose={() => { setShowTeamMatchDetail(false); setSelectedTeamMatchId(null); }}
                     matchId={selectedTeamMatchId}
+                    tournamentId={tournament?.id}
                     hubOwnerId={hubOwnerId}
                     currentUserId={user?.id}
                     onMatchUpdate={() => {
