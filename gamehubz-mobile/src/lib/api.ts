@@ -194,10 +194,7 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
         let routeUrl = url;
         if (routeUrl.startsWith(API_BASE_URL)) routeUrl = routeUrl.replace(API_BASE_URL, '');
 
-        let bodyData = options.body;
-        if (typeof bodyData === 'string' && !isFormData) {
-            try { bodyData = JSON.parse(bodyData); } catch (e) { }
-        }
+        const bodyData = options.body;
 
         const response = await apiClient({
             method: options.method || 'GET',

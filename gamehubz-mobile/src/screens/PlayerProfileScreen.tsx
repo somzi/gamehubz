@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { MatchHistoryCard } from '../components/cards/MatchHistoryCard';
@@ -115,23 +115,33 @@ export default function PlayerProfileScreen() {
         } else if (activeTab === 'matches' && userMatches.length === 0 && hasMoreMatches && !isLoadingMoreMatches) {
             loadMoreMatches();
         }
-    }, [activeTab]);
+    }, [activeTab, userMatches.length, userTournaments.length]);
+
+    useFocusEffect(
+        useCallback(() => {
+            setUserMatches([]);
+            setMatchesPage(0);
+            setHasMoreMatches(true);
+            setUserTournaments([]);
+            setTournamentsPage(0);
+            setHasMoreTournaments(true);
+        }, [id])
+    );
 
     const loadMoreTournaments = async () => {
         if (!id || isLoadingMoreTournaments || !hasMoreTournaments) return;
 
         setIsLoadingMoreTournaments(true);
-        const nextPage = tournamentsPage + 1;
 
         try {
-            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id, nextPage));
+            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(id, tournamentsPage));
             if (response.ok) {
                 const data = await response.json();
                 const items = data.items || data.Items || data.result || data;
                 const itemsArray = Array.isArray(items) ? items : [];
 
                 setUserTournaments(prev => [...prev, ...itemsArray]);
-                setTournamentsPage(nextPage);
+                setTournamentsPage(prev => prev + 1);
                 setHasMoreTournaments(itemsArray.length === 10);
             } else {
                 setHasMoreTournaments(false);
@@ -148,17 +158,16 @@ export default function PlayerProfileScreen() {
         if (!id || isLoadingMoreMatches || !hasMoreMatches) return;
 
         setIsLoadingMoreMatches(true);
-        const nextPage = matchesPage + 1;
 
         try {
-            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(id, nextPage));
+            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(id, matchesPage));
             if (response.ok) {
                 const data = await response.json();
                 const items = data.items || data.Items || data.result || data;
                 const itemsArray = Array.isArray(items) ? items : [];
 
                 setUserMatches(prev => [...prev, ...itemsArray]);
-                setMatchesPage(nextPage);
+                setMatchesPage(prev => prev + 1);
                 setHasMoreMatches(itemsArray.length === 10);
             } else {
                 setHasMoreMatches(false);
@@ -295,12 +304,7 @@ export default function PlayerProfileScreen() {
                     <Ionicons name="arrow-back" size={20} color="#FAFAFA" />
                 </Pressable>
                 <Text className="text-lg font-black text-white tracking-tight">Player Profile</Text>
-                <Pressable
-                    onPress={handleShare}
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10"
-                >
-                    <Ionicons name="share-outline" size={20} color="#FAFAFA" />
-                </Pressable>
+{/* Share button hidden - coming soon */}
             </View>
 
             <ScrollView

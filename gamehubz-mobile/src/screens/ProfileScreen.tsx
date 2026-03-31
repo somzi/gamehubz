@@ -84,17 +84,16 @@ export default function ProfileScreen() {
         if (!user?.id || isLoadingMoreTournaments || !hasMoreTournaments) return;
 
         setIsLoadingMoreTournaments(true);
-        const nextPage = tournamentsPage + 1;
 
         try {
-            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(user.id, nextPage));
+            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_TOURNAMENTS(user.id, tournamentsPage));
             if (response.ok) {
                 const data = await response.json();
                 const items = data.items || data.Items || data.result || data;
                 const itemsArray = Array.isArray(items) ? items : [];
 
                 setUserTournaments(prev => [...prev, ...itemsArray]);
-                setTournamentsPage(nextPage);
+                setTournamentsPage(prev => prev + 1);
                 setHasMoreTournaments(itemsArray.length === 10);
             } else {
                 setHasMoreTournaments(false);
@@ -111,17 +110,16 @@ export default function ProfileScreen() {
         if (!user?.id || isLoadingMoreMatches || !hasMoreMatches) return;
 
         setIsLoadingMoreMatches(true);
-        const nextPage = matchesPage + 1;
 
         try {
-            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(user.id, nextPage));
+            const response = await authenticatedFetch(ENDPOINTS.GET_PROFILE_MATCHES(user.id, matchesPage));
             if (response.ok) {
                 const data = await response.json();
                 const items = data.items || data.Items || data.result || data;
                 const itemsArray = Array.isArray(items) ? items : [];
 
                 setUserMatches(prev => [...prev, ...itemsArray]);
-                setMatchesPage(nextPage);
+                setMatchesPage(prev => prev + 1);
                 setHasMoreMatches(itemsArray.length === 10);
             } else {
                 setHasMoreMatches(false);
@@ -144,14 +142,21 @@ export default function ProfileScreen() {
         } else if (activeTab === 'matches' && userMatches.length === 0 && hasMoreMatches && !isLoadingMoreMatches) {
             loadMoreMatches();
         }
-    }, [activeTab]);
+    }, [activeTab, userMatches.length, userTournaments.length]);
 
     useFocusEffect(
         useCallback(() => {
             if (user?.id) {
                 refreshUser();
+                fetchDetailedData();
+                setUserMatches([]);
+                setMatchesPage(0);
+                setHasMoreMatches(true);
+                setUserTournaments([]);
+                setTournamentsPage(0);
+                setHasMoreTournaments(true);
             }
-        }, [user?.id, refreshUser])
+        }, [user?.id, refreshUser, fetchDetailedData])
     );
 
     const getRegionName = (region?: number) => {

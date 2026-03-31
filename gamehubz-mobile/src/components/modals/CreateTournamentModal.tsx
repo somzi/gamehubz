@@ -268,37 +268,55 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
                 }
             }
 
-            const payload = {
-                hubId: selectedHubId,
-                name: name,
-                description: description || "",
-                rules: rules || "",
-                status: 1, // Always 1 per requirement
-                maxPlayers: parseInt(maxPlayers) || 0,
-                startDate: formatToISO(startDate),
-                registrationDeadline: formatToISO(registrationDeadline),
-                prize: parseFloat(prizePool) || 0,
-                prizeCurrency: parseInt(prizeCurrency) || 1,
-                region: regionMapping[selectedRegions[0]] ?? 0,
-                format: parseInt(selectedFormat),
+            const tournamentPayload = {
+                HubId: selectedHubId,
+                Name: name,
+                Description: description || "",
+                Rules: rules || "",
+                Status: 1,
+                MaxPlayers: parseInt(maxPlayers) || 0,
+                StartDate: formatToISO(startDate),
+                RegistrationDeadline: formatToISO(registrationDeadline),
+                Prize: parseFloat(prizePool) || 0,
+                PrizeCurrency: parseInt(prizeCurrency) || 1,
+                Region: regionMapping[selectedRegions[0]] ?? 0,
+                Format: parseInt(selectedFormat),
                 GroupsCount: selectedFormat === '5' ? parseInt(groupsCount) : null,
                 QualifiersPerGroup: selectedFormat === '5' ? parseInt(qualifiersPerGroup) : null,
-                roundDurationMinutes: roundDurationMinutes,
-                isTeamTournament: isTeamTournament,
-                teamSize: isTeamTournament ? parseInt(teamSize) : null,
-                teamWinCondition: isTeamTournament ? parseInt(teamWinCondition) : null,
+                RoundDurationMinutes: roundDurationMinutes,
+                IsTeamTournament: isTeamTournament,
+                TeamSize: isTeamTournament ? parseInt(teamSize) : null,
+                TeamWinCondition: parseInt(teamWinCondition) || 0,
             };
 
-            console.log('Creating tournament with payload:', payload);
+            const requestBody = {
+                ...tournamentPayload,
+                inputDto: tournamentPayload,
+                modelSave: tournamentPayload,
+            };
+
+            console.log('Creating tournament with payload:', requestBody);
+            console.log('Create tournament request JSON:', JSON.stringify(requestBody));
+            console.log('Endpoint:', ENDPOINTS.CREATE_TOURNAMENT);
 
             const response = await authenticatedFetch(ENDPOINTS.CREATE_TOURNAMENT, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to create tournament');
+                const errorText = await response.text().catch(() => '');
+                console.error('Create tournament failed - Status:', response.status, '- Body:', errorText);
+                let errorMessage = 'Failed to create tournament';
+                try {
+                    const parsed = JSON.parse(errorText);
+                    errorMessage = parsed.message || parsed.Message || parsed.title || (parsed.errors ? JSON.stringify(parsed.errors) : null) || errorMessage;
+                } catch {}
+                throw new Error(errorMessage);
             }
 
             console.log('Tournament created successfully');
@@ -341,7 +359,7 @@ export function CreateTournamentModal({ visible, onClose, hubId }: CreateTournam
     const renderOptionsModal = (
         visible: boolean,
         onCloseModal: () => void,
-        options: { value: string; label: string | any }[],
+        options: ReadonlyArray<{ value: string; label: any }>,
         selected: string | string[],
         onSelect: (val: string) => void,
         multi = false
