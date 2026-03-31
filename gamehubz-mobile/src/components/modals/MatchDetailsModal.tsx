@@ -12,7 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { cn } from '../../lib/utils';
+import { cn, parseUtcDate } from '../../lib/utils';
 
 export type MatchStatus = 'pending_availability' | 'scheduled' | 'ready_phase' | 'completed';
 
@@ -145,7 +145,7 @@ export function MatchDetailsModal({
                 };
                 setMatchDetails(normalizedData);
                 if (normalizedData.scheduledTime) {
-                    const date = new Date(normalizedData.scheduledTime);
+                    const date = parseUtcDate(normalizedData.scheduledTime);
                     setConfirmedTime(date.toLocaleString(undefined, {
                         day: 'numeric',
                         month: 'short',
@@ -179,7 +179,7 @@ export function MatchDetailsModal({
                     setLocalDeadline(data.matchDeadline);
                 }
                 if (data.confirmedTime) {
-                    const confirmedDate = new Date(data.confirmedTime);
+                    const confirmedDate = parseUtcDate(data.confirmedTime);
                     setConfirmedTime(confirmedDate.toLocaleString());
                     setCurrentStatus('scheduled');
                 }

@@ -12,7 +12,7 @@ import { authenticatedFetch, ENDPOINTS } from '../lib/api';
 import { PlayerAvatar } from '../components/ui/PlayerAvatar';
 import { DashboardActivityDto } from '../types/dashboard';
 import { HighlightsModal } from '../components/modals/HighlightsModal';
-import { cn } from '../lib/utils';
+import { cn, parseUtcDate } from '../lib/utils';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -246,7 +246,7 @@ export default function HomeScreen() {
                                             userNickname={match.userNickname}
                                             status="scheduled"
                                             scheduledTime={match.scheduledTime
-                                                ? new Date(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                                ? parseUtcDate(match.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                                                 : 'TBD'}
                                             onMatchUpdate={fetchMatches}
                                         />
