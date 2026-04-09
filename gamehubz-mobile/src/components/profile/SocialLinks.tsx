@@ -31,7 +31,7 @@ const platformConfig: any = {
         bgColor: "bg-[#E4405F]/20",
     },
     twitter: {
-        icon: <FontAwesome name="twitter" size={20} />,
+        icon: <Text style={{ fontSize: 18, fontWeight: '900', color: 'white' }}>𝕏</Text>,
         color: "text-foreground",
         bgColor: "bg-foreground/10",
     },
