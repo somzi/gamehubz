@@ -1,12 +1,13 @@
-// Environment configuration
 const IS_PROD = !__DEV__;
+const IS_STAGING = true; // true = staging, false = local
+
 const PROD_URL = 'https://codespheresolutions.dev';
-// For local development on physical devices, use your computer's local IP
+const STAGING_URL = 'http://178.104.50.1:8081';
 const LOCAL_IP = '192.168.0.3';
 const LOCAL_PORT = '5057';
 const LOCAL_URL = `http://${LOCAL_IP}:${LOCAL_PORT}`;
 
-export const API_BASE_URL = IS_PROD ? PROD_URL : LOCAL_URL;
+export const API_BASE_URL = IS_PROD ? PROD_URL : IS_STAGING ? STAGING_URL : LOCAL_URL;
 
 console.log(`[API] Environment: ${IS_PROD ? 'Production' : 'Development'}`);
 console.log(`[API] Base URL: ${API_BASE_URL}`);
